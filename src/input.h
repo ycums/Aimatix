@@ -1,3 +1,5 @@
+// 入力確定処理
+bool confirmInputAndAddAlarm();
 #ifndef INPUT_H
 #define INPUT_H
 

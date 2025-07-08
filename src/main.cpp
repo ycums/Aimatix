@@ -37,6 +37,9 @@ void handleSettingsMenu();
 const char* ssid = "your-ssid"; // Placeholder
 const char* password = "your-password"; // Placeholder
 
+// スケジュール選択モード用の選択インデックス
+static int scheduleSelectedIndex = 0;
+
 void setup() {
   M5.begin();
   M5.Power.begin();
@@ -85,7 +88,7 @@ void loop() {
       drawInputMode();
       break;
     case SCHEDULE_SELECT:
-      drawScheduleSelect();
+      drawScheduleSelect(scheduleSelectedIndex);
       break;
     case ALARM_ACTIVE:
       drawAlarmActive();
@@ -228,9 +231,122 @@ void handleSettingsMenu() {
 }
 
 void handleButtons() {
+
+
   static unsigned long lastPress = 0;
   const unsigned long LONG_PRESS_TIME = 1000;  // 1秒間の長押し
-  
+  switch (currentMode) {
+    case MAIN_DISPLAY:
+      if (M5.BtnA.wasPressed()) {
+        currentMode = ABS_TIME_INPUT;
+        resetInput();
+      }
+      if (M5.BtnB.wasPressed()) {
+        lastPress = millis();
+      }
+      if (M5.BtnB.pressedFor(LONG_PRESS_TIME)) {
+        currentMode = REL_MINUS_TIME_INPUT;
+        resetInput();
+      } else if (M5.BtnB.wasReleased() && millis() - lastPress < LONG_PRESS_TIME) {
+        currentMode = REL_PLUS_TIME_INPUT;
+        resetInput();
+      }
+      if (M5.BtnC.wasPressed()) {
+        lastPress = millis();
+      }
+      if (M5.BtnC.pressedFor(LONG_PRESS_TIME)) {
+        currentMode = SETTINGS_MENU;
+      } else if (M5.BtnC.wasReleased() && millis() - lastPress < LONG_PRESS_TIME) {
+        currentMode = SCHEDULE_SELECT;
+      }
+      break;
+
+    case ABS_TIME_INPUT:
+    case REL_PLUS_TIME_INPUT:
+    case REL_MINUS_TIME_INPUT:
+      if (M5.BtnA.wasPressed()) {
+        // 数字の変更（カーソル位置ごとに+1、桁送り）
+        if (inputState.currentDigit < 2) {
+          int *value = &inputState.hours;
+          int digit = inputState.currentDigit;
+          int v = *value;
+          if (digit == 0) {
+            v += 10;
+            if (v > 23) v = v % 10; // 24時以降は0x
+          } else {
+            v = (v / 10) * 10 + ((v % 10 + 1) % 10);
+            if (v > 23) v = v - 10;
+          }
+          *value = v;
+        } else {
+          int *value = &inputState.minutes;
+          int digit = inputState.currentDigit - 2;
+          int v = *value;
+          if (digit == 0) {
+            v += 10;
+            if (v > 59) v = v % 10;
+          } else {
+            v = (v / 10) * 10 + ((v % 10 + 1) % 10);
+            if (v > 59) v = v - 10;
+          }
+          *value = v;
+        }
+      }
+      if (M5.BtnB.wasPressed()) {
+        inputState.currentDigit = (inputState.currentDigit + 1) % 4;
+      }
+      if (M5.BtnC.wasPressed()) {
+        if (confirmInputAndAddAlarm()) {
+          currentMode = MAIN_DISPLAY;
+        } else {
+          // 入力エラー時は何らかの警告表示（今は何もしない）
+        }
+      }
+      if (M5.BtnC.pressedFor(LONG_PRESS_TIME)) {
+        currentMode = MAIN_DISPLAY;
+      }
+      break;
+
+    case SETTINGS_MENU:
+      handleSettingsMenu();
+      if (M5.BtnC.pressedFor(LONG_PRESS_TIME)) {
+        currentMode = MAIN_DISPLAY;
+      }
+      break;
+
+    case SCHEDULE_SELECT: {
+      int listSize = alarmTimes.size() + 1; // +1 for SETTINGS
+      if (M5.BtnB.wasPressed()) {
+        scheduleSelectedIndex = (scheduleSelectedIndex + 1) % listSize;
+      }
+      if (M5.BtnC.wasPressed()) {
+        scheduleSelectedIndex = (scheduleSelectedIndex - 1 + listSize) % listSize;
+      }
+      if (M5.BtnA.wasPressed()) {
+        // アラーム削除（SETTINGS選択時は無効）
+        if (scheduleSelectedIndex < alarmTimes.size()) {
+          alarmTimes.erase(alarmTimes.begin() + scheduleSelectedIndex);
+          if (scheduleSelectedIndex >= alarmTimes.size() && alarmTimes.size() > 0) {
+            scheduleSelectedIndex = alarmTimes.size() - 1;
+          }
+        }
+      }
+      // 決定（SETTINGSならSETTINGS_MENUへ遷移）
+      if (M5.BtnC.pressedFor(LONG_PRESS_TIME) || M5.BtnB.pressedFor(LONG_PRESS_TIME)) {
+        if (scheduleSelectedIndex == alarmTimes.size()) {
+          currentMode = SETTINGS_MENU;
+        } else {
+          // アラーム選択時は何もしない（将来編集モード等に拡張可）
+          currentMode = MAIN_DISPLAY;
+        }
+      }
+      // 戻る
+      if (M5.BtnA.pressedFor(LONG_PRESS_TIME)) {
+        currentMode = MAIN_DISPLAY;
+      }
+      break;
+    }
+  }
   switch (currentMode) {
     case MAIN_DISPLAY:
       if (M5.BtnA.wasPressed()) {
@@ -261,55 +377,41 @@ void handleButtons() {
     case REL_PLUS_TIME_INPUT:
     case REL_MINUS_TIME_INPUT:
       if (M5.BtnA.wasPressed()) {
-        // 数字の変更
+        // 数字の変更（カーソル位置ごとに+1、桁送り）
         if (inputState.currentDigit < 2) {
           int *value = &inputState.hours;
           int digit = inputState.currentDigit;
-          int currentValue = *value / (digit == 0 ? 10 : 1) % 10;
-          currentValue = (currentValue + 1) % (digit == 0 && *value >= 20 ? 2 : 10);
-          *value = (*value / (digit == 0 ? 100 : 10) * (digit == 0 ? 100 : 10)) +
-                   (currentValue * (digit == 0 ? 10 : 1)) +
-                   (*value % (digit == 0 ? 10 : 1));
+          int v = *value;
+          if (digit == 0) {
+            v += 10;
+            if (v > 23) v = v % 10; // 24時以降は0x
+          } else {
+            v = (v / 10) * 10 + ((v % 10 + 1) % 10);
+            if (v > 23) v = v - 10;
+          }
+          *value = v;
         } else {
           int *value = &inputState.minutes;
           int digit = inputState.currentDigit - 2;
-          int currentValue = *value / (digit == 0 ? 10 : 1) % 10;
-          currentValue = (currentValue + 1) % (digit == 0 && *value >= 50 ? 6 : 10);
-          *value = (*value / (digit == 0 ? 100 : 10) * (digit == 0 ? 100 : 10)) +
-                   (currentValue * (digit == 0 ? 10 : 1)) +
-                   (*value % (digit == 0 ? 10 : 1));
+          int v = *value;
+          if (digit == 0) {
+            v += 10;
+            if (v > 59) v = v % 10;
+          } else {
+            v = (v / 10) * 10 + ((v % 10 + 1) % 10);
+            if (v > 59) v = v - 10;
+          }
+          *value = v;
         }
       }
       if (M5.BtnB.wasPressed()) {
         inputState.currentDigit = (inputState.currentDigit + 1) % 4;
       }
       if (M5.BtnC.wasPressed()) {
-        time_t now = time(NULL);
-        time_t newAlarmTime;
-        
-        if (currentMode == ABS_TIME_INPUT) {
-          struct tm timeinfo = *localtime(&now);
-          timeinfo.tm_hour = inputState.hours;
-          timeinfo.tm_min = inputState.minutes;
-          timeinfo.tm_sec = 0;
-          newAlarmTime = mktime(&timeinfo);
-          if (newAlarmTime <= now) {
-            timeinfo.tm_mday++;
-            newAlarmTime = mktime(&timeinfo);
-          }
-        } else {
-          time_t delta = inputState.hours * 3600 + inputState.minutes * 60;
-          if (currentMode == REL_PLUS_TIME_INPUT) {
-            newAlarmTime = now + delta;
-          } else {
-            newAlarmTime = now - delta;
-          }
-        }
-        
-        if (alarmTimes.size() < MAX_ALARMS && newAlarmTime > now) {
-          alarmTimes.push_back(newAlarmTime);
-          sortAlarms();
+        if (confirmInputAndAddAlarm()) {
           currentMode = MAIN_DISPLAY;
+        } else {
+          // 入力エラー時は何らかの警告表示（今は何もしない）
         }
       }
       if (M5.BtnC.pressedFor(LONG_PRESS_TIME)) {

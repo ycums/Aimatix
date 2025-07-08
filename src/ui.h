@@ -39,7 +39,7 @@ void drawInvertedText(int x, int y, const char* text, int font);
 void drawMainDisplay();
 void drawNTPSync();
 void drawInputMode();
-void drawScheduleSelect();
+void drawScheduleSelect(int selectedIndex);
 void drawAlarmActive();
 void drawSettingsMenu();
 
