@@ -11,7 +11,6 @@
 // Settings structure
 struct Settings {
   bool sound_enabled;
-  bool vibration_enabled;
   uint8_t lcd_brightness;
   char checksum;  // 設定が有効かどうかを確認するためのチェックサム
 };

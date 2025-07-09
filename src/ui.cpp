@@ -1,6 +1,7 @@
 #include "ui.h"
 #include <M5Stack.h>
 #include <time.h>
+#include <WiFi.h>
 
 // Global variables used in UI functions (declare as extern in main.cpp or pass as parameters)
 // extern Settings settings; // Assuming settings are needed for drawing
@@ -110,19 +111,74 @@ void drawInvertedText(int x, int y, const char* text, int font) {
 // - NEXT時刻
 // - 鳴動時刻リスト
 void drawMainDisplay() {
-  // ここにメイン画面の描画コードをspriteに対して記述
-  sprite.fillSprite(TFT_BLACK); // 画面クリア
+  sprite.fillSprite(TFT_BLACK);
   drawStatusBar("MAIN");
   drawButtonHints("ABS", "REL+", "SCHED");
-  
-  // 例: 現在時刻を表示
+
   time_t now = time(NULL);
-  sprite.setTextSize(2);
-  sprite.setTextColor(AMBER_COLOR);
-  sprite.setTextDatum(TC_DATUM); // 中央上
-  sprite.drawString(getDateString(now), 160, 30);
-  sprite.setTextDatum(MC_DATUM); // 中央
-  sprite.drawString(getTimeString(now), 160, 120, 7); // 大きいフォント
+  // --- 上部中央: 日付（英語3文字曜日, ピリオド付き） ---
+  sprite.setTextDatum(TC_DATUM);
+  sprite.setTextColor(AMBER_COLOR, TFT_BLACK);
+  sprite.setTextFont(2); // Font2
+  struct tm* tminfo = localtime(&now);
+  const char* wdays[] = {"Sun.", "Mon.", "Tue.", "Wed.", "Thu.", "Fri.", "Sat."};
+  char dateStr[32];
+  sprintf(dateStr, "%04d/%02d/%02d %s", tminfo->tm_year+1900, tminfo->tm_mon+1, tminfo->tm_mday, wdays[tminfo->tm_wday]);
+  sprite.drawString(dateStr, 160, 10);
+
+  // --- 現在時刻（中央やや上、HH:MMのみ） ---
+  sprite.setTextDatum(MC_DATUM);
+  sprite.setTextFont(4);
+  char hmStr[6];
+  sprintf(hmStr, "%02d:%02d", tminfo->tm_hour, tminfo->tm_min);
+  sprite.drawString(hmStr, 160, 45);
+
+  // --- 中央: 残り時間 ---
+  time_t nextAlarm = 0;
+  std::vector<time_t> futureAlarms;
+  if (!alarmTimes.empty()) {
+    std::sort(alarmTimes.begin(), alarmTimes.end());
+    for (time_t t : alarmTimes) {
+      if (t > now) {
+        if (!nextAlarm) nextAlarm = t;
+        futureAlarms.push_back(t);
+      }
+    }
+  }
+  sprite.setTextDatum(MC_DATUM);
+  sprite.setTextFont(7);
+  sprite.setTextColor(AMBER_COLOR, TFT_BLACK);
+  if (nextAlarm) {
+    sprite.drawString(getRemainTimeString(now, nextAlarm), 160, 95);
+  } else {
+    sprite.drawString("-00:00:00", 160, 95);
+  }
+
+  // --- プログレスバー ---
+  extern time_t lastReleaseTime;
+  float progress = 0.0f;
+  if (nextAlarm && lastReleaseTime && nextAlarm > lastReleaseTime) {
+    float total = nextAlarm - lastReleaseTime;
+    float done = now - lastReleaseTime;
+    progress = (done >= 0 && total > 0) ? (done / total) : 0.0f;
+    if (progress < 0) progress = 0;
+    if (progress > 1) progress = 1;
+  }
+  drawProgressBar(40, 145, 240, 10, progress);
+
+  // --- アラームリスト（未来のみ最大5件） ---
+  sprite.setTextDatum(ML_DATUM);
+  sprite.setTextFont(2);
+  sprite.setTextColor(AMBER_COLOR, TFT_BLACK);
+  int y = 210;
+  int count = 0;
+  for (time_t t : futureAlarms) {
+    if (count >= 5) break;
+    sprite.drawString(getTimeString(t), 20 + count * 60, y);
+    count++;
+  }
+
+  sprite.pushSprite(0, 0);
 }
 
 void drawNTPSync() {
@@ -136,23 +192,72 @@ void drawNTPSync() {
 
 void drawInputMode() {
   sprite.fillSprite(TFT_BLACK);
-  drawStatusBar("INPUT");
+  // モード名を明示
+  extern Mode currentMode;
+  const char* modeTitle = "SET TIME";
+  if (currentMode == ABS_TIME_INPUT) modeTitle = "SET ABS TIME";
+  else if (currentMode == REL_PLUS_TIME_INPUT) modeTitle = "ADD REL TIME";
+  else if (currentMode == REL_MINUS_TIME_INPUT) modeTitle = "SUB REL TIME";
+  drawStatusBar(modeTitle);
   drawButtonHints("INC", "NEXT", "SET/CANCEL");
+  sprite.setTextDatum(TC_DATUM);
+  sprite.setTextFont(4);
+  sprite.setTextColor(AMBER_COLOR, TFT_BLACK);
+  sprite.drawString(modeTitle, 160, 30);
+
+  // 入力中の数字（__:__ 形式、カーソル桁はネガポジ反転）
+  char buf[8] = "__:__";
+  int h1 = inputState.hours / 10, h2 = inputState.hours % 10;
+  int m1 = inputState.minutes / 10, m2 = inputState.minutes % 10;
+  buf[0] = (inputState.currentDigit > 0 || h1 > 0) ? '0' + h1 : '_';
+  buf[1] = (inputState.currentDigit > 1 || h2 > 0) ? '0' + h2 : '_';
+  buf[3] = (inputState.currentDigit > 2 || m1 > 0) ? '0' + m1 : '_';
+  buf[4] = (inputState.currentDigit > 3 || m2 > 0) ? '0' + m2 : '_';
   sprite.setTextDatum(MC_DATUM);
-  sprite.setTextColor(AMBER_COLOR);
-  sprite.drawString("Enter Time:", 160, 80, 4);
-  
-  // 入力中の時刻表示（inputStateを使用）
-  char inputBuffer[6];
-  sprintf(inputBuffer, "%02d:%02d", inputState.hours, inputState.minutes);
-  sprite.drawString(inputBuffer, 160, 120, 7);
-  
-  // カーソル表示（点滅させる場合は別途ロジックが必要）
-  int cursor_x = 160 - sprite.textWidth(inputBuffer, 7) / 2;
-  if (inputState.currentDigit < 2) cursor_x += inputState.currentDigit * sprite.textWidth("0", 7);
-  else cursor_x += (inputState.currentDigit - 2) * sprite.textWidth("0", 7) + sprite.textWidth(":", 7);
-  
-  sprite.fillRect(cursor_x, 120 + sprite.fontHeight(7) / 2, sprite.textWidth("0", 7), 2, AMBER_COLOR);
+  sprite.setTextFont(7);
+  for (int i = 0, x = 160 - 60; i < 5; ++i, x += 30) {
+    if (i == 2) {
+      sprite.setTextColor(AMBER_COLOR, TFT_BLACK);
+      sprite.drawString(":", x, 120);
+      continue;
+    }
+    int digitIdx = (i < 2) ? i : i - 1;
+    if (inputState.currentDigit == digitIdx) {
+      sprite.setTextColor(TFT_BLACK, AMBER_COLOR); // ネガポジ反転
+      sprite.drawString(String(buf[i]), x, 120);
+      sprite.setTextColor(AMBER_COLOR, TFT_BLACK);
+    } else {
+      sprite.drawString(String(buf[i]), x, 120);
+    }
+  }
+
+  // 入力値・モードに応じたアラーム時刻プレビュー
+  sprite.setTextDatum(MC_DATUM);
+  sprite.setTextFont(2);
+  sprite.setTextColor(AMBER_COLOR, TFT_BLACK);
+  time_t now = time(NULL);
+  struct tm tminfo;
+  char preview[32] = "";
+  if (currentMode == ABS_TIME_INPUT) {
+    localtime_r(&now, &tminfo);
+    tminfo.tm_hour = inputState.hours;
+    tminfo.tm_min = inputState.minutes;
+    tminfo.tm_sec = 0;
+    time_t alarmT = mktime(&tminfo);
+    strftime(preview, sizeof(preview), "-> %Y/%m/%d %H:%M", localtime(&alarmT));
+  } else if (currentMode == REL_PLUS_TIME_INPUT || currentMode == REL_MINUS_TIME_INPUT) {
+    int total = inputState.hours * 60 + inputState.minutes;
+    if (currentMode == REL_MINUS_TIME_INPUT) total = -total;
+    time_t base = now + total * 60;
+    struct tm t;
+    localtime_r(&base, &t);
+    t.tm_sec = 0;
+    time_t alarmT = mktime(&t);
+    strftime(preview, sizeof(preview), "-> %Y/%m/%d %H:%M", localtime(&alarmT));
+  }
+  sprite.drawString(preview, 160, 170);
+
+  sprite.pushSprite(0, 0);
 }
 
 void drawScheduleSelect(int selectedIndex) {
@@ -204,4 +309,16 @@ void drawSettingsMenu() {
       sprite.drawString(itemStr, 10, 60 + i * 20, 2);
     }
   }
+}
+
+void drawInfoDisplay() {
+  sprite.fillSprite(TFT_BLACK);
+  drawStatusBar("INFO");
+  drawButtonHints(NULL, NULL, "BACK");
+  sprite.setTextDatum(TL_DATUM);
+  sprite.setTextColor(AMBER_COLOR);
+  sprite.drawString("M5Stack Timer", 40, 60, 4);
+  sprite.drawString("Version 1.0.0", 40, 100, 2);
+  sprite.drawString("(C) 2025 Your Name", 40, 120, 2);
+  sprite.drawString((String)"MAC: " + WiFi.macAddress(), 40, 140, 2);
 }

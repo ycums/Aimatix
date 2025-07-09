@@ -28,10 +28,7 @@ void playAlarm() {
   if (settings.sound_enabled) {
     M5.Speaker.tone(880, 500);  // 880Hz, 500ms
   }
-  if (settings.vibration_enabled) {
-    // バイブレーション機能（ハードウェア依存）
-    // M5Stack Fireのバイブレーション制御ピンを確認し、実装する
-  }
+  // バイブレーション機能は非搭載のため削除
 }
 
 void stopAlarm() {
@@ -39,6 +36,10 @@ void stopAlarm() {
   if (settings.sound_enabled) {
     M5.Speaker.mute();
   }
-  // バイブレーション停止（ハードウェア依存）
-  // M5Stack Fireのバイブレーション制御ピンを確認し、実装する
+  // バイブレーション停止は不要
+}
+
+void removePastAlarms() {
+  time_t now = time(NULL);
+  alarmTimes.erase(std::remove_if(alarmTimes.begin(), alarmTimes.end(), [now](time_t t){ return t <= now; }), alarmTimes.end());
 }

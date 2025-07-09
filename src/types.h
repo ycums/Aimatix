@@ -10,20 +10,20 @@ enum Mode {
   REL_MINUS_TIME_INPUT,
   SCHEDULE_SELECT,
   ALARM_ACTIVE,
-  SETTINGS_MENU
+  SETTINGS_MENU,
+  INFO_DISPLAY
 };
 
 // 設定メニュー用の構造体
 struct SettingsMenu {
-  const char* items[5] = {
+  const char* items[4] = {
     "SOUND: ",
-    "VIBRATE: ",
     "LCD BRIGHTNESS",
     "ALL CLEAR",
     "INFO"
   };
   int selectedItem = 0;
-  int itemCount = 5;
+  int itemCount = 4;
 };
 
 // Global variables (defined in main.cpp)

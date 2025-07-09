@@ -34,6 +34,7 @@ String getRemainTimeString(time_t now, time_t target);
 void drawProgressBar(int x, int y, int width, int height, float progress);
 void drawInvertedText(int x, int y, const char* text, int font);
 void initUI(); // Function to initialize UI including sprite
+void drawInfoDisplay();
 
 // 各モードの描画関数プロトタイプ
 void drawMainDisplay();
