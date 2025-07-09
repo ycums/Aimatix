@@ -7,14 +7,25 @@
 // extern std::vector<time_t> alarmTimes; // Assuming alarmTimes are needed for drawing
 // extern Mode currentMode; // Assuming currentMode is needed for drawing
 
+// Define the sprite object
+TFT_eSprite sprite = TFT_eSprite(&M5.Lcd); // Create sprite object associated with M5.Lcd
+
+// Initialize UI and display settings
+void initUI() {
+  // スプライトの初期化
+  sprite.createSprite(320, 240);  // M5Stackの画面サイズ
+  sprite.fillSprite(TFT_BLACK);   // 背景を黒で初期化
+}
+
 // ステータスバーの描画
 void drawStatusBar(const char* mode) {
-  M5.Lcd.fillRect(0, 0, 320, 20, TFT_BLACK);
-  M5.Lcd.setTextSize(1);
+  // スプライトに描画
+  sprite.fillRect(0, 0, 320, 20, TFT_BLACK);
+  sprite.setTextSize(1);
   
   // モード名を表示
-  M5.Lcd.setTextColor(AMBER_COLOR);
-  M5.Lcd.drawString(mode, 5, 5, 2);
+  sprite.setTextColor(AMBER_COLOR);
+  sprite.drawString(mode, 5, 5, 2);
   
   // バッテリー情報を表示
   int batteryLevel = M5.Power.getBatteryLevel();
@@ -24,19 +35,19 @@ void drawStatusBar(const char* mode) {
   }
   
   uint16_t color = (batteryLevel <= 20) ? FLASH_ORANGE : AMBER_COLOR;
-  M5.Lcd.setTextColor(color);
-  M5.Lcd.drawString(batteryString.c_str(), 280, 5, 2);
+  sprite.setTextColor(color);
+  sprite.drawString(batteryString.c_str(), 280, 5, 2);
 }
 
 // ボタンヒントの描画
 void drawButtonHints(const char* btnA, const char* btnB, const char* btnC) {
-  M5.Lcd.fillRect(0, M5.Lcd.height() - 20, 320, 20, TFT_BLACK);
-  M5.Lcd.setTextColor(AMBER_COLOR);
-  M5.Lcd.setTextSize(1);
+  sprite.fillRect(0, M5.Lcd.height() - 20, 320, 20, TFT_BLACK);
+  sprite.setTextColor(AMBER_COLOR);
+  sprite.setTextSize(1);
   
-  if (btnA) M5.Lcd.drawString(String("[A: ") + btnA + "]", 5, M5.Lcd.height() - 15, 2);
-  if (btnB) M5.Lcd.drawString(String("[B: ") + btnB + "]", 110, M5.Lcd.height() - 15, 2);
-  if (btnC) M5.Lcd.drawString(String("[C: ") + btnC + "]", 215, M5.Lcd.height() - 15, 2);
+  if (btnA) sprite.drawString(String("[A: ") + btnA + "]", 5, M5.Lcd.height() - 15, 2);
+  if (btnB) sprite.drawString(String("[B: ") + btnB + "]", 110, M5.Lcd.height() - 15, 2);
+  if (btnC) sprite.drawString(String("[C: ") + btnC + "]", 215, M5.Lcd.height() - 15, 2);
 }
 
 // 時刻文字列の取得
@@ -75,18 +86,18 @@ String getRemainTimeString(time_t now, time_t target) {
 }
 
 void drawProgressBar(int x, int y, int width, int height, float progress) {
-  M5.Lcd.drawRect(x, y, width, height, AMBER_COLOR);
+  sprite.drawRect(x, y, width, height, AMBER_COLOR);
   int progressWidth = (width - 2) * progress;
-  M5.Lcd.fillRect(x + 1, y + 1, width - 2, height - 2, DARK_GREY);
-  M5.Lcd.fillRect(x + 1, y + 1, progressWidth, height - 2, AMBER_COLOR);
+  sprite.fillRect(x + 1, y + 1, width - 2, height - 2, DARK_GREY);
+  sprite.fillRect(x + 1, y + 1, progressWidth, height - 2, AMBER_COLOR);
 }
 
 void drawInvertedText(int x, int y, const char* text, int font) {
-  M5.Lcd.setTextFont(font);
-  M5.Lcd.setTextDatum(MC_DATUM); // 中央揃え
-  M5.Lcd.setTextColor(TFT_BLACK, AMBER_COLOR); // 反転色
-  M5.Lcd.drawString(text, x, y);
-  M5.Lcd.setTextColor(AMBER_COLOR, TFT_BLACK); // デフォルト色に戻す
+  sprite.setTextFont(font);
+  sprite.setTextDatum(MC_DATUM); // 中央揃え
+  sprite.setTextColor(TFT_BLACK, AMBER_COLOR); // 反転色
+  sprite.drawString(text, x, y);
+  sprite.setTextColor(AMBER_COLOR, TFT_BLACK); // デフォルト色に戻す
 }
 
 // drawMainDisplay, drawNTPSync, drawInputMode, drawScheduleSelect, drawAlarmActive, drawSettingsMenu
@@ -98,161 +109,99 @@ void drawInvertedText(int x, int y, const char* text, int font) {
 // - 進捗バー
 // - NEXT時刻
 // - 鳴動時刻リスト
-// 必要なグローバル: alarmTimes, getNextAlarmTime(), settings, etc.
-
-#include "alarm.h" // getNextAlarmTime() を利用するため
-extern std::vector<time_t> alarmTimes;
-extern Settings settings;
-
 void drawMainDisplay() {
-  M5.Lcd.fillScreen(TFT_BLACK);
+  // ここにメイン画面の描画コードをspriteに対して記述
+  sprite.fillSprite(TFT_BLACK); // 画面クリア
   drawStatusBar("MAIN");
-
+  drawButtonHints("ABS", "REL+", "SCHED");
+  
+  // 例: 現在時刻を表示
   time_t now = time(NULL);
-  time_t nextAlarm = getNextAlarmTime();
-
-  // 日付・時刻表示
-  String dateStr = getDateString(now);
-  String timeStr = getTimeString(now);
-  M5.Lcd.setTextFont(FONT_AUXILIARY);
-  M5.Lcd.setTextColor(AMBER_COLOR, TFT_BLACK);
-  M5.Lcd.drawString(dateStr, 10, 30);
-  M5.Lcd.setTextFont(FONT_IMPORTANT);
-  M5.Lcd.drawString(timeStr, 10, 55);
-
-  // 残り時間表示（中央大きく）
-  String remainStr = "--:--:--";
-  if (nextAlarm > 0) remainStr = getRemainTimeString(now, nextAlarm);
-  M5.Lcd.setTextFont(FONT_MAIN);
-  M5.Lcd.setTextColor(AMBER_COLOR, TFT_BLACK);
-  M5.Lcd.drawString(remainStr, 160, 100);
-
-  // 進捗バー
-  float progress = 0.0f;
-  static time_t lastClear = 0; // 直前の解除時刻（本来はALARM解除時に更新）
-  if (nextAlarm > 0 && lastClear > 0 && nextAlarm > lastClear) {
-    float total = float(nextAlarm - lastClear);
-    float done = float(now - lastClear);
-    progress = (done >= 0 && total > 0) ? (done / total) : 0.0f;
-    if (progress > 1.0f) progress = 1.0f;
-  }
-  drawProgressBar(40, 170, 240, 12, progress);
-
-  // NEXT時刻
-  if (nextAlarm > 0) {
-    String nextStr = "NEXT: " + getTimeString(nextAlarm);
-    M5.Lcd.setTextFont(FONT_IMPORTANT);
-    M5.Lcd.setTextColor(AMBER_COLOR, TFT_BLACK);
-    M5.Lcd.drawString(nextStr, 160, 190);
-  }
-
-  // 鳴動時刻リスト（最大5件、下部に表示）
-  M5.Lcd.setTextFont(FONT_AUXILIARY);
-  M5.Lcd.setTextColor(AMBER_COLOR, TFT_BLACK);
-  int y = 220;
-  int count = 0;
-  for (time_t t : alarmTimes) {
-    if (count >= 5) break;
-    if (t <= now) continue;
-    String tstr = getTimeString(t);
-    M5.Lcd.drawString(tstr, 60 + count * 50, y);
-    count++;
-  }
-
-  // ボタンヒント
-  drawButtonHints("ABS", "REL+", "SEL");
+  sprite.setTextSize(2);
+  sprite.setTextColor(AMBER_COLOR);
+  sprite.setTextDatum(TC_DATUM); // 中央上
+  sprite.drawString(getDateString(now), 160, 30);
+  sprite.setTextDatum(MC_DATUM); // 中央
+  sprite.drawString(getTimeString(now), 160, 120, 7); // 大きいフォント
 }
-void drawNTPSync() {}
-// 入力モード画面の詳細描画
-// - 数字入力UI（カーソル移動、ネガポジ反転、未入力は_表示）
-// - 入力値のバリデーション、予測時刻表示
-// - ボタンヒント
-#include "input.h"
-extern InputState inputState;
+
+void drawNTPSync() {
+  sprite.fillSprite(TFT_BLACK);
+  drawStatusBar("NTP SYNC");
+  drawButtonHints(NULL, NULL, "SKIP");
+  sprite.setTextDatum(MC_DATUM);
+  sprite.setTextColor(AMBER_COLOR);
+  sprite.drawString("Syncing Time...", 160, 120, 4);
+}
 
 void drawInputMode() {
-  M5.Lcd.fillScreen(TFT_BLACK);
+  sprite.fillSprite(TFT_BLACK);
   drawStatusBar("INPUT");
-
-
-  // 入力中の数字列を作成（例: "1_ : _5"）
-  char buf[8] = {'_', '_', ' ', ':', ' ', '_', '_', '\0'};
-  int h = inputState.hours;
-  int m = inputState.minutes;
-  // 各桁を分解
-  buf[0] = (h >= 10) ? ('0' + h / 10) : '_';
-  buf[1] = (h >= 0) ? ('0' + h % 10) : '_';
-  buf[5] = (m >= 10) ? ('0' + m / 10) : '_';
-  buf[6] = (m >= 0) ? ('0' + m % 10) : '_';
-
-  // カーソル位置の桁を反転表示
-  int x = 100, y = 80;
-  for (int i = 0; i < 7; ++i) {
-    if (i == 2 || i == 4) continue; // スペースとコロン
-    int font = FONT_MAIN;
-    bool isCursor = false;
-    if ((inputState.currentDigit == 0 && i == 0) ||
-        (inputState.currentDigit == 1 && i == 1) ||
-        (inputState.currentDigit == 2 && i == 5) ||
-        (inputState.currentDigit == 3 && i == 6)) {
-      isCursor = true;
-    }
-    if (isCursor) {
-      drawInvertedText(x + i * 32, y, String(buf[i]).c_str(), font);
-    } else {
-      M5.Lcd.setTextFont(font);
-      M5.Lcd.setTextColor(AMBER_COLOR, TFT_BLACK);
-      M5.Lcd.drawString(String(buf[i]), x + i * 32, y);
-    }
-  }
-
-  // 予測時刻表示（現在時刻+入力値）
-  time_t now = time(NULL);
-  struct tm tminfo;
-  localtime_r(&now, &tminfo);
-  tminfo.tm_hour = inputState.hours;
-  tminfo.tm_min = inputState.minutes;
-  tminfo.tm_sec = 0;
-  time_t predicted = mktime(&tminfo);
-  String predStr = "-> " + getDateString(predicted) + " " + getTimeString(predicted);
-  M5.Lcd.setTextFont(FONT_AUXILIARY);
-  M5.Lcd.setTextColor(AMBER_COLOR, TFT_BLACK);
-  M5.Lcd.drawString(predStr, 60, 180);
-
-  // ボタンヒント
-  drawButtonHints("+1/5", "NEXT", "OK/CANCEL");
+  drawButtonHints("INC", "NEXT", "SET/CANCEL");
+  sprite.setTextDatum(MC_DATUM);
+  sprite.setTextColor(AMBER_COLOR);
+  sprite.drawString("Enter Time:", 160, 80, 4);
+  
+  // 入力中の時刻表示（inputStateを使用）
+  char inputBuffer[6];
+  sprintf(inputBuffer, "%02d:%02d", inputState.hours, inputState.minutes);
+  sprite.drawString(inputBuffer, 160, 120, 7);
+  
+  // カーソル表示（点滅させる場合は別途ロジックが必要）
+  int cursor_x = 160 - sprite.textWidth(inputBuffer, 7) / 2;
+  if (inputState.currentDigit < 2) cursor_x += inputState.currentDigit * sprite.textWidth("0", 7);
+  else cursor_x += (inputState.currentDigit - 2) * sprite.textWidth("0", 7) + sprite.textWidth(":", 7);
+  
+  sprite.fillRect(cursor_x, 120 + sprite.fontHeight(7) / 2, sprite.textWidth("0", 7), 2, AMBER_COLOR);
 }
+
 void drawScheduleSelect(int selectedIndex) {
-  M5.Lcd.fillScreen(TFT_BLACK);
+  sprite.fillSprite(TFT_BLACK);
   drawStatusBar("SCHEDULE");
-
-  time_t now = time(NULL);
-  int listSize = alarmTimes.size() + 1; // +1 for SETTINGS
-  int y0 = 50;
-  int lineHeight = 32;
-
-  for (int i = 0; i < listSize; ++i) {
-    int y = y0 + i * lineHeight;
-    String label;
-    if (i < alarmTimes.size()) {
-      // アラーム時刻
-      label = getTimeString(alarmTimes[i]);
-    } else {
-      // SETTINGS項目
-      label = "[SETTINGS]";
-    }
+  drawButtonHints("DEL", "NEXT", "PREV/SET");
+  
+  sprite.setTextDatum(TL_DATUM); // 左上
+  sprite.setTextColor(AMBER_COLOR);
+  sprite.drawString("Alarms:", 10, 30, 2);
+  
+  // アラームリスト表示
+  for (size_t i = 0; i < alarmTimes.size(); ++i) {
+    String alarmStr = getTimeString(alarmTimes[i]);
     if (i == selectedIndex) {
-      drawInvertedText(160, y, label.c_str(), FONT_IMPORTANT);
+      drawInvertedText(160, 60 + i * 20, alarmStr.c_str(), 2); // 選択項目を反転
     } else {
-      M5.Lcd.setTextFont(FONT_IMPORTANT);
-      M5.Lcd.setTextColor(AMBER_COLOR, TFT_BLACK);
-      M5.Lcd.drawString(label, 160, y);
+      sprite.drawString(alarmStr, 10, 60 + i * 20, 2);
     }
   }
-
-  // ボタンヒント
-  drawButtonHints("DEL", "UP/DOWN", "SELECT");
+  
+  // SETTINGS項目
+  if (selectedIndex == alarmTimes.size()) {
+     drawInvertedText(160, 60 + alarmTimes.size() * 20, "SETTINGS", 2);
+  } else {
+     sprite.drawString("SETTINGS", 10, 60 + alarmTimes.size() * 20, 2);
+  }
 }
-void drawSettingsMenu() {}
 
-// drawAlarmActive も必要なら追加してください。
+
+
+void drawSettingsMenu() {
+  sprite.fillSprite(TFT_BLACK);
+  drawStatusBar("SETTINGS");
+  drawButtonHints("PREV", "NEXT", "SELECT/BACK");
+  
+  sprite.setTextDatum(TL_DATUM);
+  sprite.setTextColor(AMBER_COLOR);
+  sprite.drawString("Settings:", 10, 30, 2);
+  
+  const char* items[] = {"Sound", "Vibration", "LCD Brightness", "All Clear", "Info"};
+  settingsMenu.itemCount = sizeof(items) / sizeof(items[0]);
+  
+  for (int i = 0; i < settingsMenu.itemCount; ++i) {
+    String itemStr = items[i];
+    if (i == settingsMenu.selectedItem) {
+      drawInvertedText(160, 60 + i * 20, itemStr.c_str(), 2);
+    } else {
+      sprite.drawString(itemStr, 10, 60 + i * 20, 2);
+    }
+  }
+}

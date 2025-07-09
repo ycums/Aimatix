@@ -487,6 +487,8 @@
                 "ARDUINO_M5STACK_FIRE",
                 "BOARD_HAS_PSRAM",
                 "CORE_DEBUG_LEVEL=0",
+                "M5STACK_FIRE",
+                "ILI9341_ENABLE_DOUBLE_BUFFER",
                 "HAVE_CONFIG_H",
                 "MBEDTLS_CONFIG_FILE=\"mbedtls/esp_config.h\"",
                 "UNITY_INCLUDE_CONFIG_H",

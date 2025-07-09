@@ -43,7 +43,9 @@ static int scheduleSelectedIndex = 0;
 void setup() {
   M5.begin();
   M5.Power.begin();
-  
+
+  initUI(); // スプライト初期化を追加
+
   // Initialize EEPROM
   EEPROM.begin(EEPROM_SIZE);
   loadSettings();
@@ -67,38 +69,55 @@ void setup() {
 void loop() {
   M5.update();  // ボタン状態を更新
   
-  // バッテリー残量とステータスバーの更新
+  handleButtons(); // ボタン処理を追加
+
+  // 画面更新は100ms間隔で行う
+  static unsigned long lastScreenUpdate = 0;
+  bool needsUpdate = false;
+  
+  // バッテリー残量とステータスバーの更新（1秒間隔）
   static unsigned long lastStatusUpdate = 0;
   if (millis() - lastStatusUpdate >= 1000) {
-    // ステータスバーの更新処理
+    needsUpdate = true;
     lastStatusUpdate = millis();
   }
   
-  // 現在のモードに応じた表示と処理
-  switch (currentMode) {
-    case MAIN_DISPLAY:
-      drawMainDisplay();
-      break;
-    case NTP_SYNC:
-      drawNTPSync();
-      break;
-    case ABS_TIME_INPUT:
-    case REL_PLUS_TIME_INPUT:
-    case REL_MINUS_TIME_INPUT:
-      drawInputMode();
-      break;
-    case SCHEDULE_SELECT:
-      drawScheduleSelect(scheduleSelectedIndex);
-      break;
-    case ALARM_ACTIVE:
-      drawAlarmActive();
-      break;
-    case SETTINGS_MENU:
-      drawSettingsMenu();
-      break;
+  // ボタンが押された場合は即時更新
+  if (M5.BtnA.wasPressed() || M5.BtnB.wasPressed() || M5.BtnC.wasPressed()) {
+    needsUpdate = true;
   }
   
-  handleButtons();  // ボタン入力の処理
+  // 100ms経過したか、更新が必要な場合のみ画面を更新
+  if (millis() - lastScreenUpdate >= 100 || needsUpdate) {
+    lastScreenUpdate = millis();
+    
+    // 現在のモードに応じた表示と処理
+    switch (currentMode) {
+      case MAIN_DISPLAY:
+        drawMainDisplay();
+        break;
+      case NTP_SYNC:
+        drawNTPSync();
+        break;
+      case ABS_TIME_INPUT:
+      case REL_PLUS_TIME_INPUT:
+      case REL_MINUS_TIME_INPUT:
+        drawInputMode();
+        break;
+      case SCHEDULE_SELECT:
+        drawScheduleSelect(scheduleSelectedIndex);
+        break;
+      case ALARM_ACTIVE:
+        drawAlarmActive();
+        break;
+      case SETTINGS_MENU:
+        drawSettingsMenu();
+        break;
+    }
+    
+    // スプライトの内容を実際の画面に反映
+    sprite.pushSprite(0, 0);
+  }
   
   // アラーム時刻のチェックと鳴動処理
   if (currentMode != ALARM_ACTIVE) {

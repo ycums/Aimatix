@@ -19,12 +19,11 @@
 #define FONT_IMPORTANT 4 // Font4 (Height 26)
 #define FONT_MAIN      7 // Font7 (Height 48)
 
-// グローバル変数 (declared in main.cpp or other .cpp files)
-// extern Mode currentMode; // Moved to types.h
-// extern Settings settings; // Moved to settings.h
-// extern std::vector<time_t> alarmTimes; // Moved to alarm.h
-// extern InputState inputState; // Moved to input.h
-// extern SettingsMenu settingsMenu; // Moved to types.h
+// Declare the sprite object (TFT_eSprite is available via M5Stack library)
+extern TFT_eSprite sprite;
+
+// Declare global variables used in UI functions
+extern std::vector<time_t> alarmTimes; // Declare alarmTimes as extern
 
 // 関数プロトタイプ
 void drawStatusBar(const char* mode);
@@ -34,6 +33,7 @@ String getDateString(time_t t);
 String getRemainTimeString(time_t now, time_t target);
 void drawProgressBar(int x, int y, int width, int height, float progress);
 void drawInvertedText(int x, int y, const char* text, int font);
+void initUI(); // Function to initialize UI including sprite
 
 // 各モードの描画関数プロトタイプ
 void drawMainDisplay();
