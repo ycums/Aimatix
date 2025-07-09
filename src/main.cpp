@@ -241,12 +241,15 @@ void handleSettingsMenu() {
       case 0:  // Sound
         settings.sound_enabled = !settings.sound_enabled;
         break;
-      case 1:  // LCD Brightness
+      case 1:  // Vibration
+        // Vibration設定の処理（現在は未実装）
+        break;
+      case 2:  // LCD Brightness
         settings.lcd_brightness = (settings.lcd_brightness + 50) % 251;
         if (settings.lcd_brightness < 50) settings.lcd_brightness = 50;
         M5.Lcd.setBrightness(settings.lcd_brightness);
         break;
-      case 2:  // All Clear
+      case 3:  // All Clear
         // 確認ダイアログの表示
         M5.Lcd.fillScreen(TFT_BLACK);
         M5.Lcd.setTextColor(FLASH_ORANGE);
@@ -264,7 +267,7 @@ void handleSettingsMenu() {
           delay(10);
         }
         break;
-      case 3:  // Info
+      case 4:  // Info
         currentMode = INFO_DISPLAY;
         break;
     }

@@ -93,12 +93,15 @@ void drawProgressBar(int x, int y, int width, int height, float progress) {
   sprite.fillRect(x + 1, y + 1, progressWidth, height - 2, AMBER_COLOR);
 }
 
-void drawInvertedText(int x, int y, const char* text, int font) {
+void drawInvertedText(const char* text, int x, int y, int font) {
   sprite.setTextFont(font);
-  sprite.setTextDatum(MC_DATUM); // 中央揃え
-  sprite.setTextColor(TFT_BLACK, AMBER_COLOR); // 反転色
+  sprite.setTextDatum(TL_DATUM);
+  int lineHeight = sprite.fontHeight(font);
+  // デバッグ用: 塗りつぶし範囲を明示
+  sprite.fillRect(0, y, 320, lineHeight, AMBER_COLOR);
+  sprite.setTextColor(TFT_BLACK); // 黒文字
   sprite.drawString(text, x, y);
-  sprite.setTextColor(AMBER_COLOR, TFT_BLACK); // デフォルト色に戻す
+  sprite.setTextColor(AMBER_COLOR); // デフォルト色に戻す
 }
 
 // drawMainDisplay, drawNTPSync, drawInputMode, drawScheduleSelect, drawAlarmActive, drawSettingsMenu
@@ -119,7 +122,7 @@ void drawMainDisplay() {
   // --- 上部中央: 日付（英語3文字曜日, ピリオド付き） ---
   sprite.setTextDatum(TC_DATUM);
   sprite.setTextColor(AMBER_COLOR, TFT_BLACK);
-  sprite.setTextFont(2); // Font2
+  sprite.setTextFont(3); // Font3
   struct tm* tminfo = localtime(&now);
   const char* wdays[] = {"Sun.", "Mon.", "Tue.", "Wed.", "Thu.", "Fri.", "Sat."};
   char dateStr[32];
@@ -269,22 +272,28 @@ void drawScheduleSelect(int selectedIndex) {
   sprite.setTextColor(AMBER_COLOR);
   sprite.drawString("Alarms:", 10, 30, 2);
   
-  // アラームリスト表示
+  // アラームリスト表示（Font2で統一）
   for (size_t i = 0; i < alarmTimes.size(); ++i) {
     String alarmStr = getTimeString(alarmTimes[i]);
+    int y = 60 + i * 20; // Font2の行間
     if (i == selectedIndex) {
-      drawInvertedText(160, 60 + i * 20, alarmStr.c_str(), 2); // 選択項目を反転
+      drawInvertedText(alarmStr.c_str(), 10, y, 2); // 選択項目を反転
     } else {
-      sprite.drawString(alarmStr, 10, 60 + i * 20, 2);
+      sprite.setTextFont(2);
+      sprite.drawString(alarmStr, 10, y, 2);
     }
   }
   
-  // SETTINGS項目
+  // SETTINGS項目（Font2で統一）
+  int settingsY = 60 + alarmTimes.size() * 20;
   if (selectedIndex == alarmTimes.size()) {
-     drawInvertedText(160, 60 + alarmTimes.size() * 20, "SETTINGS", 2);
+     drawInvertedText("SETTINGS", 10, settingsY, 2); // 左寄せで統一
   } else {
-     sprite.drawString("SETTINGS", 10, 60 + alarmTimes.size() * 20, 2);
+     sprite.setTextFont(2);
+     sprite.drawString("SETTINGS", 10, settingsY, 2);
   }
+  
+  sprite.pushSprite(0, 0);
 }
 
 
@@ -296,19 +305,21 @@ void drawSettingsMenu() {
   
   sprite.setTextDatum(TL_DATUM);
   sprite.setTextColor(AMBER_COLOR);
-  sprite.drawString("Settings:", 10, 30, 2);
   
   const char* items[] = {"Sound", "Vibration", "LCD Brightness", "All Clear", "Info"};
   settingsMenu.itemCount = sizeof(items) / sizeof(items[0]);
   
   for (int i = 0; i < settingsMenu.itemCount; ++i) {
     String itemStr = items[i];
+    int y = 40 + i * 20; // Font2の行間
     if (i == settingsMenu.selectedItem) {
-      drawInvertedText(160, 60 + i * 20, itemStr.c_str(), 2);
+      drawInvertedText(itemStr.c_str(), 10, y, 2); // Font2で強調＋全幅反転
     } else {
-      sprite.drawString(itemStr, 10, 60 + i * 20, 2);
+      sprite.setTextFont(2);
+      sprite.drawString(itemStr, 10, y, 2); // Font2で統一
     }
   }
+  sprite.pushSprite(0, 0);
 }
 
 void drawInfoDisplay() {
