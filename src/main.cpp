@@ -47,6 +47,7 @@ time_t lastReleaseTime = 0;
 void setup() {
   M5.begin();
   M5.Power.begin();
+  Serial.begin(115200); // デバッグ用シリアル通信を開始
 
   initUI(); // スプライト初期化を追加
 
@@ -208,21 +209,9 @@ void handleSettingsMenu() {
         currentMode = WARNING_COLOR_TEST;
         break;
       case 4:  // All Clear
-        // 確認ダイアログの表示
-        M5.Lcd.fillScreen(TFT_BLACK);
-        M5.Lcd.setTextColor(FLASH_ORANGE);
-        M5.Lcd.drawString("ARE YOU SURE?", 60, 100, 4);
-        M5.Lcd.drawString("A: Yes  C: No", 80, 140, 4);
-        while (true) {
-          M5.update();
-          if (M5.BtnA.wasPressed()) {
-            alarmTimes.clear();
-            break;
-          }
-          if (M5.BtnC.wasPressed()) {
-            break;
-          }
-          delay(10);
+        // 共通の確認画面を使用
+        if (showYesNoDialog("CLEAR ALL ALARMS?", NULL)) {
+          alarmTimes.clear();
         }
         break;
       case 5:  // Info
@@ -245,17 +234,21 @@ void handleButtons() {
     return;
   }
   
-  // 全画面共通のC長押し処理（メイン画面に戻る）
-  if (M5.BtnC.wasPressed()) {
-    lastPress = millis();
-    cLongPressHandled = false;
-  }
-  if (M5.BtnC.pressedFor(LONG_PRESS_TIME)) {
-    if (!cLongPressHandled && currentMode != MAIN_DISPLAY) {
-      currentMode = MAIN_DISPLAY;
-      cLongPressHandled = true;
-      lastModeChange = millis();
-      return; // 他の処理をスキップ
+  // 入力モード以外での全画面共通のC長押し処理（メイン画面に戻る）
+  if (currentMode != ABS_TIME_INPUT && currentMode != REL_PLUS_TIME_INPUT && currentMode != REL_MINUS_TIME_INPUT) {
+    if (M5.BtnC.wasPressed()) {
+      lastPress = millis();
+      cLongPressHandled = false;
+      Serial.println("Main: C button pressed - common handler");
+    }
+    if (M5.BtnC.pressedFor(LONG_PRESS_TIME)) {
+      if (!cLongPressHandled && currentMode != MAIN_DISPLAY) {
+        Serial.println("Main: C button long press - returning to main");
+        currentMode = MAIN_DISPLAY;
+        cLongPressHandled = true;
+        lastModeChange = millis();
+        return; // 他の処理をスキップ
+      }
     }
   }
   
@@ -322,33 +315,13 @@ void handleButtons() {
       if (M5.BtnC.wasPressed()) {
         // DELETE: 二段階確認でアラーム削除
         if (scheduleSelectedIndex < alarmTimes.size()) {
-          // 確認画面を表示
-          sprite.fillSprite(TFT_BLACK);
-          sprite.setTextDatum(MC_DATUM);
-          sprite.setTextColor(FLASH_ORANGE, TFT_BLACK);
-          sprite.setTextFont(4);
-          sprite.drawString("DELETE ALARM?", SCREEN_WIDTH/2, 100);
-          sprite.drawString(getTimeString(alarmTimes[scheduleSelectedIndex]), SCREEN_WIDTH/2, 140);
-          sprite.setTextFont(2);
-          sprite.drawString("A: YES  C: NO", SCREEN_WIDTH/2, 180);
-          sprite.pushSprite(0, 0);
-          
-          // 確認待ち
-          while (true) {
-            M5.update();
-            if (M5.BtnA.wasPressed()) {
-              // 削除実行
-              alarmTimes.erase(alarmTimes.begin() + scheduleSelectedIndex);
-              if (scheduleSelectedIndex >= alarmTimes.size() && alarmTimes.size() > 0) {
-                scheduleSelectedIndex = alarmTimes.size() - 1;
-              }
-              break;
+          // 共通の確認画面を使用
+          if (showYesNoDialog("DELETE ALARM?", getTimeString(alarmTimes[scheduleSelectedIndex]).c_str())) {
+            // 削除実行
+            alarmTimes.erase(alarmTimes.begin() + scheduleSelectedIndex);
+            if (scheduleSelectedIndex >= alarmTimes.size() && alarmTimes.size() > 0) {
+              scheduleSelectedIndex = alarmTimes.size() - 1;
             }
-            if (M5.BtnC.wasPressed()) {
-              // キャンセル
-              break;
-            }
-            delay(10);
           }
         }
       }

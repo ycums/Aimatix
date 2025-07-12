@@ -147,6 +147,35 @@ void drawInvertedText(const char* text, int x, int y, int font) {
   sprite.setTextDatum(currentDatum); // 元のDATUMに戻す
 }
 
+// 共通のYES/NO確認画面を表示する関数
+bool showYesNoDialog(const char* title, const char* detail) {
+  sprite.fillSprite(TFT_BLACK);
+  sprite.setTextDatum(MC_DATUM);
+  sprite.setTextColor(FLASH_ORANGE, TFT_BLACK);
+  sprite.setTextFont(4);
+  sprite.drawString(title, SCREEN_WIDTH/2, 100);
+  
+  if (detail != NULL) {
+    sprite.drawString(detail, SCREEN_WIDTH/2, 140);
+  }
+  
+  sprite.setTextFont(2);
+  sprite.drawString("A: YES  C: NO", SCREEN_WIDTH/2, 180);
+  sprite.pushSprite(0, 0);
+  
+  // 確認待ち
+  while (true) {
+    M5.update();
+    if (M5.BtnA.wasPressed()) {
+      return true; // YES
+    }
+    if (M5.BtnC.wasPressed()) {
+      return false; // NO
+    }
+    delay(10);
+  }
+}
+
 // drawMainDisplay, drawNTPSync, drawInputMode, drawScheduleSelect, drawAlarmActive, drawSettingsMenu
 // これらの関数はmain.cppから呼ばれるため、最低限のダミー実装を用意してリンクエラーを防ぐ。
 // 必要に応じて本実装を追加してください。

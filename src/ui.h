@@ -55,6 +55,7 @@ String getDateString(time_t t);
 String getRemainTimeString(time_t now, time_t target);
 void drawProgressBar(int x, int y, int width, int height, float progress);
 void drawInvertedText(const char* text, int x, int y, int font);
+bool showYesNoDialog(const char* title, const char* detail);
 
 // Screen drawing functions
 void drawMainDisplay();

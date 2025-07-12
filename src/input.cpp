@@ -68,6 +68,8 @@ void handleDigitEditInput() {
   static bool aLongPressFired = false;
   static uint32_t bPressStart = 0;
   static bool bLongPressFired = false;
+  static uint32_t cPressStart = 0;
+  static bool cLongPressFired = false;
 
   // Aボタン: +1（短押し）、+5（長押し）
   if (M5.BtnA.wasPressed()) {
@@ -145,60 +147,82 @@ void handleDigitEditInput() {
     }
   }
 
-  // Cボタン: セット（確定）
+  // Cボタン: セット（短押し）、戻る（長押し）
   if (M5.BtnC.wasPressed()) {
-    int hour = digitEditInput.hourTens * 10 + digitEditInput.hourOnes;
-    int min = digitEditInput.minTens * 10 + digitEditInput.minOnes;
-    
-    // 時刻バリデーション
-    if (hour > 23 || min > 59) {
-      // エラー: 無効な時刻
-      return;
-    }
-    
-    // アラーム時刻の計算
-    time_t now = time(NULL);
-    time_t alarmTime = 0;
-    
-    if (currentMode == ABS_TIME_INPUT) {
-      // 絶対時刻入力
-      struct tm tminfo;
-      localtime_r(&now, &tminfo);
-      tminfo.tm_hour = hour;
-      tminfo.tm_min = min;
-      tminfo.tm_sec = 0;
-      alarmTime = mktime(&tminfo);
-      
-      // 過去時刻の場合は翌日として設定
-      if (alarmTime <= now) {
-        alarmTime += 24 * 3600; // 24時間追加
-      }
-    } else if (currentMode == REL_PLUS_TIME_INPUT) {
-      // 相対時刻追加
-      alarmTime = now + (hour * 3600) + (min * 60);
-    }
-    
-    // 重複チェック
-    if (std::find(alarmTimes.begin(), alarmTimes.end(), alarmTime) != alarmTimes.end()) {
-      // エラー: 重複
-      return;
-    }
-    
-    // 最大数チェック
-    if (alarmTimes.size() >= 5) {
-      // エラー: 最大数超過
-      return;
-    }
-    
-    // アラーム追加
-    alarmTimes.push_back(alarmTime);
-    std::sort(alarmTimes.begin(), alarmTimes.end());
-    
-    // 入力状態リセット
-    resetInput();
-    
-    // メイン画面に戻る（デバウンス処理付き）
+    cPressStart = millis();
+    cLongPressFired = false;
+    Serial.println("C button pressed - start time recorded");
+  }
+  if (M5.BtnC.isPressed() && !cLongPressFired && millis() - cPressStart >= 1000) {
+    // 長押し1秒経過時点でメイン画面に戻る
+    Serial.println("C button long press detected - returning to main");
     currentMode = MAIN_DISPLAY;
+    cLongPressFired = true;
+  }
+  if (M5.BtnC.wasReleased()) {
+    Serial.print("C button released - press duration: ");
+    Serial.print(millis() - cPressStart);
+    Serial.println("ms");
+    if (!cLongPressFired && millis() - cPressStart < 1000) {
+      // 短押し: セット（確定）
+      Serial.println("C button short press - confirming alarm");
+      int hour = digitEditInput.hourTens * 10 + digitEditInput.hourOnes;
+      int min = digitEditInput.minTens * 10 + digitEditInput.minOnes;
+      
+      // 時刻バリデーション
+      if (hour > 23 || min > 59) {
+        // エラー: 無効な時刻
+        Serial.println("Invalid time - validation failed");
+        return;
+      }
+      
+      // アラーム時刻の計算
+      time_t now = time(NULL);
+      time_t alarmTime = 0;
+      
+      if (currentMode == ABS_TIME_INPUT) {
+        // 絶対時刻入力
+        struct tm tminfo;
+        localtime_r(&now, &tminfo);
+        tminfo.tm_hour = hour;
+        tminfo.tm_min = min;
+        tminfo.tm_sec = 0;
+        alarmTime = mktime(&tminfo);
+        
+        // 過去時刻の場合は翌日として設定
+        if (alarmTime <= now) {
+          alarmTime += 24 * 3600; // 24時間追加
+        }
+      } else if (currentMode == REL_PLUS_TIME_INPUT) {
+        // 相対時刻追加
+        alarmTime = now + (hour * 3600) + (min * 60);
+      }
+      
+      // 重複チェック
+      if (std::find(alarmTimes.begin(), alarmTimes.end(), alarmTime) != alarmTimes.end()) {
+        // エラー: 重複
+        Serial.println("Duplicate alarm - not added");
+        return;
+      }
+      
+      // 最大数チェック
+      if (alarmTimes.size() >= 5) {
+        // エラー: 最大数超過
+        Serial.println("Too many alarms - not added");
+        return;
+      }
+      
+      // アラーム追加
+      alarmTimes.push_back(alarmTime);
+      std::sort(alarmTimes.begin(), alarmTimes.end());
+      
+      // 入力状態リセット
+      resetInput();
+      
+      // メイン画面に戻る
+      Serial.println("Alarm added successfully - returning to main");
+      currentMode = MAIN_DISPLAY;
+    }
   }
 }
 
