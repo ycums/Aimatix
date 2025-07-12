@@ -269,7 +269,7 @@ void drawInputMode() {
   
   // 時刻表示の開始位置を計算（5文字分の幅を考慮）
   int totalWidth = 5 * 40; // 5文字 × 40px（概算）
-  int startX = centerX - totalWidth / 2;
+  int startX = centerX - totalWidth / 2 + 20; // MC_DATUM用に20px調整
   
   int x = startX;
   for (int i = 0; i < 5; ++i) {
