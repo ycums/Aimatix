@@ -308,24 +308,48 @@ void handleButtons() {
     case ALARM_MANAGEMENT: {
       int listSize = alarmTimes.size();
       if (M5.BtnA.wasPressed()) {
-        // アラーム削除
-        if (scheduleSelectedIndex < alarmTimes.size()) {
-          alarmTimes.erase(alarmTimes.begin() + scheduleSelectedIndex);
-          if (scheduleSelectedIndex >= alarmTimes.size() && alarmTimes.size() > 0) {
-            scheduleSelectedIndex = alarmTimes.size() - 1;
-          }
+        // PREV: 前の項目へ
+        if (scheduleSelectedIndex > 0) {
+          scheduleSelectedIndex--;
         }
       }
       if (M5.BtnB.wasPressed()) {
-        // 循環動作を無効化：最後の項目では何もしない
+        // NEXT: 次の項目へ
         if (scheduleSelectedIndex < listSize - 1) {
           scheduleSelectedIndex++;
         }
       }
       if (M5.BtnC.wasPressed()) {
-        // 循環動作を無効化：最初の項目では何もしない
-        if (scheduleSelectedIndex > 0) {
-          scheduleSelectedIndex--;
+        // DELETE: 二段階確認でアラーム削除
+        if (scheduleSelectedIndex < alarmTimes.size()) {
+          // 確認画面を表示
+          sprite.fillSprite(TFT_BLACK);
+          sprite.setTextDatum(MC_DATUM);
+          sprite.setTextColor(FLASH_ORANGE, TFT_BLACK);
+          sprite.setTextFont(4);
+          sprite.drawString("DELETE ALARM?", SCREEN_WIDTH/2, 100);
+          sprite.drawString(getTimeString(alarmTimes[scheduleSelectedIndex]), SCREEN_WIDTH/2, 140);
+          sprite.setTextFont(2);
+          sprite.drawString("A: YES  C: NO", SCREEN_WIDTH/2, 180);
+          sprite.pushSprite(0, 0);
+          
+          // 確認待ち
+          while (true) {
+            M5.update();
+            if (M5.BtnA.wasPressed()) {
+              // 削除実行
+              alarmTimes.erase(alarmTimes.begin() + scheduleSelectedIndex);
+              if (scheduleSelectedIndex >= alarmTimes.size() && alarmTimes.size() > 0) {
+                scheduleSelectedIndex = alarmTimes.size() - 1;
+              }
+              break;
+            }
+            if (M5.BtnC.wasPressed()) {
+              // キャンセル
+              break;
+            }
+            delay(10);
+          }
         }
       }
       break;

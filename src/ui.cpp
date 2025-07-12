@@ -424,7 +424,7 @@ void drawWarningColorTest() {
 void drawAlarmManagement() {
   sprite.fillSprite(TFT_BLACK);
   drawTitleBar("ALARM MGMT");
-  drawButtonHintsGrid("DELETE", "NEXT", "PREV");
+  drawButtonHintsGrid("PREV", "NEXT", "DELETE");
   
   // --- アラームリストの表示（グリッドセル(0,1)-(15,9)） ---
   sprite.setTextFont(4); // Font4に戻す
