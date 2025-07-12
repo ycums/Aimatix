@@ -45,24 +45,27 @@ extern TFT_eSprite sprite;
 extern std::vector<time_t> alarmTimes; // Declare alarmTimes as extern
 
 // Function declarations
-void drawWarningColorTest();
-
-// 関数プロトタイプ
-void drawStatusBar(const char* mode);
-void drawButtonHints(const char* btnA, const char* btnB, const char* btnC);
+void initUI();
+void drawTitleBar(const char* modeName);
+void drawButtonHintsGrid(const char* btnA, const char* btnB, const char* btnC);
+void drawCommonUI(const char* modeName);
+void drawGridLines();
 String getTimeString(time_t t);
 String getDateString(time_t t);
 String getRemainTimeString(time_t now, time_t target);
 void drawProgressBar(int x, int y, int width, int height, float progress);
 void drawInvertedText(const char* text, int x, int y, int font);
-void initUI(); // Function to initialize UI including sprite
-void drawInfoDisplay();
 
-// グリッドシステム関連の関数プロトタイプ
-void drawCommonUI(const char* modeName);
-void drawTitleBar(const char* modeName);
-void drawButtonHintsGrid(const char* btnA, const char* btnB, const char* btnC);
-void drawGridLines(); // グリッド線の描画（デバッグ用）
+// Screen drawing functions
+void drawMainDisplay();
+void drawNTPSync();
+void drawInputMode();
+void drawScheduleSelection();
+void drawAlarmManagement(); // アラーム管理画面を追加
+void drawAlarmActive();
+void drawSettingsMenu();
+void drawInfoDisplay();
+void drawWarningColorTest();
 
 // メニュー項目描画の共通関数
 void drawMenuItems(const char** items, int itemCount, int selectedItem, int startGridRow, int endGridRow, int marginTop);

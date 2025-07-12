@@ -66,6 +66,8 @@ void resetInput() {
 void handleDigitEditInput() {
   static uint32_t aPressStart = 0;
   static bool aLongPressFired = false;
+  static uint32_t bPressStart = 0;
+  static bool bLongPressFired = false;
 
   // Aボタン: +1（短押し）、+5（長押し）
   if (M5.BtnA.wasPressed()) {
@@ -73,61 +75,130 @@ void handleDigitEditInput() {
     aLongPressFired = false;
   }
   if (M5.BtnA.isPressed() && !aLongPressFired && millis() - aPressStart >= 500) {
-    // 長押し0.5秒経過時点で+5
+    // 長押し0.5秒経過時点で+5（1回のみ）
     int add = 5;
     switch (digitEditInput.cursor) {
-      case 0: digitEditInput.hourTens = (digitEditInput.hourTens + add) % 3; if (digitEditInput.hourTens == 2 && digitEditInput.hourOnes > 3) digitEditInput.hourOnes = 3; break;
-      case 1: digitEditInput.hourOnes = (digitEditInput.hourOnes + add) % ((digitEditInput.hourTens == 2) ? 4 : 10); break;
-      case 2: digitEditInput.minTens = (digitEditInput.minTens + add) % 6; break;
-      case 3: digitEditInput.minOnes = (digitEditInput.minOnes + add) % 10; break;
+      case 0: // 時十の位
+        digitEditInput.hourTens = (digitEditInput.hourTens + add) % 3;
+        if (digitEditInput.hourTens == 2 && digitEditInput.hourOnes > 3) {
+          digitEditInput.hourOnes = 3; // 制限
+        }
+        break;
+      case 1: { // 時一の位
+        int maxHourOnes = (digitEditInput.hourTens == 2) ? 4 : 10;
+        digitEditInput.hourOnes = (digitEditInput.hourOnes + add) % maxHourOnes;
+        break;
+      }
+      case 2: // 分十の位
+        digitEditInput.minTens = (digitEditInput.minTens + add) % 6;
+        break;
+      case 3: // 分一の位
+        digitEditInput.minOnes = (digitEditInput.minOnes + add) % 10;
+        break;
     }
     aLongPressFired = true;
   }
   if (M5.BtnA.wasReleased()) {
     if (!aLongPressFired && millis() - aPressStart < 500) {
-      // 短押し
+      // 短押し: +1
       int add = 1;
       switch (digitEditInput.cursor) {
-        case 0: digitEditInput.hourTens = (digitEditInput.hourTens + add) % 3; if (digitEditInput.hourTens == 2 && digitEditInput.hourOnes > 3) digitEditInput.hourOnes = 3; break;
-        case 1: digitEditInput.hourOnes = (digitEditInput.hourOnes + add) % ((digitEditInput.hourTens == 2) ? 4 : 10); break;
-        case 2: digitEditInput.minTens = (digitEditInput.minTens + add) % 6; break;
-        case 3: digitEditInput.minOnes = (digitEditInput.minOnes + add) % 10; break;
+        case 0: // 時十の位
+          digitEditInput.hourTens = (digitEditInput.hourTens + add) % 3;
+          if (digitEditInput.hourTens == 2 && digitEditInput.hourOnes > 3) {
+            digitEditInput.hourOnes = 3; // 制限
+          }
+          break;
+        case 1: { // 時一の位
+          int maxHourOnes = (digitEditInput.hourTens == 2) ? 4 : 10;
+          digitEditInput.hourOnes = (digitEditInput.hourOnes + add) % maxHourOnes;
+          break;
+        }
+        case 2: // 分十の位
+          digitEditInput.minTens = (digitEditInput.minTens + add) % 6;
+          break;
+        case 3: // 分一の位
+          digitEditInput.minOnes = (digitEditInput.minOnes + add) % 10;
+          break;
       }
     }
   }
+
   // Bボタン: 桁送り（短押し）、リセット（長押し）
-  if (M5.BtnB.wasReleasefor(1000)) {
-    // 長押し（リセット）
+  if (M5.BtnB.wasPressed()) {
+    bPressStart = millis();
+    bLongPressFired = false;
+  }
+  if (M5.BtnB.isPressed() && !bLongPressFired && millis() - bPressStart >= 1000) {
+    // 長押し1秒経過時点でリセット
     digitEditInput.hourTens = DigitEditTimeInputState::INIT_HOUR_TENS;
     digitEditInput.hourOnes = DigitEditTimeInputState::INIT_HOUR_ONES;
     digitEditInput.minTens = DigitEditTimeInputState::INIT_MIN_TENS;
     digitEditInput.minOnes = DigitEditTimeInputState::INIT_MIN_ONES;
-    digitEditInput.cursor = 3;
-  } else if (M5.BtnB.wasPressed()) {
-    // 短押し（桁送り）
-    if (digitEditInput.cursor < 3) digitEditInput.cursor++;
+    digitEditInput.cursor = 0; // カーソル位置もリセット
+    bLongPressFired = true;
   }
+  if (M5.BtnB.wasReleased()) {
+    if (!bLongPressFired && millis() - bPressStart < 1000) {
+      // 短押し: 桁送り（左から右）
+      digitEditInput.cursor = (digitEditInput.cursor + 1) % 4;
+    }
+  }
+
   // Cボタン: セット（確定）
   if (M5.BtnC.wasPressed()) {
     int hour = digitEditInput.hourTens * 10 + digitEditInput.hourOnes;
     int min = digitEditInput.minTens * 10 + digitEditInput.minOnes;
-    // バリデーション（例: 00:00は不可、23:59まで）
-    if (hour == 0 && min == 0) {
-      // エラー表示など
-      return;
-    }
+    
+    // 時刻バリデーション
     if (hour > 23 || min > 59) {
-      // エラー表示など
+      // エラー: 無効な時刻
       return;
     }
-    // ここで時刻セット処理（例: alarmTimes.push_back(...) など）
-    // ...
+    
+    // アラーム時刻の計算
+    time_t now = time(NULL);
+    time_t alarmTime = 0;
+    
+    if (currentMode == ABS_TIME_INPUT) {
+      // 絶対時刻入力
+      struct tm tminfo;
+      localtime_r(&now, &tminfo);
+      tminfo.tm_hour = hour;
+      tminfo.tm_min = min;
+      tminfo.tm_sec = 0;
+      alarmTime = mktime(&tminfo);
+      
+      // 過去時刻の場合は翌日として設定
+      if (alarmTime <= now) {
+        alarmTime += 24 * 3600; // 24時間追加
+      }
+    } else if (currentMode == REL_PLUS_TIME_INPUT) {
+      // 相対時刻追加
+      alarmTime = now + (hour * 3600) + (min * 60);
+    }
+    
+    // 重複チェック
+    if (std::find(alarmTimes.begin(), alarmTimes.end(), alarmTime) != alarmTimes.end()) {
+      // エラー: 重複
+      return;
+    }
+    
+    // 最大数チェック
+    if (alarmTimes.size() >= 5) {
+      // エラー: 最大数超過
+      return;
+    }
+    
+    // アラーム追加
+    alarmTimes.push_back(alarmTime);
+    std::sort(alarmTimes.begin(), alarmTimes.end());
+    
     // 入力状態リセット
-    digitEditInput.hourTens = DigitEditTimeInputState::INIT_HOUR_TENS;
-    digitEditInput.hourOnes = DigitEditTimeInputState::INIT_HOUR_ONES;
-    digitEditInput.minTens = DigitEditTimeInputState::INIT_MIN_TENS;
-    digitEditInput.minOnes = DigitEditTimeInputState::INIT_MIN_ONES;
-    digitEditInput.cursor = 3;
+    resetInput();
+    
+    // メイン画面に戻る（デバウンス処理付き）
+    currentMode = MAIN_DISPLAY;
   }
 }
 

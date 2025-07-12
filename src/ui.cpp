@@ -2,6 +2,7 @@
 #include <M5Stack.h>
 #include <time.h>
 #include <WiFi.h>
+#include "alarm.h"
 
 // Global variables used in UI functions (declare as extern in main.cpp or pass as parameters)
 // extern Settings settings; // Assuming settings are needed for drawing
@@ -114,14 +115,14 @@ String getDateString(time_t t) {
 // 残り時間文字列の取得
 String getRemainTimeString(time_t now, time_t target) {
   time_t diff = target - now;
-  if (diff < 0) return "-00:00:00";
+  if (diff < 0) return "00:00:00";
   
   int hours = diff / 3600;
   int minutes = (diff % 3600) / 60;
   int seconds = diff % 60;
   
   char buffer[32];
-  sprintf(buffer, "-%02d:%02d:%02d", hours, minutes, seconds);
+  sprintf(buffer, "%02d:%02d:%02d", hours, minutes, seconds);
   return String(buffer);
 }
 
@@ -155,45 +156,20 @@ void drawInvertedText(const char* text, int x, int y, int font) {
 void drawMainDisplay() {
   sprite.fillSprite(TFT_BLACK);
   drawTitleBar("MAIN");
-  drawButtonHintsGrid("ABS", "REL+", "SCHED");
-  
-  // デバッグ用: グリッド線を描画
-  drawGridLines();
+  drawButtonHintsGrid("ABS", "REL+", "MGMT");
   
   time_t now = time(NULL);
   
-  // --- 上部中央: 日付（グリッドセル(0,0)-(15,0)） ---
-  sprite.setTextDatum(TC_DATUM);
-  sprite.setTextColor(AMBER_COLOR, TFT_BLACK);
-  sprite.setTextFont(2);
-  struct tm* tminfo = localtime(&now);
-  const char* wdays[] = {"Sun.", "Mon.", "Tue.", "Wed.", "Thu.", "Fri.", "Sat."};
-  char dateStr[32];
-  sprintf(dateStr, "%04d/%02d/%02d %s", tminfo->tm_year+1900, tminfo->tm_mon+1, tminfo->tm_mday, wdays[tminfo->tm_wday]);
-  sprite.drawString(dateStr, 8 * GRID_WIDTH, 3 * GRID_HEIGHT + 10);
-  
-  // デバッグ用: 座標ラベルを表示
-  sprite.setTextColor(FLASH_ORANGE, TFT_BLACK);
-  sprite.setTextFont(1);
-  sprite.drawString("(0,0)", 0, 0);
-  sprite.drawString("(15,0)", 15 * GRID_WIDTH, 0);
-  sprite.drawString("(0,11)", 0, 11 * GRID_HEIGHT);
-  sprite.drawString("(15,11)", 15 * GRID_WIDTH, 11 * GRID_HEIGHT);
-
-  // --- 現在時刻（グリッドセル(0,2)-(15,3)） ---
-  // デバッグ用: 境界線を描画
-  sprite.drawRect(0, 2 * GRID_HEIGHT, 16 * GRID_WIDTH, GRID_HEIGHT * 2, FLASH_ORANGE);
-  
+  // --- 現在時刻（グリッドセル(0,1)-(15,2)、Font4、垂直中央寄せ） ---
   sprite.setTextDatum(MC_DATUM);
   sprite.setTextFont(4);
+  sprite.setTextColor(AMBER_COLOR, TFT_BLACK);
+  struct tm* tminfo = localtime(&now);
   char hmStr[6];
   sprintf(hmStr, "%02d:%02d", tminfo->tm_hour, tminfo->tm_min);
-  sprite.drawString(hmStr, 8 * GRID_WIDTH, 2 * GRID_HEIGHT + 10);
-
-  // --- 中央: 残り時間（グリッドセル(0,4)-(15,6)） ---
-  // デバッグ用: 境界線を描画
-  sprite.drawRect(0, 4 * GRID_HEIGHT, 16 * GRID_WIDTH, GRID_HEIGHT * 3, FLASH_ORANGE);
+  sprite.drawString(hmStr, SCREEN_WIDTH/2, GRID_Y(1) + GRID_HEIGHT);
   
+  // --- 次のアラームまでの残り時間（グリッドセル(0,3)-(15,5)、Font7、垂直中央寄せ） ---
   time_t nextAlarm = 0;
   std::vector<time_t> futureAlarms;
   if (!alarmTimes.empty()) {
@@ -205,19 +181,17 @@ void drawMainDisplay() {
       }
     }
   }
+  
   sprite.setTextDatum(MC_DATUM);
   sprite.setTextFont(7);
   sprite.setTextColor(AMBER_COLOR, TFT_BLACK);
   if (nextAlarm) {
-    sprite.drawString(getRemainTimeString(now, nextAlarm), 8 * GRID_WIDTH, 5 * GRID_HEIGHT + 10);
+    sprite.drawString(getRemainTimeString(now, nextAlarm), SCREEN_WIDTH/2, GRID_Y(3) + GRID_HEIGHT * 1.5);
   } else {
-    sprite.drawString("-00:00:00", 8 * GRID_WIDTH, 5 * GRID_HEIGHT + 10);
+    sprite.drawString("-00:00:00", SCREEN_WIDTH/2, GRID_Y(3) + GRID_HEIGHT * 1.5);
   }
-
-  // --- プログレスバー（グリッドセル(0,7)-(15,8)） ---
-  // デバッグ用: 境界線を描画
-  sprite.drawRect(0, 7 * GRID_HEIGHT, 16 * GRID_WIDTH, GRID_HEIGHT * 2, FLASH_ORANGE);
   
+  // --- プログレスバー（グリッドセル(0,6)-(15,7)、高さ16px） ---
   extern time_t lastReleaseTime;
   float progress = 0.0f;
   if (nextAlarm && lastReleaseTime && nextAlarm > lastReleaseTime) {
@@ -227,30 +201,40 @@ void drawMainDisplay() {
     if (progress < 0) progress = 0;
     if (progress > 1) progress = 1;
   }
-  drawProgressBar(0, 7 * GRID_HEIGHT + 10, 16 * GRID_WIDTH, 40, progress);
-
-  // --- アラームリスト（グリッドセル(0,9)-(15,10)） ---
-  // デバッグ用: 境界線を描画
-  sprite.drawRect(0, 9 * GRID_HEIGHT, 16 * GRID_WIDTH, GRID_HEIGHT * 2, FLASH_ORANGE);
   
-  sprite.setTextDatum(MC_DATUM);
+  // プログレスバーの位置計算（垂直中央寄せ）
+  int progressY = GRID_Y(6) + (2 * GRID_HEIGHT - 16) / 2; // 16px高さで中央寄せ
+  
+  // プログレスバーの境界線
+  sprite.drawRect(GRID_X(0), progressY, 16 * GRID_WIDTH, 16, AMBER_COLOR);
+  // プログレスバーの背景
+  sprite.fillRect(GRID_X(0) + 1, progressY + 1, 16 * GRID_WIDTH - 2, 14, TFT_BLACK);
+  // プログレスバーの進捗
+  int progressWidth = (16 * GRID_WIDTH - 2) * progress;
+  if (progressWidth > 0) {
+    sprite.fillRect(GRID_X(0) + 1, progressY + 1, progressWidth, 14, AMBER_COLOR);
+  }
+  
+  // --- アラームリスト（グリッドセル(0,8)-(15,9)、Font2、最大5件、水平配置、垂直中央寄せ） ---
+  sprite.setTextDatum(ML_DATUM); // 中央左寄せに変更
   sprite.setTextFont(2);
   sprite.setTextColor(AMBER_COLOR, TFT_BLACK);
+  
   int count = 0;
   for (time_t t : futureAlarms) {
     if (count >= 5) break;
-    int x = (count + 1) * (16 * GRID_WIDTH / 6);
-    sprite.drawString(getTimeString(t), x, 9 * GRID_HEIGHT + 10);
+    int x = GRID_X(1) + count * (14 * GRID_WIDTH / 5); // X=1から開始、5等分して配置
+    sprite.drawString(getTimeString(t), x, GRID_Y(8) + GRID_HEIGHT/2);
     count++;
   }
-
+  
   sprite.pushSprite(0, 0);
 }
 
 void drawNTPSync() {
   sprite.fillSprite(TFT_BLACK);
-  drawStatusBar("NTP SYNC");
-  drawButtonHints(NULL, NULL, "SKIP");
+  drawTitleBar("NTP SYNC");
+  drawButtonHintsGrid(NULL, NULL, "SKIP");
   sprite.setTextDatum(MC_DATUM);
   sprite.setTextColor(AMBER_COLOR);
   sprite.drawString("Syncing Time...", 160, 120, 4);
@@ -258,6 +242,7 @@ void drawNTPSync() {
 
 void drawInputMode() {
   sprite.fillSprite(TFT_BLACK);
+  
   // モード名を明示
   extern Mode currentMode;
   const char* modeTitle = "SET TIME";
@@ -267,52 +252,43 @@ void drawInputMode() {
   drawTitleBar(modeTitle);
   drawButtonHintsGrid("+1/+5", "NEXT/RESET", "SET");
 
-  // 桁ごと編集方式の値を表示（水平方向のみ中央寄せ）
+  // --- 時刻入力表示（グリッドセル(0,3)-(15,5)、Font7、水平中央寄せ） ---
   char buf[6];
   snprintf(buf, sizeof(buf), "%d%d:%d%d",
     digitEditInput.hourTens,
     digitEditInput.hourOnes,
     digitEditInput.minTens,
     digitEditInput.minOnes);
+  
   sprite.setTextDatum(MC_DATUM);
   sprite.setTextFont(7);
   
-  // 水平方向の中央位置を計算
-  int centerX = GRID_X(4); // 画面中央
-  int y = GRID_Y(1) + 24;  // 以前の垂直位置
+  // 時刻表示の中央位置を計算
+  int centerX = SCREEN_WIDTH / 2;
+  int centerY = GRID_Y(3) + GRID_HEIGHT * 1.5; // グリッドセル(0,3)-(15,5)の中央
   
   // 時刻表示の開始位置を計算（5文字分の幅を考慮）
-  int totalWidth = 5 * 40; // 5文字 × 40px
+  int totalWidth = 5 * 40; // 5文字 × 40px（概算）
   int startX = centerX - totalWidth / 2;
   
   int x = startX;
   for (int i = 0; i < 5; ++i) {
     if (i == 2) {
       sprite.setTextColor(AMBER_COLOR, TFT_BLACK);
-      sprite.drawString(":", x, y);
+      sprite.drawString(":", x, centerY);
       x += 40;
       continue;
     }
     int digitIdx = (i < 2) ? i : i - 1;
     if (digitEditInput.cursor == digitIdx) {
       sprite.setTextColor(TFT_BLACK, AMBER_COLOR); // ネガポジ反転
-      sprite.drawString(String(buf[i]), x, y);
+      sprite.drawString(String(buf[i]), x, centerY);
       sprite.setTextColor(AMBER_COLOR, TFT_BLACK);
     } else {
-      sprite.drawString(String(buf[i]), x, y);
+      sprite.drawString(String(buf[i]), x, centerY);
     }
     x += 40;
   }
-
-  // 入力値のプレビュー（グリッドセル(1,3)-(6,3)）
-  sprite.setTextDatum(MC_DATUM);
-  sprite.setTextFont(2);
-  sprite.setTextColor(AMBER_COLOR, TFT_BLACK);
-  char preview[16];
-  snprintf(preview, sizeof(preview), "%02d:%02d",
-    digitEditInput.hourTens * 10 + digitEditInput.hourOnes,
-    digitEditInput.minTens * 10 + digitEditInput.minOnes);
-  sprite.drawString(preview, GRID_X(4), GRID_Y(3) + 10);
 
   sprite.pushSprite(0, 0);
 }
@@ -368,8 +344,8 @@ void drawSettingsMenu() {
 
 void drawInfoDisplay() {
   sprite.fillSprite(TFT_BLACK);
-  drawStatusBar("INFO");
-  drawButtonHints(NULL, NULL, "BACK");
+  drawTitleBar("INFO");
+  drawButtonHintsGrid(NULL, NULL, "BACK");
   sprite.setTextDatum(TL_DATUM);
   sprite.setTextColor(AMBER_COLOR);
   sprite.drawString("M5Stack Timer", 40, 60, 4);
@@ -440,4 +416,94 @@ void drawWarningColorTest() {
   drawButtonHintsGrid(NULL, NULL, "BACK");
   
   sprite.pushSprite(0, 0);
+}
+
+void drawAlarmManagement() {
+  sprite.fillSprite(TFT_BLACK);
+  drawTitleBar("ALARM MGMT");
+  drawButtonHintsGrid("DELETE", "NEXT", "PREV");
+  
+  // --- アラームリストの表示（グリッドセル(0,2)-(15,9)） ---
+  sprite.setTextFont(4);
+  sprite.setTextColor(AMBER_COLOR, TFT_BLACK);
+  sprite.setTextDatum(MC_DATUM);
+  
+  extern int scheduleSelectedIndex; // 外部変数の宣言
+  
+  int yStart = GRID_Y(2);
+  int lineHeight = 30;
+  int maxItems = 8; // グリッドセル(0,2)-(15,9)に収まる最大アイテム数
+  
+  for (int i = 0; i < alarmTimes.size() && i < maxItems; i++) {
+    int y = yStart + i * lineHeight;
+    
+    if (i == scheduleSelectedIndex) {
+      // 選択中の項目はネガポジ反転
+      drawInvertedText(getTimeString(alarmTimes[i]).c_str(), 
+                      SCREEN_WIDTH/2, y, 4);
+    } else {
+      sprite.drawString(getTimeString(alarmTimes[i]), 
+                       SCREEN_WIDTH/2, y);
+    }
+  }
+  
+  // アラームが0件の場合のメッセージ
+  if (alarmTimes.empty()) {
+    sprite.setTextFont(2);
+    sprite.setTextColor(AMBER_COLOR, TFT_BLACK);
+    sprite.drawString("NO ALARMS", SCREEN_WIDTH/2, SCREEN_HEIGHT/2);
+  }
+  
+  sprite.pushSprite(0, 0);
+}
+
+void drawAlarmActive() {
+  static bool flash = false;
+  static unsigned long lastFlash = 0;
+  static unsigned long alarmStart = 0;
+  
+  if (alarmStart == 0) alarmStart = millis();
+  unsigned long elapsed = millis() - alarmStart;
+  
+  // 0.5秒ごとにON/OFF切り替え（最大5秒間）
+  if (elapsed < 5000) {
+    if (millis() - lastFlash >= 500) {
+      flash = !flash;
+      lastFlash = millis();
+    }
+    
+    // 画面点滅（フラッシュオレンジ⇔黒）
+    if (flash) {
+      sprite.fillSprite(FLASH_ORANGE);
+      sprite.setTextColor(TFT_BLACK, FLASH_ORANGE);
+    } else {
+      sprite.fillSprite(TFT_BLACK);
+      sprite.setTextColor(FLASH_ORANGE, TFT_BLACK);
+    }
+    
+    // --- オーバータイム表示（グリッドセル(0,3)-(15,5)、Font7、フラッシュオレンジ） ---
+    sprite.setTextDatum(MC_DATUM);
+    sprite.setTextFont(7);
+    
+    time_t now = time(NULL);
+    time_t alarmTime = getNextAlarmTime();
+    if (alarmTime > 0) {
+      time_t overtime = now - alarmTime;
+      if (overtime > 0) {
+        int hours = overtime / 3600;
+        int minutes = (overtime % 3600) / 60;
+        int seconds = overtime % 60;
+        
+        char overtimeStr[16];
+        sprintf(overtimeStr, "+%02d:%02d:%02d", hours, minutes, seconds);
+        sprite.drawString(overtimeStr, SCREEN_WIDTH/2, GRID_Y(3) + GRID_HEIGHT * 1.5);
+      }
+    }
+    
+    sprite.pushSprite(0, 0);
+  } else {
+    // 5秒経過で自動停止
+    sprite.fillSprite(TFT_BLACK);
+    sprite.pushSprite(0, 0);
+  }
 }
