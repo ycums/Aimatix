@@ -188,7 +188,7 @@ void drawMainDisplay() {
   if (nextAlarm) {
     sprite.drawString(getRemainTimeString(now, nextAlarm), SCREEN_WIDTH/2, GRID_Y(3) + GRID_HEIGHT * 1.5);
   } else {
-    sprite.drawString("-00:00:00", SCREEN_WIDTH/2, GRID_Y(3) + GRID_HEIGHT * 1.5);
+    sprite.drawString("00:00:00", SCREEN_WIDTH/2, GRID_Y(3) + GRID_HEIGHT * 1.5);
   }
   
   // --- プログレスバー（グリッドセル(0,6)-(15,7)、高さ16px） ---
