@@ -9,6 +9,8 @@
 #include "alarm.h"
 #include "input.h"
 #include "types.h"
+#include "button_manager.h"
+#include "debounce_manager.h"
 
 // Constants
 #define WIFI_TIMEOUT 20000  // 20秒のタイムアウト
@@ -65,6 +67,10 @@ void setup() {
   // デバッグ用：アラームリストに初期値を5件追加
   addDebugAlarms();
   
+  // ButtonManagerの初期化
+  ButtonManager::resetButtonStates();
+  Serial.println("ButtonManager initialized");
+  
   // Wi-Fi/NTP同期は一時的にスキップ
   // if (connectWiFi()) {
   //   timeClient.begin();
@@ -77,6 +83,9 @@ void setup() {
 void loop() {
   removePastAlarms();
   M5.update();  // ボタン状態を更新
+  
+  // ButtonManagerの状態更新（既存処理には影響なし）
+  ButtonManager::updateButtonStates();
   
   handleButtons(); // ボタン処理を追加
 

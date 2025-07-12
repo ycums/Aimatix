@@ -58,38 +58,44 @@
 └─────────────────────────────────────┘
 ```
 
+## 段階的実装戦略
+
+### 段階的実装の原則
+1. **各ステップでコンパイルが通る状態を維持**
+2. **既存機能を壊さずに段階的に移行**
+3. **動作確認しながら進める**
+4. **必要に応じてロールバック可能**
+
+### 実装順序
+```
+Step 1: 最小限のButtonManager（既存コードは変更なし）
+Step 2: 既存コードにButtonManagerを並行導入
+Step 3: 段階的に既存コードをButtonManagerに移行
+Step 4: 完全移行と最適化
+```
+
 ## 実装計画
 
-### Phase 1: 基盤システムの構築
+### Phase 1: 基盤システムの構築（コンパイル通る状態を維持）
 
-#### 1.1 ButtonManagerクラスの作成
+#### Step 1.1: 最小限のButtonManagerクラス
 **ファイル**: `src/button_manager.h`, `src/button_manager.cpp`
 
 ```cpp
-// 基本的な構造
+// Step 1.1: 最小限の実装（既存コードは一切変更しない）
 class ButtonManager {
 public:
-  // 基本的な判定
+  // 基本的な判定（既存のM5.BtnX.wasPressed()をラップ）
   static bool isShortPress(Button& button, unsigned long threshold = 1000);
   static bool isLongPress(Button& button, unsigned long threshold = 1000);
   static bool isReleased(Button& button);
-  
-  // 同時押し判定
-  static bool isSimultaneousPress(Button& button1, Button& button2, unsigned long tolerance = 100);
-  static bool isAllButtonsPressed();
-  static bool isCombinationPress(const std::vector<Button*>& buttons);
   
   // 状態管理
   static void updateButtonStates();
   static void resetButtonStates();
   
-  // 拡張性のための基盤
-  static ButtonState getButtonState(Button& button);
-  static void addButtonEventListener(Button& button, ButtonEventType type, std::function<void()> callback);
-  
 private:
   static std::map<Button*, ButtonState> buttonStates;
-  static std::vector<ButtonEvent> eventListeners;
   static void applyHardwareDebounce(ButtonState& state);
 };
 
@@ -100,38 +106,25 @@ struct ButtonState {
   unsigned long pressStartTime;
   unsigned long lastChangeTime;
   int pressCount;
-  std::vector<unsigned long> pressHistory; // 将来の拡張用
-};
-
-struct ButtonEvent {
-  Button* button;
-  ButtonEventType type;
-  std::function<void()> callback;
-};
-
-enum ButtonEventType {
-  SHORT_PRESS,
-  LONG_PRESS,
-  RELEASE,
-  SIMULTANEOUS_PRESS
 };
 ```
 
-#### 1.2 DebounceManagerクラスの作成
+**このステップでの動作確認**:
+- コンパイルが通ることを確認
+- 既存のボタン処理は一切変更されない
+- ButtonManagerは並行して動作するだけ
+
+#### Step 1.2: 最小限のDebounceManagerクラス
 **ファイル**: `src/debounce_manager.h`, `src/debounce_manager.cpp`
 
 ```cpp
+// Step 1.2: 最小限の実装（既存コードは一切変更しない）
 class DebounceManager {
 public:
   // 階層別デバウンス判定
   static bool canProcessHardware(Button& button);
   static bool canProcessOperation(const String& operationType);
   static bool canProcessModeChange();
-  
-  // デバウンス時間の設定
-  static void setHardwareDebounceTime(unsigned long time);
-  static void setOperationDebounceTime(unsigned long time);
-  static void setModeChangeDebounceTime(unsigned long time);
   
 private:
   static const unsigned long DEFAULT_HARDWARE_DEBOUNCE = 50;
@@ -143,25 +136,269 @@ private:
 };
 ```
 
-### Phase 2: 既存コードの段階的移行
+**このステップでの動作確認**:
+- コンパイルが通ることを確認
+- 既存のデバウンス処理は一切変更されない
+- DebounceManagerは並行して動作するだけ
 
-#### 2.1 main.cppのリファクタリング
-**目標**: ボタン処理の一元化
+### Phase 2: 並行導入（既存コードを壊さずに段階的移行）
 
+#### Step 2.1: main.cppにButtonManagerを並行導入
 ```cpp
-// 変更前
+// Step 2.1: 既存のhandleButtons()はそのまま、ButtonManagerを並行導入
 void handleButtons() {
-  // 各モードで個別にボタン処理
-  if (M5.BtnA.wasPressed()) { /* 処理 */ }
-  if (M5.BtnB.wasPressed()) { /* 処理 */ }
-  if (M5.BtnC.wasPressed()) { /* 処理 */ }
+  // 既存のコードはそのまま
+  static unsigned long lastPress = 0;
+  static unsigned long lastModeChange = 0;
+  const unsigned long LONG_PRESS_TIME = 1000;
+  const unsigned long DEBOUNCE_TIME = 200;
+  static bool cLongPressHandled = false;
+  
+  // 既存のデバウンス処理
+  if (millis() - lastModeChange < DEBOUNCE_TIME) {
+    return;
+  }
+  
+  // 既存のCボタン処理（そのまま）
+  if (currentMode != ABS_TIME_INPUT && currentMode != REL_PLUS_TIME_INPUT && currentMode != REL_MINUS_TIME_INPUT) {
+    if (M5.BtnC.wasPressed()) {
+      lastPress = millis();
+      cLongPressHandled = false;
+      Serial.println("Main: C button pressed - common handler");
+    }
+    if (M5.BtnC.pressedFor(LONG_PRESS_TIME)) {
+      if (!cLongPressHandled && currentMode != MAIN_DISPLAY) {
+        Serial.println("Main: C button long press - returning to main");
+        currentMode = MAIN_DISPLAY;
+        cLongPressHandled = true;
+        lastModeChange = millis();
+        return;
+      }
+    }
+  }
+  
+  // 既存のswitch文（そのまま）
+  switch (currentMode) {
+    case MAIN_DISPLAY:
+      // 既存の処理
+      break;
+    case ABS_TIME_INPUT:
+    case REL_PLUS_TIME_INPUT:
+    case REL_MINUS_TIME_INPUT:
+      handleDigitEditInput();
+      drawInputMode();
+      if (currentMode == MAIN_DISPLAY) {
+        lastModeChange = millis();
+      }
+      break;
+    // 他のケース（そのまま）
+  }
+  
+  // 新しく追加: ButtonManagerの状態更新（既存処理には影響なし）
+  ButtonManager::updateButtonStates();
 }
+```
 
-// 変更後
+**このステップでの動作確認**:
+- 既存のボタン処理が正常に動作することを確認
+- ButtonManagerが並行して動作することを確認
+- コンパイルが通ることを確認
+
+#### Step 2.2: input.cppにButtonManagerを並行導入
+```cpp
+// Step 2.2: 既存のhandleDigitEditInput()はそのまま、ButtonManagerを並行導入
+void handleDigitEditInput() {
+  // 既存のコードはそのまま
+  static uint32_t aPressStart = 0;
+  static bool aLongPressFired = false;
+  static uint32_t bPressStart = 0;
+  static bool bLongPressFired = false;
+  static uint32_t cPressStart = 0;
+  static bool cLongPressFired = false;
+
+  // 既存のAボタン処理（そのまま）
+  if (M5.BtnA.wasPressed()) {
+    aPressStart = millis();
+    aLongPressFired = false;
+  }
+  // ... 既存のAボタン処理（そのまま）
+
+  // 既存のBボタン処理（そのまま）
+  if (M5.BtnB.wasPressed()) {
+    bPressStart = millis();
+    bLongPressFired = false;
+  }
+  // ... 既存のBボタン処理（そのまま）
+
+  // 既存のCボタン処理（そのまま）
+  if (M5.BtnC.wasPressed()) {
+    cPressStart = millis();
+    cLongPressFired = false;
+  }
+  // ... 既存のCボタン処理（そのまま）
+  
+  // 新しく追加: ButtonManagerの状態更新（既存処理には影響なし）
+  ButtonManager::updateButtonStates();
+}
+```
+
+**このステップでの動作確認**:
+- 既存の入力処理が正常に動作することを確認
+- ButtonManagerが並行して動作することを確認
+- コンパイルが通ることを確認
+
+### Phase 3: 段階的移行（既存コードを少しずつ置き換え）
+
+#### Step 3.1: main.cppの一部をButtonManagerに移行
+```cpp
+// Step 3.1: 一部のボタン処理をButtonManagerに移行（段階的）
 void handleButtons() {
   ButtonManager::updateButtonStates();
   
-  // デバウンスチェック
+  // デバウンスチェック（既存のロジックをDebounceManagerに移行）
+  if (!DebounceManager::canProcessModeChange()) return;
+  
+  // 既存のCボタン処理はそのまま（後で移行）
+  static unsigned long lastPress = 0;
+  static bool cLongPressHandled = false;
+  
+  if (currentMode != ABS_TIME_INPUT && currentMode != REL_PLUS_TIME_INPUT && currentMode != REL_MINUS_TIME_INPUT) {
+    if (M5.BtnC.wasPressed()) {
+      lastPress = millis();
+      cLongPressHandled = false;
+    }
+    if (M5.BtnC.pressedFor(1000)) {
+      if (!cLongPressHandled && currentMode != MAIN_DISPLAY) {
+        currentMode = MAIN_DISPLAY;
+        cLongPressHandled = true;
+        return;
+      }
+    }
+  }
+  
+  switch (currentMode) {
+    case MAIN_DISPLAY:
+      // 既存の処理（そのまま）
+      if (M5.BtnA.wasPressed()) {
+        currentMode = ABS_TIME_INPUT;
+        resetInput();
+      }
+      // ... 他の既存処理
+      break;
+    case ABS_TIME_INPUT:
+    case REL_PLUS_TIME_INPUT:
+    case REL_MINUS_TIME_INPUT:
+      handleDigitEditInput();
+      drawInputMode();
+      break;
+    // 他のケース（そのまま）
+  }
+}
+```
+
+**このステップでの動作確認**:
+- 既存のボタン処理が正常に動作することを確認
+- DebounceManagerが正常に動作することを確認
+- コンパイルが通ることを確認
+
+#### Step 3.2: input.cppの一部をButtonManagerに移行
+```cpp
+// Step 3.2: 一部のボタン処理をButtonManagerに移行（段階的）
+void handleDigitEditInput() {
+  // 操作レベルのデバウンスチェック
+  if (!DebounceManager::canProcessOperation("input_mode")) return;
+  
+  // 既存のAボタン処理はそのまま（後で移行）
+  static uint32_t aPressStart = 0;
+  static bool aLongPressFired = false;
+  
+  if (M5.BtnA.wasPressed()) {
+    aPressStart = millis();
+    aLongPressFired = false;
+  }
+  // ... 既存のAボタン処理（そのまま）
+  
+  // 既存のBボタン処理はそのまま（後で移行）
+  static uint32_t bPressStart = 0;
+  static bool bLongPressFired = false;
+  
+  if (M5.BtnB.wasPressed()) {
+    bPressStart = millis();
+    bLongPressFired = false;
+  }
+  // ... 既存のBボタン処理（そのまま）
+  
+  // Cボタン処理をButtonManagerに移行（テスト）
+  if (ButtonManager::isShortPress(M5.BtnC)) {
+    // 短押し: セット（確定）
+    int hour = digitEditInput.hourTens * 10 + digitEditInput.hourOnes;
+    int min = digitEditInput.minTens * 10 + digitEditInput.minOnes;
+    
+    // 時刻バリデーション
+    if (hour > 23 || min > 59) {
+      return;
+    }
+    
+    // アラーム時刻の計算
+    time_t now = time(NULL);
+    time_t alarmTime = 0;
+    
+    if (currentMode == ABS_TIME_INPUT) {
+      struct tm tminfo;
+      localtime_r(&now, &tminfo);
+      tminfo.tm_hour = hour;
+      tminfo.tm_min = min;
+      tminfo.tm_sec = 0;
+      alarmTime = mktime(&tminfo);
+      
+      if (alarmTime <= now) {
+        alarmTime += 24 * 3600;
+      }
+    } else if (currentMode == REL_PLUS_TIME_INPUT) {
+      alarmTime = now + (hour * 3600) + (min * 60);
+    }
+    
+    // 重複チェック
+    if (std::find(alarmTimes.begin(), alarmTimes.end(), alarmTime) != alarmTimes.end()) {
+      return;
+    }
+    
+    // 最大数チェック
+    if (alarmTimes.size() >= 5) {
+      return;
+    }
+    
+    // アラーム追加
+    alarmTimes.push_back(alarmTime);
+    std::sort(alarmTimes.begin(), alarmTimes.end());
+    
+    // 入力状態リセット
+    resetInput();
+    
+    // メイン画面に戻る
+    currentMode = MAIN_DISPLAY;
+  }
+  
+  if (ButtonManager::isLongPress(M5.BtnC, 1000)) {
+    // 長押し: メイン画面に戻る
+    currentMode = MAIN_DISPLAY;
+  }
+}
+```
+
+**このステップでの動作確認**:
+- Cボタンの短押し/長押し判定が正常に動作することを確認
+- 既存のA/Bボタン処理が正常に動作することを確認
+- コンパイルが通ることを確認
+
+### Phase 4: 完全移行と最適化
+
+#### Step 4.1: 残りのボタン処理を完全移行
+```cpp
+// Step 4.1: 全てのボタン処理をButtonManagerに移行
+void handleButtons() {
+  ButtonManager::updateButtonStates();
+  
   if (!DebounceManager::canProcessModeChange()) return;
   
   switch (currentMode) {
@@ -173,43 +410,73 @@ void handleButtons() {
     case REL_MINUS_TIME_INPUT:
       handleInputModeButtons();
       break;
+    case ALARM_MANAGEMENT:
+      handleAlarmManagementButtons();
+      break;
+    case SETTINGS_MENU:
+      handleSettingsMenuButtons();
+      break;
     // 他のモード...
   }
 }
-```
 
-#### 2.2 input.cppのリファクタリング
-**目標**: ButtonManagerの活用
-
-```cpp
-// 変更前
-void handleDigitEditInput() {
-  static uint32_t aPressStart = 0;
-  static bool aLongPressFired = false;
-  // 個別のボタン処理...
+void handleMainDisplayButtons() {
+  if (ButtonManager::isShortPress(M5.BtnA)) {
+    currentMode = ABS_TIME_INPUT;
+    resetInput();
+  }
+  
+  if (ButtonManager::isShortPress(M5.BtnB)) {
+    currentMode = REL_PLUS_TIME_INPUT;
+    resetInput();
+  }
+  
+  if (ButtonManager::isLongPress(M5.BtnB, 1000)) {
+    currentMode = REL_MINUS_TIME_INPUT;
+    resetInput();
+  }
+  
+  if (ButtonManager::isShortPress(M5.BtnC)) {
+    currentMode = ALARM_MANAGEMENT;
+  }
+  
+  if (ButtonManager::isLongPress(M5.BtnC, 1000)) {
+    currentMode = SETTINGS_MENU;
+  }
 }
 
-// 変更後
-void handleDigitEditInput() {
-  // 操作レベルのデバウンスチェック
+void handleInputModeButtons() {
   if (!DebounceManager::canProcessOperation("input_mode")) return;
   
-  // ButtonManagerを使用した統一された処理
   if (ButtonManager::isShortPress(M5.BtnA)) {
     handleDigitIncrement();
   }
+  
   if (ButtonManager::isLongPress(M5.BtnA, 500)) {
     handleDigitIncrementBy5();
   }
-  // 他のボタン処理...
+  
+  if (ButtonManager::isShortPress(M5.BtnB)) {
+    handleDigitMove();
+  }
+  
+  if (ButtonManager::isLongPress(M5.BtnB, 1000)) {
+    handleDigitReset();
+  }
+  
+  if (ButtonManager::isShortPress(M5.BtnC)) {
+    handleDigitConfirm();
+  }
+  
+  if (ButtonManager::isLongPress(M5.BtnC, 1000)) {
+    currentMode = MAIN_DISPLAY;
+  }
 }
 ```
 
-### Phase 3: 同時押し機能の実装
-
-#### 3.1 基本的な同時押し機能
+#### Step 4.2: 同時押し機能の実装
 ```cpp
-// ButtonManagerに実装
+// Step 4.2: 同時押し機能を追加
 class ButtonManager {
 public:
   // 同時押し判定
@@ -227,14 +494,14 @@ public:
 };
 ```
 
-### Phase 4: 最適化とテスト
+### Phase 5: 最適化とテスト
 
-#### 4.1 パフォーマンス最適化
+#### 5.1 パフォーマンス最適化
 - メモリ使用量の最適化
 - 処理速度の改善
 - バッテリー消費の最適化
 
-#### 4.2 テストと検証
+#### 5.2 テストと検証
 - 各ボタン操作の動作確認
 - デバウンス処理の効果検証
 - 同時押し機能のテスト
@@ -242,17 +509,42 @@ public:
 
 ## 実装スケジュール
 
-### Week 1: Phase 1-2
-- ButtonManagerクラスの基本実装
-- DebounceManagerクラスの基本実装
-- main.cppとinput.cppのリファクタリング
+### Day 1: Phase 1
+- Step 1.1: 最小限のButtonManagerクラス
+- Step 1.2: 最小限のDebounceManagerクラス
 - 基本的なテスト
 
-### Week 2: Phase 3-4
-- 同時押し機能の実装
+### Day 2: Phase 2
+- Step 2.1: main.cppにButtonManagerを並行導入
+- Step 2.2: input.cppにButtonManagerを並行導入
+- 既存機能の動作確認
+
+### Day 3: Phase 3
+- Step 3.1: main.cppの一部をButtonManagerに移行
+- Step 3.2: input.cppの一部をButtonManagerに移行
+- 段階的な動作確認
+
+### Day 4: Phase 4-5
+- Step 4.1: 完全移行
+- Step 4.2: 同時押し機能の実装
 - 最適化とテスト
-- ドキュメント更新
-- 最終動作確認
+
+## 段階的実装のメリット
+
+### 1. リスクの最小化
+- 各ステップでコンパイルが通る状態を維持
+- 既存機能を壊さずに段階的に移行
+- 問題が発生した場合の早期発見と修正
+
+### 2. 動作確認の容易さ
+- 各ステップで動作確認が可能
+- 問題の特定が容易
+- 必要に応じてロールバック可能
+
+### 3. 開発効率の向上
+- 並行して開発とテストが可能
+- 段階的なデバッグが可能
+- 自信を持って進められる
 
 ## 将来の拡張性
 
@@ -327,10 +619,10 @@ public:
 
 ## 次のステップ
 
-1. **Phase 1の実装開始**
-   - ButtonManagerクラスの基本構造の実装
-   - DebounceManagerクラスの基本構造の実装
-   - 基本的なテストの作成
+1. **Step 1.1の実装開始**
+   - 最小限のButtonManagerクラスの実装
+   - コンパイル確認
+   - 基本的なテスト
 
 2. **既存コードの分析**
    - 現在のボタン処理の詳細分析
@@ -338,6 +630,6 @@ public:
    - 移行順序の決定
 
 3. **テスト計画の策定**
-   - 各フェーズでのテスト項目の定義
+   - 各ステップでのテスト項目の定義
    - 実機テストの計画
    - 回帰テストの計画 
