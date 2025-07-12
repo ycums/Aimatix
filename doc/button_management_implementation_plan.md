@@ -2,7 +2,7 @@
 
 ## 概要
 
-現在のプロジェクトにおけるボタン管理の分散とデバウンス処理の重複を解決し、将来的な拡張性（AB同時押し、シーケンス操作など）に対応できる統一されたシステムを実装する。
+現在のプロジェクトにおけるボタン管理の分散とデバウンス処理の重複を解決し、将来的な拡張性（AB同時押しなど）に対応できる統一されたシステムを実装する。
 
 ## 現状の問題点
 
@@ -18,8 +18,7 @@
 
 ### 3. 将来拡張への対応困難
 - AB同時押し、ABC同時押しの実装が困難
-- シーケンス操作、連続押し判定の追加が複雑
-- 新しいボタン操作パターンの追加が困難
+- 新しいボタン操作パターンの追加が複雑
 
 ## 設計方針
 
@@ -52,12 +51,10 @@
 │ │  ├─ isSimultaneousPress()         │
 │ │  ├─ isAllButtonsPressed()         │
 │ │  └─ isCombinationPress()          │
-│ ├─ シーケンス判定                    │
-│ │  ├─ isSequencePressed()           │
-│ │  └─ isPatternMatched()            │
-│ └─ 連続押し判定                      │
-│   ├─ isDoublePress()                │
-│   └─ isTriplePress()                │
+│ └─ 拡張性のための基盤                │
+│   ├─ ボタン状態の履歴管理            │
+│   ├─ イベントシステム                │
+│   └─ プラグイン可能な判定機能        │
 └─────────────────────────────────────┘
 ```
 
@@ -77,12 +74,22 @@ public:
   static bool isLongPress(Button& button, unsigned long threshold = 1000);
   static bool isReleased(Button& button);
   
+  // 同時押し判定
+  static bool isSimultaneousPress(Button& button1, Button& button2, unsigned long tolerance = 100);
+  static bool isAllButtonsPressed();
+  static bool isCombinationPress(const std::vector<Button*>& buttons);
+  
   // 状態管理
   static void updateButtonStates();
   static void resetButtonStates();
   
+  // 拡張性のための基盤
+  static ButtonState getButtonState(Button& button);
+  static void addButtonEventListener(Button& button, ButtonEventType type, std::function<void()> callback);
+  
 private:
   static std::map<Button*, ButtonState> buttonStates;
+  static std::vector<ButtonEvent> eventListeners;
   static void applyHardwareDebounce(ButtonState& state);
 };
 
@@ -93,6 +100,20 @@ struct ButtonState {
   unsigned long pressStartTime;
   unsigned long lastChangeTime;
   int pressCount;
+  std::vector<unsigned long> pressHistory; // 将来の拡張用
+};
+
+struct ButtonEvent {
+  Button* button;
+  ButtonEventType type;
+  std::function<void()> callback;
+};
+
+enum ButtonEventType {
+  SHORT_PRESS,
+  LONG_PRESS,
+  RELEASE,
+  SIMULTANEOUS_PRESS
 };
 ```
 
@@ -184,11 +205,11 @@ void handleDigitEditInput() {
 }
 ```
 
-### Phase 3: 拡張機能の実装
+### Phase 3: 同時押し機能の実装
 
-#### 3.1 同時押し機能の追加
+#### 3.1 基本的な同時押し機能
 ```cpp
-// ButtonManagerに追加
+// ButtonManagerに実装
 class ButtonManager {
 public:
   // 同時押し判定
@@ -206,38 +227,6 @@ public:
 };
 ```
 
-#### 3.2 シーケンス操作の追加
-```cpp
-// ButtonManagerに追加
-class ButtonManager {
-public:
-  // シーケンス判定
-  static bool isSequencePressed(const std::vector<Button*>& sequence, unsigned long timeout = 2000);
-  static bool isPatternMatched(const String& pattern);
-  
-  // 使用例
-  if (ButtonManager::isSequencePressed({&M5.BtnA, &M5.BtnB, &M5.BtnC})) {
-    // A→B→Cシーケンス処理
-  }
-};
-```
-
-#### 3.3 連続押し機能の追加
-```cpp
-// ButtonManagerに追加
-class ButtonManager {
-public:
-  // 連続押し判定
-  static bool isDoublePress(Button& button, unsigned long interval = 300);
-  static bool isTriplePress(Button& button, unsigned long interval = 300);
-  
-  // 使用例
-  if (ButtonManager::isDoublePress(M5.BtnC)) {
-    // Cダブルクリック処理
-  }
-};
-```
-
 ### Phase 4: 最適化とテスト
 
 #### 4.1 パフォーマンス最適化
@@ -248,30 +237,57 @@ public:
 #### 4.2 テストと検証
 - 各ボタン操作の動作確認
 - デバウンス処理の効果検証
-- 同時押し、シーケンス操作のテスト
+- 同時押し機能のテスト
 - 実機での動作確認
 
 ## 実装スケジュール
 
-### Week 1: Phase 1
+### Week 1: Phase 1-2
 - ButtonManagerクラスの基本実装
 - DebounceManagerクラスの基本実装
+- main.cppとinput.cppのリファクタリング
 - 基本的なテスト
 
-### Week 2: Phase 2
-- main.cppのリファクタリング
-- input.cppのリファクタリング
-- 既存機能の動作確認
-
-### Week 3: Phase 3
+### Week 2: Phase 3-4
 - 同時押し機能の実装
-- シーケンス操作の実装
-- 連続押し機能の実装
-
-### Week 4: Phase 4
 - 最適化とテスト
 - ドキュメント更新
 - 最終動作確認
+
+## 将来の拡張性
+
+### シーケンス操作への対応
+```cpp
+// 将来的な実装例（現在は実装しない）
+class ButtonManager {
+public:
+  // シーケンス判定（将来実装）
+  static bool isSequencePressed(const std::vector<Button*>& sequence, unsigned long timeout = 2000);
+  static bool isPatternMatched(const String& pattern);
+};
+```
+
+### 連続押し機能への対応
+```cpp
+// 将来的な実装例（現在は実装しない）
+class ButtonManager {
+public:
+  // 連続押し判定（将来実装）
+  static bool isDoublePress(Button& button, unsigned long interval = 300);
+  static bool isTriplePress(Button& button, unsigned long interval = 300);
+};
+```
+
+### プラグイン可能な判定機能
+```cpp
+// 将来的な拡張例（現在は実装しない）
+class ButtonManager {
+public:
+  // カスタム判定機能の追加
+  static void addCustomDetector(const String& name, std::function<bool()> detector);
+  static bool isCustomDetected(const String& name);
+};
+```
 
 ## 期待される効果
 
@@ -282,7 +298,7 @@ public:
 
 ### 2. 拡張性の向上
 - 新しいボタン操作パターンの簡単追加
-- 同時押し、シーケンス操作への対応
+- 同時押し機能への対応
 - 将来的な機能拡張への対応
 
 ### 3. デバッグ性の向上
