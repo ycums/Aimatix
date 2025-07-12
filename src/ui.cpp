@@ -135,6 +135,8 @@ void drawProgressBar(int x, int y, int width, int height, float progress) {
 
 void drawInvertedText(const char* text, int x, int y, int font) {
   sprite.setTextFont(font);
+  // 現在のDATUMを保存
+  uint8_t currentDatum = sprite.getTextDatum();
   sprite.setTextDatum(TL_DATUM);
   int lineHeight = sprite.fontHeight(font);
   // デバッグ用: 塗りつぶし範囲を明示
@@ -142,6 +144,7 @@ void drawInvertedText(const char* text, int x, int y, int font) {
   sprite.setTextColor(TFT_BLACK); // 黒文字
   sprite.drawString(text, x, y);
   sprite.setTextColor(AMBER_COLOR); // デフォルト色に戻す
+  sprite.setTextDatum(currentDatum); // 元のDATUMに戻す
 }
 
 // drawMainDisplay, drawNTPSync, drawInputMode, drawScheduleSelect, drawAlarmActive, drawSettingsMenu
@@ -423,27 +426,33 @@ void drawAlarmManagement() {
   drawTitleBar("ALARM MGMT");
   drawButtonHintsGrid("DELETE", "NEXT", "PREV");
   
-  // --- アラームリストの表示（グリッドセル(0,2)-(15,9)） ---
-  sprite.setTextFont(4);
+  // --- アラームリストの表示（グリッドセル(0,1)-(15,9)） ---
+  sprite.setTextFont(4); // Font4に戻す
   sprite.setTextColor(AMBER_COLOR, TFT_BLACK);
-  sprite.setTextDatum(MC_DATUM);
+  sprite.setTextDatum(ML_DATUM); // 左寄せに変更
   
   extern int scheduleSelectedIndex; // 外部変数の宣言
   
-  int yStart = GRID_Y(2);
-  int lineHeight = 30;
-  int maxItems = 8; // グリッドセル(0,2)-(15,9)に収まる最大アイテム数
+  int yStart = GRID_Y(1);
+  int lineHeight = 30; // Font4用に行間を調整
+  int maxItems = 9; // グリッドセル(0,1)-(15,9)に収まる最大アイテム数
+  int x = GRID_X(1); // X=1で左寄せ
   
   for (int i = 0; i < alarmTimes.size() && i < maxItems; i++) {
     int y = yStart + i * lineHeight;
     
     if (i == scheduleSelectedIndex) {
-      // 選択中の項目はネガポジ反転
-      drawInvertedText(getTimeString(alarmTimes[i]).c_str(), 
-                      SCREEN_WIDTH/2, y, 4);
+      // 選択中の項目は水平方向のすべてを反転
+      int fontHeight = sprite.fontHeight(4); // Font4の実際の高さを取得
+      // ML_DATUMの場合、yは文字の中心位置なので、背景は文字の上端から開始
+      int backgroundY = y - fontHeight/2; // 文字の中心から上端までの距離
+      sprite.fillRect(0, backgroundY, 320, fontHeight, AMBER_COLOR);
+      sprite.setTextColor(TFT_BLACK, AMBER_COLOR);
+      sprite.drawString(getTimeString(alarmTimes[i]), x, y);
+      sprite.setTextColor(AMBER_COLOR, TFT_BLACK);
     } else {
-      sprite.drawString(getTimeString(alarmTimes[i]), 
-                       SCREEN_WIDTH/2, y);
+      sprite.setTextFont(4); // 非選択項目も同じフォントサイズを使用
+      sprite.drawString(getTimeString(alarmTimes[i]), x, y);
     }
   }
   
@@ -451,6 +460,7 @@ void drawAlarmManagement() {
   if (alarmTimes.empty()) {
     sprite.setTextFont(2);
     sprite.setTextColor(AMBER_COLOR, TFT_BLACK);
+    sprite.setTextDatum(MC_DATUM); // 中央寄せに戻す
     sprite.drawString("NO ALARMS", SCREEN_WIDTH/2, SCREEN_HEIGHT/2);
   }
   

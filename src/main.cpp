@@ -61,6 +61,9 @@ void setup() {
   M5.Lcd.fillScreen(TFT_BLACK);
   M5.Lcd.setTextColor(AMBER_COLOR, TFT_BLACK);
   
+  // デバッグ用：アラームリストに初期値を5件追加
+  addDebugAlarms();
+  
   // Wi-Fi/NTP同期は一時的にスキップ
   // if (connectWiFi()) {
   //   timeClient.begin();
@@ -314,10 +317,16 @@ void handleButtons() {
         }
       }
       if (M5.BtnB.wasPressed()) {
-        scheduleSelectedIndex = (scheduleSelectedIndex + 1) % listSize;
+        // 循環動作を無効化：最後の項目では何もしない
+        if (scheduleSelectedIndex < listSize - 1) {
+          scheduleSelectedIndex++;
+        }
       }
       if (M5.BtnC.wasPressed()) {
-        scheduleSelectedIndex = (scheduleSelectedIndex - 1 + listSize) % listSize;
+        // 循環動作を無効化：最初の項目では何もしない
+        if (scheduleSelectedIndex > 0) {
+          scheduleSelectedIndex--;
+        }
       }
       break;
     }
