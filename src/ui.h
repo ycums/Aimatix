@@ -30,9 +30,9 @@
 #define CONTENT_WIDTH 320
 #define CONTENT_HEIGHT 200  // 240 - 20 - 20
 
-// グリッド定義（コンテンツ領域を8x5グリッドに分割）
-#define GRID_WIDTH 40   // 320/8
-#define GRID_HEIGHT 40  // 200/5
+// グリッド定義（全体を16x12グリッドに分割）
+#define GRID_WIDTH 20   // 320/16
+#define GRID_HEIGHT 20  // 240/12
 
 // グリッド座標からピクセル座標への変換ヘルパー
 #define GRID_X(col) (col * GRID_WIDTH)

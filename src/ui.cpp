@@ -75,18 +75,18 @@ void drawCommonUI(const char* modeName) {
 
 void drawGridLines() {
   // グリッド線を描画（デバッグ用）
-  sprite.setTextColor(DARK_GREY, TFT_BLACK);
+  sprite.setTextColor(DARKGREY, TFT_BLACK);
   
-  // 縦線（8本）
-  for (int i = 0; i <= 8; i++) {
+  // 縦線（17本）
+  for (int i = 0; i <= 16; ++i) {
     int x = i * GRID_WIDTH;
-    sprite.drawLine(x, TITLE_HEIGHT, x, SCREEN_HEIGHT - HINT_HEIGHT, DARK_GREY);
+    sprite.drawLine(x, 0, x, SCREEN_HEIGHT, DARKGREY);
   }
   
-  // 横線（5本）
-  for (int i = 0; i <= 5; i++) {
-    int y = TITLE_HEIGHT + i * GRID_HEIGHT;
-    sprite.drawLine(0, y, SCREEN_WIDTH, y, DARK_GREY);
+  // 横線（13本）
+  for (int i = 0; i <= 12; ++i) {
+    int y = i * GRID_HEIGHT;
+    sprite.drawLine(0, y, SCREEN_WIDTH, y, DARKGREY);
   }
 }
 
@@ -128,7 +128,7 @@ String getRemainTimeString(time_t now, time_t target) {
 void drawProgressBar(int x, int y, int width, int height, float progress) {
   sprite.drawRect(x, y, width, height, AMBER_COLOR);
   int progressWidth = (width - 2) * progress;
-  sprite.fillRect(x + 1, y + 1, width - 2, height - 2, DARK_GREY);
+  sprite.fillRect(x + 1, y + 1, width - 2, height - 2, DARKGREY);
   sprite.fillRect(x + 1, y + 1, progressWidth, height - 2, AMBER_COLOR);
 }
 
@@ -157,9 +157,12 @@ void drawMainDisplay() {
   drawTitleBar("MAIN");
   drawButtonHintsGrid("ABS", "REL+", "SCHED");
   
+  // デバッグ用: グリッド線を描画
+  drawGridLines();
+  
   time_t now = time(NULL);
   
-  // --- 上部中央: 日付（グリッドセル(0,0)-(7,0)） ---
+  // --- 上部中央: 日付（グリッドセル(0,0)-(15,0)） ---
   sprite.setTextDatum(TC_DATUM);
   sprite.setTextColor(AMBER_COLOR, TFT_BLACK);
   sprite.setTextFont(2);
@@ -167,16 +170,30 @@ void drawMainDisplay() {
   const char* wdays[] = {"Sun.", "Mon.", "Tue.", "Wed.", "Thu.", "Fri.", "Sat."};
   char dateStr[32];
   sprintf(dateStr, "%04d/%02d/%02d %s", tminfo->tm_year+1900, tminfo->tm_mon+1, tminfo->tm_mday, wdays[tminfo->tm_wday]);
-  sprite.drawString(dateStr, GRID_X(4), GRID_Y(0) + 10);
+  sprite.drawString(dateStr, 8 * GRID_WIDTH, 3 * GRID_HEIGHT + 10);
+  
+  // デバッグ用: 座標ラベルを表示
+  sprite.setTextColor(FLASH_ORANGE, TFT_BLACK);
+  sprite.setTextFont(1);
+  sprite.drawString("(0,0)", 0, 0);
+  sprite.drawString("(15,0)", 15 * GRID_WIDTH, 0);
+  sprite.drawString("(0,11)", 0, 11 * GRID_HEIGHT);
+  sprite.drawString("(15,11)", 15 * GRID_WIDTH, 11 * GRID_HEIGHT);
 
-  // --- 現在時刻（グリッドセル(3,1)-(4,1)） ---
+  // --- 現在時刻（グリッドセル(0,2)-(15,3)） ---
+  // デバッグ用: 境界線を描画
+  sprite.drawRect(0, 2 * GRID_HEIGHT, 16 * GRID_WIDTH, GRID_HEIGHT * 2, FLASH_ORANGE);
+  
   sprite.setTextDatum(MC_DATUM);
   sprite.setTextFont(4);
   char hmStr[6];
   sprintf(hmStr, "%02d:%02d", tminfo->tm_hour, tminfo->tm_min);
-  sprite.drawString(hmStr, GRID_X(4), GRID_Y(1) + 20);
+  sprite.drawString(hmStr, 8 * GRID_WIDTH, 2 * GRID_HEIGHT + 10);
 
-  // --- 中央: 残り時間（グリッドセル(2,2)-(5,2)） ---
+  // --- 中央: 残り時間（グリッドセル(0,4)-(15,6)） ---
+  // デバッグ用: 境界線を描画
+  sprite.drawRect(0, 4 * GRID_HEIGHT, 16 * GRID_WIDTH, GRID_HEIGHT * 3, FLASH_ORANGE);
+  
   time_t nextAlarm = 0;
   std::vector<time_t> futureAlarms;
   if (!alarmTimes.empty()) {
@@ -192,12 +209,15 @@ void drawMainDisplay() {
   sprite.setTextFont(7);
   sprite.setTextColor(AMBER_COLOR, TFT_BLACK);
   if (nextAlarm) {
-    sprite.drawString(getRemainTimeString(now, nextAlarm), GRID_X(4), GRID_Y(2) + 24);
+    sprite.drawString(getRemainTimeString(now, nextAlarm), 8 * GRID_WIDTH, 5 * GRID_HEIGHT + 10);
   } else {
-    sprite.drawString("-00:00:00", GRID_X(4), GRID_Y(2) + 24);
+    sprite.drawString("-00:00:00", 8 * GRID_WIDTH, 5 * GRID_HEIGHT + 10);
   }
 
-  // --- プログレスバー（グリッドセル(0,3)-(7,3)） ---
+  // --- プログレスバー（グリッドセル(0,7)-(15,8)） ---
+  // デバッグ用: 境界線を描画
+  sprite.drawRect(0, 7 * GRID_HEIGHT, 16 * GRID_WIDTH, GRID_HEIGHT * 2, FLASH_ORANGE);
+  
   extern time_t lastReleaseTime;
   float progress = 0.0f;
   if (nextAlarm && lastReleaseTime && nextAlarm > lastReleaseTime) {
@@ -207,17 +227,20 @@ void drawMainDisplay() {
     if (progress < 0) progress = 0;
     if (progress > 1) progress = 1;
   }
-  drawProgressBar(GRID_X(0), GRID_Y(3) + 15, GRID_WIDTH * 8, 10, progress);
+  drawProgressBar(0, 7 * GRID_HEIGHT + 10, 16 * GRID_WIDTH, 40, progress);
 
-  // --- アラームリスト（グリッドセル(0,4)-(7,4)） ---
+  // --- アラームリスト（グリッドセル(0,9)-(15,10)） ---
+  // デバッグ用: 境界線を描画
+  sprite.drawRect(0, 9 * GRID_HEIGHT, 16 * GRID_WIDTH, GRID_HEIGHT * 2, FLASH_ORANGE);
+  
   sprite.setTextDatum(MC_DATUM);
   sprite.setTextFont(2);
   sprite.setTextColor(AMBER_COLOR, TFT_BLACK);
   int count = 0;
   for (time_t t : futureAlarms) {
     if (count >= 5) break;
-    int x = GRID_X(1) + count * (GRID_WIDTH * 1.5);
-    sprite.drawString(getTimeString(t), x, GRID_Y(4) + 10);
+    int x = (count + 1) * (16 * GRID_WIDTH / 6);
+    sprite.drawString(getTimeString(t), x, 9 * GRID_HEIGHT + 10);
     count++;
   }
 
