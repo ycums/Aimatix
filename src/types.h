@@ -11,19 +11,21 @@ enum Mode {
   SCHEDULE_SELECT,
   ALARM_ACTIVE,
   SETTINGS_MENU,
-  INFO_DISPLAY
+  INFO_DISPLAY,
+  WARNING_COLOR_TEST
 };
 
 // 設定メニュー用の構造体
 struct SettingsMenu {
-  const char* items[4] = {
+  const char* items[5] = {
     "SOUND: ",
     "LCD BRIGHTNESS",
+    "WARNING COLOR TEST",
     "ALL CLEAR",
     "INFO"
   };
   int selectedItem = 0;
-  int itemCount = 4;
+  int itemCount = 5;
 };
 
 // Global variables (defined in main.cpp)

@@ -26,6 +26,7 @@ SettingsMenu settingsMenu;
 extern InputState inputState; // Declared in input.h
 extern Settings settings; // Declared in settings.h
 extern std::vector<time_t> alarmTimes; // Declared in alarm.h
+int scheduleSelectedIndex = 0;
 
 // Function declarations defined in main.cpp
 bool connectWiFi();
@@ -39,7 +40,7 @@ const char* ssid = "your-ssid"; // Placeholder
 const char* password = "your-password"; // Placeholder
 
 // スケジュール選択モード用の選択インデックス
-static int scheduleSelectedIndex = 0;
+// static int scheduleSelectedIndex = 0; // This line is removed as it's now extern
 
 time_t lastReleaseTime = 0;
 
@@ -109,7 +110,7 @@ void loop() {
         drawInputMode();
         break;
       case SCHEDULE_SELECT:
-        drawScheduleSelect(scheduleSelectedIndex);
+        drawScheduleSelection();
         break;
       case ALARM_ACTIVE:
         drawAlarmActive();
@@ -119,6 +120,9 @@ void loop() {
         break;
       case INFO_DISPLAY:
         drawInfoDisplay();
+        break;
+      case WARNING_COLOR_TEST:
+        drawWarningColorTest();
         break;
     }
     
@@ -133,6 +137,11 @@ void loop() {
       currentMode = ALARM_ACTIVE;
       playAlarm();
     }
+  }
+  
+  // 警告色テスト画面からの戻り処理
+  if (currentMode == WARNING_COLOR_TEST && M5.BtnC.wasPressed()) {
+    currentMode = SETTINGS_MENU;
   }
   
   delay(10);  // CPU負荷軽減のための短い遅延
@@ -177,21 +186,21 @@ void drawAlarmActive() {
 
   if (alarmStart == 0) alarmStart = millis();
   unsigned long elapsed = millis() - alarmStart;
-
+  
   // 0.5秒ごとにON/OFF切り替え（最大5秒間）
   if (elapsed < 5000) {
-    if (millis() - lastFlash >= 500) {
-      flash = !flash;
-      lastFlash = millis();
+  if (millis() - lastFlash >= 500) {
+    flash = !flash;
+    lastFlash = millis();
       vibAudioCycle = flash ? 1 : 0;
       // 画面点滅
-      if (flash) {
-        M5.Lcd.fillScreen(FLASH_ORANGE);
-        M5.Lcd.setTextColor(TFT_BLACK);
-      } else {
-        M5.Lcd.fillScreen(TFT_BLACK);
-        M5.Lcd.setTextColor(FLASH_ORANGE);
-      }
+    if (flash) {
+      M5.Lcd.fillScreen(FLASH_ORANGE);
+      M5.Lcd.setTextColor(TFT_BLACK);
+    } else {
+      M5.Lcd.fillScreen(TFT_BLACK);
+      M5.Lcd.setTextColor(FLASH_ORANGE);
+    }
       // 音ON/OFF
       if (settings.sound_enabled) {
         if (vibAudioCycle) {
@@ -249,7 +258,10 @@ void handleSettingsMenu() {
         if (settings.lcd_brightness < 50) settings.lcd_brightness = 50;
         M5.Lcd.setBrightness(settings.lcd_brightness);
         break;
-      case 3:  // All Clear
+      case 3:  // Warning Color Test
+        currentMode = WARNING_COLOR_TEST;
+        break;
+      case 4:  // All Clear
         // 確認ダイアログの表示
         M5.Lcd.fillScreen(TFT_BLACK);
         M5.Lcd.setTextColor(FLASH_ORANGE);
@@ -267,7 +279,7 @@ void handleSettingsMenu() {
           delay(10);
         }
         break;
-      case 4:  // Info
+      case 5:  // Info
         currentMode = INFO_DISPLAY;
         break;
     }
@@ -277,13 +289,22 @@ void handleSettingsMenu() {
 
 void handleButtons() {
   static unsigned long lastPress = 0;
+  static unsigned long lastModeChange = 0;
   const unsigned long LONG_PRESS_TIME = 1000;  // 1秒間の長押し
+  const unsigned long DEBOUNCE_TIME = 200;     // デバウンス時間200ms
   static bool cLongPressHandled = false;
+  
+  // デバウンス処理：前回のモード変更から一定時間経過していない場合は処理をスキップ
+  if (millis() - lastModeChange < DEBOUNCE_TIME) {
+    return;
+  }
+  
   switch (currentMode) {
     case MAIN_DISPLAY:
       if (M5.BtnA.wasPressed()) {
         currentMode = ABS_TIME_INPUT;
         resetInput();
+        lastModeChange = millis();
       }
       if (M5.BtnB.wasPressed()) {
         lastPress = millis();
@@ -291,9 +312,11 @@ void handleButtons() {
       if (M5.BtnB.pressedFor(LONG_PRESS_TIME)) {
         currentMode = REL_MINUS_TIME_INPUT;
         resetInput();
+        lastModeChange = millis();
       } else if (M5.BtnB.wasReleased() && millis() - lastPress < LONG_PRESS_TIME) {
         currentMode = REL_PLUS_TIME_INPUT;
         resetInput();
+        lastModeChange = millis();
       }
       if (M5.BtnC.wasPressed()) {
         lastPress = millis();
@@ -301,66 +324,30 @@ void handleButtons() {
       }
       if (M5.BtnC.pressedFor(LONG_PRESS_TIME)) {
         if (!cLongPressHandled) {
-          currentMode = SETTINGS_MENU;
+        currentMode = SETTINGS_MENU;
           cLongPressHandled = true;
+          lastModeChange = millis();
         }
       } else if (M5.BtnC.wasReleased() && millis() - lastPress < LONG_PRESS_TIME) {
         currentMode = SCHEDULE_SELECT;
+        lastModeChange = millis();
       }
       break;
 
     case ABS_TIME_INPUT:
     case REL_PLUS_TIME_INPUT:
     case REL_MINUS_TIME_INPUT:
-      if (M5.BtnA.wasPressed()) {
-        // 数字の変更（カーソル位置ごとに+1、桁送り）
-        if (inputState.currentDigit < 2) {
-          int *value = &inputState.hours;
-          int digit = inputState.currentDigit;
-          int v = *value;
-          if (digit == 0) {
-            v += 10;
-            if (v > 23) v = v % 10; // 24時以降は0x
-          } else {
-            v = (v / 10) * 10 + ((v % 10 + 1) % 10);
-            if (v > 23) v = v - 10;
-          }
-          *value = v;
-        } else {
-          int *value = &inputState.minutes;
-          int digit = inputState.currentDigit - 2;
-          int v = *value;
-          if (digit == 0) {
-            v += 10;
-            if (v > 59) v = v % 10;
-          } else {
-            v = (v / 10) * 10 + ((v % 10 + 1) % 10);
-            if (v > 59) v = v - 10;
-          }
-          *value = v;
-        }
-      }
-      if (M5.BtnB.wasPressed()) {
-        inputState.currentDigit = (inputState.currentDigit + 1) % 4;
-      }
-      if (M5.BtnC.wasPressed()) {
-        if (confirmInputAndAddAlarm()) {
-          currentMode = MAIN_DISPLAY;
-        } else {
-          // 入力エラー時は何らかの警告表示（今は何もしない）
-        }
-      }
-      if (M5.BtnC.pressedFor(LONG_PRESS_TIME)) {
-        currentMode = MAIN_DISPLAY;
-      }
+      handleDigitEditInput();
+      drawInputMode();
       break;
 
     case SETTINGS_MENU:
       handleSettingsMenu();
       if (M5.BtnC.pressedFor(LONG_PRESS_TIME)) {
         if (!cLongPressHandled) {
-          currentMode = MAIN_DISPLAY;
+        currentMode = MAIN_DISPLAY;
           cLongPressHandled = true;
+          lastModeChange = millis();
         }
       } else if (M5.BtnC.wasReleased()) {
         cLongPressHandled = false;
@@ -388,14 +375,17 @@ void handleButtons() {
       if (M5.BtnC.pressedFor(LONG_PRESS_TIME) || M5.BtnB.pressedFor(LONG_PRESS_TIME)) {
         if (scheduleSelectedIndex == alarmTimes.size()) {
           currentMode = SETTINGS_MENU;
+          lastModeChange = millis();
         } else {
           // アラーム選択時は何もしない（将来編集モード等に拡張可）
           currentMode = MAIN_DISPLAY;
+          lastModeChange = millis();
         }
       }
       // 戻る
       if (M5.BtnA.pressedFor(LONG_PRESS_TIME)) {
         currentMode = MAIN_DISPLAY;
+        lastModeChange = millis();
       }
       break;
     }
@@ -403,6 +393,7 @@ void handleButtons() {
       drawInfoDisplay();
       if (M5.BtnC.wasPressed()) {
         currentMode = SETTINGS_MENU;
+        lastModeChange = millis();
       }
       break;
   }
