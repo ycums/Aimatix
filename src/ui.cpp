@@ -39,12 +39,14 @@ void drawTitleBar(const char* modeName) {
   bool isCharging = M5.Power.isCharging();
   
   char batteryStr[10];
-  sprintf(batteryStr, "%s %d%%", isCharging ? "⚡" : "🔋", batteryLevel);
+  sprintf(batteryStr, "%s %d%%", isCharging ? "CHG" : "BAT", batteryLevel);
   
-  // 残量に応じて色を変更
+  // 残量と充電状態に応じて色を変更
   int batteryColor = AMBER_COLOR;
-  if (batteryLevel <= 20 && !isCharging) {
-    batteryColor = FLASH_ORANGE;
+  if (isCharging) {
+    batteryColor = TFT_GREEN; // 充電中は緑色
+  } else if (batteryLevel <= 20) {
+    batteryColor = FLASH_ORANGE; // 低バッテリーは警告色
   }
   
   sprite.setTextColor(batteryColor, TFT_BLACK);
