@@ -3,13 +3,10 @@
 #include <cstring>
 
 // シンプルな警告メッセージ機能のテスト実装
-static unsigned long mockMillis = 0;
+extern unsigned long mockMillis;
+extern unsigned long millis();
 static char currentWarningMessage[64] = "";
 static bool warningActive = false;
-
-unsigned long millis() {
-  return mockMillis;
-}
 
 void showWarningMessage(const char* message, unsigned long duration = 3000) {
   strncpy(currentWarningMessage, message, sizeof(currentWarningMessage) - 1);

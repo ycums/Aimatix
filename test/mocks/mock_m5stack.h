@@ -3,6 +3,8 @@
 
 #include <cstdint>
 #include <ctime>
+#include <cstdio>
+#include <cstring>
 
 // Windows環境でのヘッダー競合を回避
 #ifdef _WIN32
@@ -24,6 +26,14 @@ inline struct tm* localtime_r(const time_t* timep, struct tm* result) {
     return nullptr;
 }
 #endif
+
+// Arduino関数のモック（先に宣言）
+extern unsigned long mockMillis;
+extern time_t mockTime;
+
+unsigned long millis();
+time_t time(time_t* t);
+void delay(unsigned long ms);
 
 // テスト用のM5Stackモッククラス
 class MockM5Stack {
@@ -79,6 +89,7 @@ public:
   class Speaker {
   public:
     void tone(uint16_t frequency, uint32_t duration) {}
+    void stop() {}
     void mute() {}
   };
   
@@ -87,6 +98,7 @@ public:
   public:
     int getBatteryLevel() const { return 75; } // 75%を返す
     bool isCharging() const { return false; }
+    void begin() {}
   };
   
   // メソッド
@@ -109,6 +121,15 @@ extern MockM5Stack M5;
 #define TFT_RED 0xF800
 #define TFT_GREEN 0x07E0
 #define TFT_BLUE 0x001F
+#define TFT_YELLOW 0xFFE0
+#define TFT_CYAN 0x07FF
+#define TFT_MAGENTA 0xF81F
+#define TFT_ORANGE 0xFD20
+
+// プロジェクト固有の色定義
+#define AMBER_COLOR 0xFB20
+#define FLASH_ORANGE 0xF000
+#define DARKGREY 0x4208
 
 // フォント定義
 #define MC_DATUM 0
@@ -138,5 +159,70 @@ public:
   uint8_t getTextDatum() const { return MC_DATUM; }
   int fontHeight(uint8_t font) const { return 16; }
 };
+
+// シリアル通信のモック
+class MockSerial {
+public:
+  void begin(unsigned long baud) {}
+  void print(const char* str) { printf("%s", str); }
+  void print(int value) { printf("%d", value); }
+  void print(unsigned long value) { printf("%lu", value); }
+  void print(long value) { printf("%ld", value); }
+  void print(long long value) { printf("%lld", value); }
+  void print(size_t value) { printf("%zu", value); }
+  void println() { printf("\n"); }
+  void println(const char* str) { printf("%s\n", str); }
+  void println(int value) { printf("%d\n", value); }
+  void println(unsigned long value) { printf("%lu\n", value); }
+  void println(long value) { printf("%ld\n", value); }
+  void println(long long value) { printf("%lld\n", value); }
+  void println(size_t value) { printf("%zu\n", value); }
+};
+
+extern MockSerial Serial;
+
+// EEPROMのモック
+class MockEEPROM {
+public:
+  void begin(size_t size) {}
+  uint8_t read(int address) { return 0; }
+  void write(int address, uint8_t value) {}
+  void commit() {}
+};
+
+extern MockEEPROM EEPROM;
+
+// WiFi status constants（先に定義）
+#define WL_CONNECTED 3
+#define WL_DISCONNECTED 6
+
+// WiFiのモック
+class MockWiFi {
+public:
+  static void begin(const char* ssid, const char* password) {}
+  static int status() { return WL_CONNECTED; }
+};
+
+// NTPClientのモック
+class MockNTPClient {
+public:
+  MockNTPClient(void* udp, const char* poolServerName, int timeOffset, int updateInterval) {}
+  void begin() {}
+  void update() {}
+  time_t getEpochTime() { return mockTime; }
+};
+
+// その他の必要な定数
+#define EEPROM_SIZE 512
+#define SCREEN_WIDTH 320
+#define SCREEN_HEIGHT 240
+#define TITLE_HEIGHT 20
+#define HINT_HEIGHT 20
+#define GRID_WIDTH 20
+#define GRID_HEIGHT 20
+
+// グリッド座標変換マクロ
+#define GRID_X(x) ((x) * GRID_WIDTH)
+#define GRID_Y(y) ((y) * GRID_HEIGHT)
 
 #endif // MOCK_M5STACK_H 

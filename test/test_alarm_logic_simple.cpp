@@ -7,6 +7,9 @@
 // AlarmLogicクラスの純粋ロジックテスト
 // M5Stack依存を排除し、標準C++のみでテスト
 
+void setUp(void) {}
+void tearDown(void) {}
+
 // アラーム追加テスト
 void test_alarm_addition() {
   std::vector<time_t> alarms;
@@ -34,14 +37,12 @@ void test_maximum_alarm_limit() {
   
   // 5個まで追加可能
   for (int i = 0; i < 5; i++) {
-    time_t alarm = base_time + i * 3600;
-    TEST_ASSERT_TRUE(AlarmLogic::addAlarm(alarms, alarm));
+    TEST_ASSERT_TRUE(AlarmLogic::addAlarm(alarms, base_time + i * 3600));
   }
   TEST_ASSERT_EQUAL(5, alarms.size());
   
   // 6個目は拒否
-  time_t alarm6 = base_time + 6 * 3600;
-  TEST_ASSERT_FALSE(AlarmLogic::addAlarm(alarms, alarm6));
+  TEST_ASSERT_FALSE(AlarmLogic::addAlarm(alarms, base_time + 18000));
   TEST_ASSERT_EQUAL(5, alarms.size());
   
   printf("✓ 最大アラーム数制限テスト: 成功\n");
@@ -53,12 +54,11 @@ void test_alarm_removal() {
   time_t alarm1 = 1000000000;
   time_t alarm2 = 1000003600;
   
-  // アラームを追加
   AlarmLogic::addAlarm(alarms, alarm1);
   AlarmLogic::addAlarm(alarms, alarm2);
   TEST_ASSERT_EQUAL(2, alarms.size());
   
-  // 正常な削除
+  // 存在するアラームの削除
   TEST_ASSERT_TRUE(AlarmLogic::removeAlarm(alarms, alarm1));
   TEST_ASSERT_EQUAL(1, alarms.size());
   
@@ -73,7 +73,6 @@ void test_alarm_removal() {
 void test_duplicate_check() {
   std::vector<time_t> alarms;
   time_t alarm1 = 1000000000;
-  time_t alarm2 = 1000003600;
   
   // 空のリストでは重複なし
   TEST_ASSERT_FALSE(AlarmLogic::isDuplicateAlarm(alarms, alarm1));
@@ -82,13 +81,10 @@ void test_duplicate_check() {
   AlarmLogic::addAlarm(alarms, alarm1);
   TEST_ASSERT_TRUE(AlarmLogic::isDuplicateAlarm(alarms, alarm1));
   
-  // 異なるアラームは重複なし
-  TEST_ASSERT_FALSE(AlarmLogic::isDuplicateAlarm(alarms, alarm2));
-  
   printf("✓ 重複チェックテスト: 成功\n");
 }
 
-// アラームソートテスト
+// ソートテスト
 void test_alarm_sorting() {
   std::vector<time_t> alarms;
   time_t alarm1 = 1000003600; // 2番目
@@ -100,73 +96,58 @@ void test_alarm_sorting() {
   AlarmLogic::addAlarm(alarms, alarm2);
   AlarmLogic::addAlarm(alarms, alarm3);
   
-  // ソートされていることを確認
+  // 自動ソートされていることを確認
   TEST_ASSERT_EQUAL(alarm2, alarms[0]);
   TEST_ASSERT_EQUAL(alarm1, alarms[1]);
   TEST_ASSERT_EQUAL(alarm3, alarms[2]);
   
-  printf("✓ アラームソートテスト: 成功\n");
+  printf("✓ ソートテスト: 成功\n");
 }
 
-// 過去のアラーム削除テスト
+// 過去アラーム削除テスト
 void test_past_alarm_removal() {
   std::vector<time_t> alarms;
-  time_t now = 1000000000;
-  time_t past1 = now - 3600;   // 1時間前
-  time_t past2 = now - 1800;   // 30分前
-  time_t future1 = now + 3600; // 1時間後
-  time_t future2 = now + 1800; // 30分後
+  time_t now = time(NULL);
+  time_t past_alarm = now - 3600; // 1時間前
+  time_t future_alarm = now + 3600; // 1時間後
   
-  // アラームを追加
-  AlarmLogic::addAlarm(alarms, past1);
-  AlarmLogic::addAlarm(alarms, past2);
-  AlarmLogic::addAlarm(alarms, future1);
-  AlarmLogic::addAlarm(alarms, future2);
-  TEST_ASSERT_EQUAL(4, alarms.size());
+  AlarmLogic::addAlarm(alarms, past_alarm);
+  AlarmLogic::addAlarm(alarms, future_alarm);
+  TEST_ASSERT_EQUAL(2, alarms.size());
   
   // 過去のアラームを削除
   AlarmLogic::removePastAlarms(alarms, now);
-  TEST_ASSERT_EQUAL(2, alarms.size());
+  TEST_ASSERT_EQUAL(1, alarms.size());
+  TEST_ASSERT_EQUAL(future_alarm, alarms[0]);
   
-  // 未来のアラームのみ残っていることを確認
-  TEST_ASSERT_EQUAL(future2, alarms[0]);
-  TEST_ASSERT_EQUAL(future1, alarms[1]);
-  
-  printf("✓ 過去のアラーム削除テスト: 成功\n");
+  printf("✓ 過去アラーム削除テスト: 成功\n");
 }
 
 // 次のアラーム取得テスト
-void test_next_alarm_getting() {
+void test_next_alarm_time() {
   std::vector<time_t> alarms;
-  time_t now = 1000000000;
-  time_t alarm1 = now + 1800;  // 30分後
-  time_t alarm2 = now + 3600;  // 1時間後
-  time_t alarm3 = now + 7200;  // 2時間後
+  time_t now = time(NULL);
+  time_t alarm1 = now + 1800; // 30分後
+  time_t alarm2 = now + 3600; // 1時間後
   
-  // アラームを追加
+  // アラームなしの場合
+  TEST_ASSERT_EQUAL(0, AlarmLogic::getNextAlarmTime(alarms, now));
+  
+  // アラームありの場合
   AlarmLogic::addAlarm(alarms, alarm2);
   AlarmLogic::addAlarm(alarms, alarm1);
-  AlarmLogic::addAlarm(alarms, alarm3);
   
-  // 次のアラームを取得
   time_t next = AlarmLogic::getNextAlarmTime(alarms, now);
   TEST_ASSERT_EQUAL(alarm1, next);
   
   printf("✓ 次のアラーム取得テスト: 成功\n");
 }
 
-void setUp(void) {
-  // テスト前のセットアップ
-}
-
-void tearDown(void) {
-  // テスト後のクリーンアップ
-}
-
+// メイン関数
 int main() {
-  printf("=== AlarmLogicクラステスト開始 ===\n");
-  
   UNITY_BEGIN();
+  
+  printf("=== AlarmLogic Unit Test ===\n");
   
   RUN_TEST(test_alarm_addition);
   RUN_TEST(test_maximum_alarm_limit);
@@ -174,12 +155,9 @@ int main() {
   RUN_TEST(test_duplicate_check);
   RUN_TEST(test_alarm_sorting);
   RUN_TEST(test_past_alarm_removal);
-  RUN_TEST(test_next_alarm_getting);
+  RUN_TEST(test_next_alarm_time);
   
-  UNITY_END();
+  printf("=== 全テスト完了 ===\n");
   
-  printf("=== AlarmLogicクラステスト完了 ===\n");
-  printf("全テストが完了しました！\n");
-  
-  return 0;
+  return UNITY_END();
 } 

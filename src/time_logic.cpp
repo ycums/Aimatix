@@ -4,6 +4,16 @@
 #include <sstream>
 #include <iomanip>
 
+// Windows環境でのlocaltime_r代替実装
+#ifdef _WIN32
+inline struct tm* localtime_r(const time_t* timep, struct tm* result) {
+    if (localtime_s(result, timep) == 0) {
+        return result;
+    }
+    return nullptr;
+}
+#endif
+
 // TimeLogic 実装
 bool TimeLogic::isValidTime(int hour, int minute) {
     return hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59;

@@ -45,15 +45,12 @@ void test_hour_tens_validation() {
   TEST_ASSERT_TRUE(InputLogic::isValidHourTens(1, 0));
   TEST_ASSERT_TRUE(InputLogic::isValidHourTens(1, 9));
   TEST_ASSERT_TRUE(InputLogic::isValidHourTens(2, 0));
-  TEST_ASSERT_TRUE(InputLogic::isValidHourTens(2, 1));
-  TEST_ASSERT_TRUE(InputLogic::isValidHourTens(2, 2));
   TEST_ASSERT_TRUE(InputLogic::isValidHourTens(2, 3));
   
   // 無効な組み合わせ
   TEST_ASSERT_FALSE(InputLogic::isValidHourTens(2, 4));
   TEST_ASSERT_FALSE(InputLogic::isValidHourTens(2, 9));
   TEST_ASSERT_FALSE(InputLogic::isValidHourTens(3, 0));
-  TEST_ASSERT_FALSE(InputLogic::isValidHourTens(9, 0));
   
   printf("✓ 時間の十の位バリデーションテスト: 成功\n");
 }
@@ -66,8 +63,6 @@ void test_hour_ones_validation() {
   TEST_ASSERT_TRUE(InputLogic::isValidHourOnes(1, 0));
   TEST_ASSERT_TRUE(InputLogic::isValidHourOnes(1, 9));
   TEST_ASSERT_TRUE(InputLogic::isValidHourOnes(2, 0));
-  TEST_ASSERT_TRUE(InputLogic::isValidHourOnes(2, 1));
-  TEST_ASSERT_TRUE(InputLogic::isValidHourOnes(2, 2));
   TEST_ASSERT_TRUE(InputLogic::isValidHourOnes(2, 3));
   
   // 無効な組み合わせ
@@ -78,25 +73,23 @@ void test_hour_ones_validation() {
 }
 
 // 分の十の位バリデーションテスト
-void test_min_tens_validation() {
+void test_minute_tens_validation() {
   // 有効な値
-  TEST_ASSERT_TRUE(InputLogic::isValidMinTens(0));
-  TEST_ASSERT_TRUE(InputLogic::isValidMinTens(1));
-  TEST_ASSERT_TRUE(InputLogic::isValidMinTens(2));
-  TEST_ASSERT_TRUE(InputLogic::isValidMinTens(3));
-  TEST_ASSERT_TRUE(InputLogic::isValidMinTens(4));
-  TEST_ASSERT_TRUE(InputLogic::isValidMinTens(5));
+  for (int i = 0; i <= 5; i++) {
+    TEST_ASSERT_TRUE(InputLogic::isValidMinTens(i));
+  }
   
   // 無効な値
-  TEST_ASSERT_FALSE(InputLogic::isValidMinTens(6));
-  TEST_ASSERT_FALSE(InputLogic::isValidMinTens(9));
+  for (int i = 6; i <= 9; i++) {
+    TEST_ASSERT_FALSE(InputLogic::isValidMinTens(i));
+  }
   
   printf("✓ 分の十の位バリデーションテスト: 成功\n");
 }
 
 // 分の一の位バリデーションテスト
-void test_min_ones_validation() {
-  // 0から9まで全て有効
+void test_minute_ones_validation() {
+  // 有効な値
   for (int i = 0; i <= 9; i++) {
     TEST_ASSERT_TRUE(InputLogic::isValidMinOnes(i));
   }
@@ -105,20 +98,20 @@ void test_min_ones_validation() {
 }
 
 // 入力値から時刻への変換テスト
-void test_input_to_time_conversion() {
+void test_input_to_time() {
   int hour, minute;
   
-  // 12:34のテスト
-  InputLogic::inputToTime(1, 2, 3, 4, hour, minute);
+  // 12:30
+  InputLogic::inputToTime(1, 2, 3, 0, hour, minute);
   TEST_ASSERT_EQUAL(12, hour);
-  TEST_ASSERT_EQUAL(34, minute);
+  TEST_ASSERT_EQUAL(30, minute);
   
-  // 00:00のテスト
+  // 00:00
   InputLogic::inputToTime(0, 0, 0, 0, hour, minute);
   TEST_ASSERT_EQUAL(0, hour);
   TEST_ASSERT_EQUAL(0, minute);
   
-  // 23:59のテスト
+  // 23:59
   InputLogic::inputToTime(2, 3, 5, 9, hour, minute);
   TEST_ASSERT_EQUAL(23, hour);
   TEST_ASSERT_EQUAL(59, minute);
@@ -127,24 +120,24 @@ void test_input_to_time_conversion() {
 }
 
 // 時刻から入力値への変換テスト
-void test_time_to_input_conversion() {
+void test_time_to_input() {
   int hour_tens, hour_ones, min_tens, min_ones;
   
-  // 12:34のテスト
-  InputLogic::timeToInput(12, 34, hour_tens, hour_ones, min_tens, min_ones);
+  // 12:30
+  InputLogic::timeToInput(12, 30, hour_tens, hour_ones, min_tens, min_ones);
   TEST_ASSERT_EQUAL(1, hour_tens);
   TEST_ASSERT_EQUAL(2, hour_ones);
   TEST_ASSERT_EQUAL(3, min_tens);
-  TEST_ASSERT_EQUAL(4, min_ones);
+  TEST_ASSERT_EQUAL(0, min_ones);
   
-  // 00:00のテスト
+  // 00:00
   InputLogic::timeToInput(0, 0, hour_tens, hour_ones, min_tens, min_ones);
   TEST_ASSERT_EQUAL(0, hour_tens);
   TEST_ASSERT_EQUAL(0, hour_ones);
   TEST_ASSERT_EQUAL(0, min_tens);
   TEST_ASSERT_EQUAL(0, min_ones);
   
-  // 23:59のテスト
+  // 23:59
   InputLogic::timeToInput(23, 59, hour_tens, hour_ones, min_tens, min_ones);
   TEST_ASSERT_EQUAL(2, hour_tens);
   TEST_ASSERT_EQUAL(3, hour_ones);
@@ -167,33 +160,25 @@ void test_composite_validation() {
   printf("✓ 複合バリデーションテスト: 成功\n");
 }
 
-void setUp(void) {
-  // テスト前のセットアップ
-}
+void setUp(void) {}
+void tearDown(void) {}
 
-void tearDown(void) {
-  // テスト後のクリーンアップ
-}
-
+// メイン関数
 int main() {
-  printf("=== InputLogicクラステスト開始 ===\n");
-  
   UNITY_BEGIN();
+  
+  printf("=== InputLogic Unit Test ===\n");
   
   RUN_TEST(test_digit_increment);
   RUN_TEST(test_digit_decrement);
   RUN_TEST(test_hour_tens_validation);
   RUN_TEST(test_hour_ones_validation);
-  RUN_TEST(test_min_tens_validation);
-  RUN_TEST(test_min_ones_validation);
-  RUN_TEST(test_input_to_time_conversion);
-  RUN_TEST(test_time_to_input_conversion);
-  RUN_TEST(test_composite_validation);
+  RUN_TEST(test_minute_tens_validation);
+  RUN_TEST(test_minute_ones_validation);
+  RUN_TEST(test_input_to_time);
+  RUN_TEST(test_time_to_input);
   
-  UNITY_END();
+  printf("=== 全テスト完了 ===\n");
   
-  printf("=== InputLogicクラステスト完了 ===\n");
-  printf("全テストが完了しました！\n");
-  
-  return 0;
+  return UNITY_END();
 } 

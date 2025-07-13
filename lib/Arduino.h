@@ -7,6 +7,7 @@
 #include <cstring>
 #include <iostream>
 #include <string>
+#include <vector>
 
 // Arduino types
 typedef uint8_t byte;
@@ -81,10 +82,15 @@ public:
     void print(const char* str) {}
     void print(int val) {}
     void print(unsigned long val) {}
+    void print(long val) {}
+    void print(long long val) {}
+    void print(size_t val) {}
     void println(const char* str) {}
     void println(int val) {}
     void println(unsigned long val) {}
     void println(long val) {}
+    void println(long long val) {}
+    void println(size_t val) {}
     void println() {}
 };
 
@@ -134,6 +140,54 @@ public:
 private:
     std::string str_;
 };
+
+// Mock WiFi class
+class WiFiClass {
+public:
+    static void begin(const char* ssid, const char* password) {}
+    static int status() { return WL_CONNECTED; }
+    static IPAddress localIP() { return IPAddress(192, 168, 1, 100); }
+};
+
+extern WiFiClass WiFi;
+
+// Mock EEPROM class
+class EEPROMClass {
+public:
+    void begin(size_t size) {}
+    uint8_t read(int address) { return 0; }
+    void write(int address, uint8_t value) {}
+    void commit() {}
+    size_t length() { return 512; }
+};
+
+extern EEPROMClass EEPROM;
+
+// Mock Preferences class
+class Preferences {
+public:
+    bool begin(const char* name, bool readOnly = false) { return true; }
+    void end() {}
+    bool putString(const char* key, const char* value) { return true; }
+    bool putInt(const char* key, int32_t value) { return true; }
+    bool putBool(const char* key, bool value) { return true; }
+    bool putUChar(const char* key, uint8_t value) { return true; }
+    String getString(const char* key, const char* defaultValue = "") { return String(defaultValue); }
+    int32_t getInt(const char* key, int32_t defaultValue = 0) { return defaultValue; }
+    bool getBool(const char* key, bool defaultValue = false) { return defaultValue; }
+    uint8_t getUChar(const char* key, uint8_t defaultValue = 0) { return defaultValue; }
+    bool remove(const char* key) { return true; }
+    bool clear() { return true; }
+};
+
+// WiFi status constants
+#define WL_CONNECTED 3
+#define WL_DISCONNECTED 6
+#define WL_NO_SSID_AVAIL 7
+#define WL_SCAN_COMPLETED 8
+#define WL_CONNECT_FAILED 9
+#define WL_WRONG_PASSWORD 10
+#define WL_IDLE_STATUS 11
 
 #else
 // Include real Arduino library
