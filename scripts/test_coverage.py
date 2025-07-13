@@ -102,12 +102,6 @@ def run_test_with_coverage(test_name):
     print(f"テスト実行中: {run_cmd}")
     result = subprocess.run(run_cmd, shell=True, capture_output=True, text=True, encoding='utf-8', errors='replace')
     
-    # 実行ファイルを削除
-    try:
-        os.remove(output_name)
-    except FileNotFoundError:
-        pass
-    
     return result.returncode == 0
 
 def parse_gcov_file(gcov_file):
@@ -118,8 +112,8 @@ def parse_gcov_file(gcov_file):
         with open(gcov_file, 'r', encoding='utf-8') as f:
             content = f.read()
         
-        # ファイル名を抽出
-        file_match = re.search(r'File\s+(.+)', content)
+        # ファイル名を抽出（Source: ... に対応）
+        file_match = re.search(r'Source:(.+)', content)
         if not file_match:
             return None
         
@@ -273,12 +267,29 @@ def main():
         print("テスト実行に失敗しました")
         return
     
+    # gcovコマンドで.gcovファイルを生成
+    print("gcovファイル生成中...")
+    # 個別のソースファイルに対してgcovを実行
+    source_files = ['time_logic', 'mock_m5stack']
+    for source_file in source_files:
+        subprocess.run(['gcov', f'test_{test_name}_coverage-{source_file}'], shell=True, capture_output=True, text=True)
+    
     # gcovファイルを解析
     coverage_results = []
     for gcov_file in Path('.').glob('*.gcov'):
+        if str(gcov_file) == 'time_logic.cpp.gcov':
+            print('--- time_logic.cpp.gcov の内容 ---')
+            with open(gcov_file, 'r', encoding='utf-8') as f:
+                for i, line in enumerate(f):
+                    print(line.rstrip())
+                    if i > 40:
+                        break
+            print('--- ここまで ---')
+        print(f"gcovファイル発見: {gcov_file}")
         result = parse_gcov_file(gcov_file)
         if result:
             coverage_results.append(result)
+            print(f"カバレッジデータ解析成功: {result.filename}")
     
     # レポート生成
     success = generate_coverage_report(coverage_results)
@@ -286,7 +297,17 @@ def main():
     # 結果保存
     save_coverage_results(coverage_results)
     
-    # クリーンアップ
+    # クリーンアップ（実行ファイルとgcov関連ファイルを削除）
+    try:
+        os.remove(f"test_{test_name}_coverage.exe")
+    except FileNotFoundError:
+        pass
+    
+    # デバッグ用：gcovファイルの存在確認
+    print("クリーンアップ前のgcovファイル:")
+    for gcov_file in Path('.').glob('*.gcov'):
+        print(f"  {gcov_file}")
+    
     cleanup_gcov_files()
     
     if success:

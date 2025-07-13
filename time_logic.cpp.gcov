@@ -1,0 +1,182 @@
+        -:    0:Source:src/time_logic.cpp
+        -:    0:Graph:test_time_logic_minimal_coverage-time_logic.gcno
+        -:    0:Data:test_time_logic_minimal_coverage-time_logic.gcda
+        -:    0:Runs:1
+        -:    1:#include "time_logic.h"
+        -:    2:#include <algorithm>
+        -:    3:#include <cstring>
+        -:    4:#include <sstream>
+        -:    5:#include <iomanip>
+        -:    6:
+        -:    7:// Windows環境でのlocaltime_r代替実装
+        -:    8:#ifdef _WIN32
+    #####:    9:inline struct tm* localtime_r(const time_t* timep, struct tm* result) {
+    #####:   10:    if (localtime_s(result, timep) == 0) {
+    #####:   11:        return result;
+        -:   12:    }
+    #####:   13:    return nullptr;
+        -:   14:}
+        -:   15:#endif
+        -:   16:
+        -:   17:// TimeLogic 実装
+        1:   18:bool TimeLogic::isValidTime(int hour, int minute) {
+       1*:   19:    return hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59;
+        -:   20:}
+        -:   21:
+    #####:   22:time_t TimeLogic::calculateRelativeTime(int base_hour, int base_min, int add_hour, int add_min, bool is_plus) {
+    #####:   23:    time_t now = time(NULL);
+        -:   24:    struct tm tm_info;
+    #####:   25:    localtime_r(&now, &tm_info);
+        -:   26:    
+        -:   27:    // 今日の日付で、指定された時刻を設定
+    #####:   28:    tm_info.tm_hour = base_hour;
+    #####:   29:    tm_info.tm_min = base_min;
+    #####:   30:    tm_info.tm_sec = 0;
+        -:   31:    
+    #####:   32:    time_t base_time = mktime(&tm_info);
+    #####:   33:    int total_minutes = add_hour * 60 + add_min;
+        -:   34:    
+    #####:   35:    if (!is_plus) total_minutes = -total_minutes;
+        -:   36:    
+        -:   37:    // 分単位で加算
+    #####:   38:    time_t result = base_time + total_minutes * 60;
+        -:   39:    
+        -:   40:    // 結果が過去の場合は翌日に調整
+    #####:   41:    if (result <= now) {
+    #####:   42:        result += 24 * 60 * 60; // 24時間追加
+        -:   43:    }
+        -:   44:    
+    #####:   45:    return result;
+        -:   46:}
+        -:   47:
+    #####:   48:time_t TimeLogic::calculateAbsoluteTime(int hour, int minute) {
+    #####:   49:    time_t now = time(NULL);
+        -:   50:    struct tm tm_info;
+    #####:   51:    localtime_r(&now, &tm_info);
+        -:   52:    
+    #####:   53:    tm_info.tm_hour = hour;
+    #####:   54:    tm_info.tm_min = minute;
+    #####:   55:    tm_info.tm_sec = 0;
+        -:   56:    
+    #####:   57:    return mktime(&tm_info);
+        -:   58:}
+        -:   59:
+    #####:   60:time_t TimeLogic::calculateAlarmTime(int input_hour, int input_min, int mode, time_t current_time) {
+    #####:   61:    if (mode == 1) { // REL_PLUS_TIME_INPUT
+        -:   62:        // 相対時刻入力
+        -:   63:        struct tm tm_info;
+    #####:   64:        localtime_r(&current_time, &tm_info);
+    #####:   65:        int total = input_hour * 60 + input_min;
+        -:   66:        
+    #####:   67:        time_t base = current_time;
+    #####:   68:        base += total * 60;
+        -:   69:        struct tm t;
+    #####:   70:        localtime_r(&base, &t);
+    #####:   71:        t.tm_sec = 0;
+    #####:   72:        return mktime(&t);
+        -:   73:    } else {
+        -:   74:        // 絶対時刻入力
+    #####:   75:        return calculateAbsoluteTime(input_hour, input_min);
+        -:   76:    }
+        -:   77:}
+        -:   78:
+    #####:   79:void TimeLogic::formatTime(time_t time, int& hour, int& minute) {
+        -:   80:    struct tm tm_info;
+    #####:   81:    localtime_r(&time, &tm_info);
+    #####:   82:    hour = tm_info.tm_hour;
+    #####:   83:    minute = tm_info.tm_min;
+    #####:   84:}
+        -:   85:
+    #####:   86:void TimeLogic::formatTimeString(time_t time, char* buffer, size_t buffer_size) {
+        -:   87:    struct tm tm_info;
+    #####:   88:    localtime_r(&time, &tm_info);
+    #####:   89:    snprintf(buffer, buffer_size, "%02d:%02d", tm_info.tm_hour, tm_info.tm_min);
+    #####:   90:}
+        -:   91:
+        -:   92:// AlarmLogic 実装
+    #####:   93:bool AlarmLogic::addAlarm(std::vector<time_t>& alarms, time_t alarm_time) {
+    #####:   94:    if (!canAddAlarm(alarms)) return false;
+    #####:   95:    if (isDuplicateAlarm(alarms, alarm_time)) return false;
+        -:   96:    
+    #####:   97:    alarms.push_back(alarm_time);
+    #####:   98:    sortAlarms(alarms);
+    #####:   99:    return true;
+        -:  100:}
+        -:  101:
+    #####:  102:bool AlarmLogic::removeAlarm(std::vector<time_t>& alarms, time_t alarm_time) {
+    #####:  103:    auto it = std::find(alarms.begin(), alarms.end(), alarm_time);
+    #####:  104:    if (it != alarms.end()) {
+    #####:  105:        alarms.erase(it);
+    #####:  106:        return true;
+        -:  107:    }
+    #####:  108:    return false;
+        -:  109:}
+        -:  110:
+    #####:  111:bool AlarmLogic::isDuplicateAlarm(const std::vector<time_t>& alarms, time_t alarm_time) {
+    #####:  112:    return std::find(alarms.begin(), alarms.end(), alarm_time) != alarms.end();
+        -:  113:}
+        -:  114:
+    #####:  115:bool AlarmLogic::canAddAlarm(const std::vector<time_t>& alarms, int max_count) {
+    #####:  116:    return alarms.size() < max_count;
+        -:  117:}
+        -:  118:
+    #####:  119:void AlarmLogic::sortAlarms(std::vector<time_t>& alarms) {
+    #####:  120:    if (alarms.empty()) return;
+    #####:  121:    std::sort(alarms.begin(), alarms.end());
+        -:  122:}
+        -:  123:
+    #####:  124:void AlarmLogic::removePastAlarms(std::vector<time_t>& alarms, time_t current_time) {
+    #####:  125:    alarms.erase(
+    #####:  126:        std::remove_if(alarms.begin(), alarms.end(), 
+    #####:  127:            [current_time](time_t t) { return t <= current_time; }),
+    #####:  128:        alarms.end()
+        -:  129:    );
+    #####:  130:}
+        -:  131:
+    #####:  132:time_t AlarmLogic::getNextAlarmTime(const std::vector<time_t>& alarms, time_t current_time) {
+    #####:  133:    for (time_t t : alarms) {
+    #####:  134:        if (t > current_time) {
+    #####:  135:            return t;
+        -:  136:        }
+        -:  137:    }
+    #####:  138:    return 0; // 次のアラームなし
+        -:  139:}
+        -:  140:
+        -:  141:// InputLogic 実装
+    #####:  142:void InputLogic::incrementDigit(int& digit, int max_value, int increment) {
+    #####:  143:    digit = (digit + increment) % (max_value + 1);
+    #####:  144:}
+        -:  145:
+    #####:  146:void InputLogic::decrementDigit(int& digit, int max_value, int decrement) {
+    #####:  147:    digit = (digit - decrement + max_value + 1) % (max_value + 1);
+    #####:  148:}
+        -:  149:
+    #####:  150:bool InputLogic::isValidHourTens(int tens, int ones) {
+    #####:  151:    if (tens == 2) return ones <= 3;
+    #####:  152:    return tens <= 1;
+        -:  153:}
+        -:  154:
+    #####:  155:bool InputLogic::isValidHourOnes(int tens, int ones) {
+    #####:  156:    if (tens == 2) return ones <= 3;
+    #####:  157:    return ones <= 9;
+        -:  158:}
+        -:  159:
+    #####:  160:bool InputLogic::isValidMinTens(int tens) {
+    #####:  161:    return tens <= 5;
+        -:  162:}
+        -:  163:
+    #####:  164:bool InputLogic::isValidMinOnes(int ones) {
+    #####:  165:    return ones <= 9;
+        -:  166:}
+        -:  167:
+    #####:  168:void InputLogic::inputToTime(int hour_tens, int hour_ones, int min_tens, int min_ones, int& hour, int& minute) {
+    #####:  169:    hour = hour_tens * 10 + hour_ones;
+    #####:  170:    minute = min_tens * 10 + min_ones;
+    #####:  171:}
+        -:  172:
+    #####:  173:void InputLogic::timeToInput(int hour, int minute, int& hour_tens, int& hour_ones, int& min_tens, int& min_ones) {
+    #####:  174:    hour_tens = hour / 10;
+    #####:  175:    hour_ones = hour % 10;
+    #####:  176:    min_tens = minute / 10;
+    #####:  177:    min_ones = minute % 10;
+    #####:  178:} 
