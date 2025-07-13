@@ -24,6 +24,7 @@ time_t TimeLogic::calculateRelativeTime(int base_hour, int base_min, int add_hou
     struct tm tm_info;
     localtime_r(&now, &tm_info);
     
+    // 今日の日付で、指定された時刻を設定
     tm_info.tm_hour = base_hour;
     tm_info.tm_min = base_min;
     tm_info.tm_sec = 0;
@@ -33,7 +34,15 @@ time_t TimeLogic::calculateRelativeTime(int base_hour, int base_min, int add_hou
     
     if (!is_plus) total_minutes = -total_minutes;
     
-    return base_time + total_minutes * 60;
+    // 分単位で加算
+    time_t result = base_time + total_minutes * 60;
+    
+    // 結果が過去の場合は翌日に調整
+    if (result <= now) {
+        result += 24 * 60 * 60; // 24時間追加
+    }
+    
+    return result;
 }
 
 time_t TimeLogic::calculateAbsoluteTime(int hour, int minute) {
