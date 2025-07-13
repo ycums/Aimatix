@@ -14,6 +14,13 @@
 #include "button_manager.h"
 // #include "button_adapter.h"
 
+// 新しい状態遷移システムのインクルード
+#include "state_transition/button_event.h"
+#include "state_transition/system_state.h"
+#include "state_transition/transition_result.h"
+#include "state_transition/transition_validator.h"
+#include "state_transition/state_transition.h"
+
 // Constants
 #define WIFI_TIMEOUT 20000  // 20秒のタイムアウト
 #define MAX_ALARMS 5
@@ -238,6 +245,68 @@ void handleSettingsMenu() {
   }
 }
 
+// ボタンイベントをM5Stackボタン状態から作成する関数
+ButtonEvent createButtonEventFromM5Stack() {
+  const unsigned long LONG_PRESS_TIME = 1000;  // 1秒間の長押し
+  
+  // Aボタンの処理
+  if (M5.BtnA.wasPressed()) {
+    return ButtonEvent(BUTTON_TYPE_A, SHORT_PRESS);
+  } else if (M5.BtnA.pressedFor(LONG_PRESS_TIME)) {
+    return ButtonEvent(BUTTON_TYPE_A, LONG_PRESS);
+  }
+  
+  // Bボタンの処理
+  if (M5.BtnB.wasPressed()) {
+    return ButtonEvent(BUTTON_TYPE_B, SHORT_PRESS);
+  } else if (M5.BtnB.pressedFor(LONG_PRESS_TIME)) {
+    return ButtonEvent(BUTTON_TYPE_B, LONG_PRESS);
+  }
+  
+  // Cボタンの処理
+  if (M5.BtnC.wasPressed()) {
+    return ButtonEvent(BUTTON_TYPE_C, SHORT_PRESS);
+  } else if (M5.BtnC.pressedFor(LONG_PRESS_TIME)) {
+    return ButtonEvent(BUTTON_TYPE_C, LONG_PRESS);
+  }
+  
+  // ボタンが押されていない場合は無効なイベントを返す
+  return ButtonEvent();
+}
+
+// 遷移結果に基づいてアクションを実行する関数
+void executeTransitionAction(const TransitionResult& result) {
+  switch (result.action) {
+    case ACTION_RESET_INPUT:
+      resetInput();
+      break;
+    case ACTION_ADD_ALARM:
+      // アラーム追加処理は入力処理で行われる
+      break;
+    case ACTION_DELETE_ALARM:
+      // アラーム削除処理は既存の処理で行われる
+      break;
+    case ACTION_UPDATE_SETTINGS:
+      saveSettings();
+      break;
+    case ACTION_PLAY_ALARM:
+      playAlarm();
+      break;
+    case ACTION_STOP_ALARM:
+      stopAlarm();
+      break;
+    case ACTION_SHOW_WARNING:
+      showWarningMessage(result.errorMessage);
+      break;
+    case ACTION_CLEAR_WARNING:
+      clearWarningMessage();
+      break;
+    case ACTION_NONE:
+    default:
+      break;
+  }
+}
+
 void handleButtons() {
   // 警告メッセージ表示中はボタン処理をスキップ
   extern bool isWarningMessageDisplayed(const char* message);
@@ -246,130 +315,83 @@ void handleButtons() {
     return;
   }
   
-  // 既存のデバウンス処理（DebounceManagerを使用）
-  // if (!DebounceManager::canProcessModeChange()) {
-  //   return;
-  // }
+  // 新しい状態遷移システムを使用
+  ButtonEvent event = createButtonEventFromM5Stack();
   
-  // ボタン処理用の変数
-  static unsigned long lastPress = 0;
-  static bool cLongPressHandled = false;
-  static bool bLongPressHandled = false;
-  const unsigned long LONG_PRESS_TIME = 1000;  // 1秒間の長押し
+  // 無効なイベントの場合は処理をスキップ
+  if (!isValidButtonEvent(event)) {
+    return;
+  }
   
-  // Cボタン処理（元の実装に戻す）
-  if (currentMode != ABS_TIME_INPUT && currentMode != REL_PLUS_TIME_INPUT) {
-    if (M5.BtnC.wasPressed()) {
-      lastPress = millis();
-      cLongPressHandled = false;
-      Serial.println("Main: C button pressed - common handler");
+  // 現在のシステム状態を取得
+  SystemState currentState = getCurrentSystemState();
+  
+  // 状態遷移を処理
+  TransitionResult result = StateTransitionManager::handleStateTransition(
+    currentMode, event, currentState
+  );
+  
+  // 遷移結果を処理
+  if (result.isValid) {
+    // 有効な遷移の場合
+    if (result.nextMode != currentMode) {
+      // モードが変更される場合
+      currentMode = result.nextMode;
+      Serial.print("Mode changed to: ");
+      Serial.println(result.nextMode);
     }
-    if (M5.BtnC.pressedFor(LONG_PRESS_TIME)) {
-      if (!cLongPressHandled && currentMode != MAIN_DISPLAY) {
-        Serial.println("Main: C button long press - returning to main");
-        currentMode = MAIN_DISPLAY;
-        cLongPressHandled = true;
-        return; // 他の処理をスキップ
-      }
+    
+    // アクションを実行
+    executeTransitionAction(result);
+  } else {
+    // 無効な遷移の場合
+    if (result.errorMessage != nullptr) {
+      Serial.print("Invalid transition: ");
+      Serial.println(result.errorMessage);
     }
   }
   
-  // メイン画面C長押し処理（元の実装に戻す）
-  if (currentMode == MAIN_DISPLAY && M5.BtnC.pressedFor(LONG_PRESS_TIME)) {
-    if (!cLongPressHandled) {
-      currentMode = SETTINGS_MENU;
-      cLongPressHandled = true;
-      return; // 他の処理をスキップ
-    }
+  // 入力モードの場合は既存の入力処理を実行
+  if (currentMode == ABS_TIME_INPUT || currentMode == REL_PLUS_TIME_INPUT) {
+    handleDigitEditInput();
+    drawInputMode();
   }
   
-  // 既存のswitch文（そのまま）
-  switch (currentMode) {
-    case MAIN_DISPLAY:
-      if (M5.BtnA.wasPressed()) {
-        currentMode = ABS_TIME_INPUT;
-        resetInput();
-      }
-      if (M5.BtnB.wasPressed()) {
-        lastPress = millis();
-        bLongPressHandled = false;
-      }
-      if (M5.BtnB.pressedFor(LONG_PRESS_TIME)) {
-        if (!bLongPressHandled) {
-          // Bボタン長押しは削除（相対時刻減算画面への遷移を無効化）
-          bLongPressHandled = true;
-        }
-      } else if (M5.BtnB.wasReleased() && millis() - lastPress < LONG_PRESS_TIME) {
-        currentMode = REL_PLUS_TIME_INPUT;
-        resetInput();
-      }
-      if (M5.BtnC.wasPressed()) {
-        lastPress = millis();
-        cLongPressHandled = false;
-      }
-      if (M5.BtnC.wasReleased() && millis() - lastPress < LONG_PRESS_TIME) {
-        currentMode = ALARM_MANAGEMENT; // C短押しでアラーム管理画面へ
-      }
-      break;
-
-    case ABS_TIME_INPUT:
-    case REL_PLUS_TIME_INPUT:
-      handleDigitEditInput();
-      drawInputMode();
-      break;
-
-    case ALARM_MANAGEMENT: {
-      int listSize = alarmTimes.size();
-      if (M5.BtnA.wasPressed()) {
-        // PREV: 前の項目へ
-        if (scheduleSelectedIndex > 0) {
-          scheduleSelectedIndex--;
-        }
-      }
-      if (M5.BtnB.wasPressed()) {
-        // NEXT: 次の項目へ
-        if (scheduleSelectedIndex < listSize - 1) {
-          scheduleSelectedIndex++;
-        }
-      }
-      if (M5.BtnC.wasPressed()) {
-        lastPress = millis();
-        cLongPressHandled = false;
-      }
-      if (M5.BtnC.pressedFor(LONG_PRESS_TIME)) {
-        if (!cLongPressHandled) {
-          // C長押し: メイン画面に戻る
-          currentMode = MAIN_DISPLAY;
-          cLongPressHandled = true;
-          return;
-        }
-      } else if (M5.BtnC.wasReleased() && millis() - lastPress < LONG_PRESS_TIME) {
-        // C短押し: DELETE処理
-        if (scheduleSelectedIndex < alarmTimes.size()) {
-          // 共通の確認画面を使用
-          if (showYesNoDialog("DELETE ALARM?", getTimeString(alarmTimes[scheduleSelectedIndex]).c_str())) {
-            // 削除実行
-            alarmTimes.erase(alarmTimes.begin() + scheduleSelectedIndex);
-            if (scheduleSelectedIndex >= alarmTimes.size() && alarmTimes.size() > 0) {
-              scheduleSelectedIndex = alarmTimes.size() - 1;
-            }
+  // アラーム管理画面の場合は既存の処理を実行
+  if (currentMode == ALARM_MANAGEMENT) {
+    int listSize = alarmTimes.size();
+         if (event.button == BUTTON_TYPE_A && event.action == SHORT_PRESS) {
+       // PREV: 前の項目へ
+       if (scheduleSelectedIndex > 0) {
+         scheduleSelectedIndex--;
+       }
+     }
+     if (event.button == BUTTON_TYPE_B && event.action == SHORT_PRESS) {
+       // NEXT: 次の項目へ
+       if (scheduleSelectedIndex < listSize - 1) {
+         scheduleSelectedIndex++;
+       }
+     }
+     if (event.button == BUTTON_TYPE_C && event.action == SHORT_PRESS) {
+      // C短押し: DELETE処理
+      if (scheduleSelectedIndex < alarmTimes.size()) {
+        // 共通の確認画面を使用
+        if (showYesNoDialog("DELETE ALARM?", getTimeString(alarmTimes[scheduleSelectedIndex]).c_str())) {
+          // 削除実行
+          alarmTimes.erase(alarmTimes.begin() + scheduleSelectedIndex);
+          if (scheduleSelectedIndex >= alarmTimes.size() && alarmTimes.size() > 0) {
+            scheduleSelectedIndex = alarmTimes.size() - 1;
           }
         }
       }
-      break;
     }
-
-    case SETTINGS_MENU:
-      handleSettingsMenu();
-      break;
-
-
-    
-    case INFO_DISPLAY:
-      drawInfoDisplay();
-      break;
   }
   
-  // 新しく追加: ButtonManagerの状態更新（既存処理には影響なし）
+  // 設定メニューの場合は既存の処理を実行
+  if (currentMode == SETTINGS_MENU) {
+    handleSettingsMenu();
+  }
+  
+  // ButtonManagerの状態更新
   ButtonManager::updateButtonStates();
 }

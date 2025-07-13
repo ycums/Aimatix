@@ -5,9 +5,9 @@
 
 // ボタンタイプの定義
 enum ButtonType {
-  BUTTON_A,
-  BUTTON_B, 
-  BUTTON_C
+  BUTTON_TYPE_A,
+  BUTTON_TYPE_B, 
+  BUTTON_TYPE_C
 };
 
 // ボタンアクションの定義
@@ -27,7 +27,7 @@ struct ButtonEvent {
     : button(btn), action(act), timestamp(millis()) {}
     
   ButtonEvent() 
-    : button(BUTTON_A), action(SHORT_PRESS), timestamp(0) {}
+    : button(BUTTON_TYPE_A), action(SHORT_PRESS), timestamp(0) {}
 };
 
 // ボタンイベント変換関数の宣言

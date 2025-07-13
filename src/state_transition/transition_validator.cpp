@@ -34,7 +34,7 @@ bool TransitionValidator::isValidTransition(Mode currentMode, const ButtonEvent&
   // 入力モードでの特殊チェック
   if (currentMode == ABS_TIME_INPUT || currentMode == REL_PLUS_TIME_INPUT) {
     // 入力モードではCボタンの長押しでメイン画面に戻ることを許可
-    if (event.button == BUTTON_C && event.action == LONG_PRESS) {
+    if (event.button == BUTTON_TYPE_C && event.action == LONG_PRESS) {
       return true;
     }
   }
@@ -97,7 +97,7 @@ const char* TransitionValidator::getErrorMessage(Mode currentMode, const ButtonE
   
   // 入力モードでの特殊エラーメッセージ
   if (currentMode == ABS_TIME_INPUT || currentMode == REL_PLUS_TIME_INPUT) {
-    if (event.button == BUTTON_C && event.action == SHORT_PRESS) {
+    if (event.button == BUTTON_TYPE_C && event.action == SHORT_PRESS) {
       return "入力値が無効です";
     }
   }

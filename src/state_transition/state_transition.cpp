@@ -46,14 +46,14 @@ TransitionResult StateTransitionManager::handleStateTransition(
 // メイン画面の遷移ハンドラー（完全版）
 TransitionResult StateTransitionManager::handleMainDisplayTransition(const ButtonEvent& event, const SystemState& state) {
   switch (event.button) {
-    case BUTTON_A:
+    case BUTTON_TYPE_A:
       if (event.action == SHORT_PRESS) {
         // A短押し: 絶対時刻入力画面へ
         return createValidTransition(ABS_TIME_INPUT, ACTION_RESET_INPUT);
       }
       break;
       
-    case BUTTON_B:
+    case BUTTON_TYPE_B:
       if (event.action == SHORT_PRESS) {
         // B短押し: 相対時刻加算入力画面へ
         return createValidTransition(REL_PLUS_TIME_INPUT, ACTION_RESET_INPUT);
@@ -63,7 +63,7 @@ TransitionResult StateTransitionManager::handleMainDisplayTransition(const Butto
       }
       break;
       
-    case BUTTON_C:
+    case BUTTON_TYPE_C:
       if (event.action == SHORT_PRESS) {
         // C短押し: アラーム管理画面へ
         return createValidTransition(ALARM_MANAGEMENT);
@@ -80,7 +80,7 @@ TransitionResult StateTransitionManager::handleMainDisplayTransition(const Butto
 // 絶対時刻入力の遷移ハンドラー（完全版）
 TransitionResult StateTransitionManager::handleAbsTimeInputTransition(const ButtonEvent& event, const SystemState& state) {
   switch (event.button) {
-    case BUTTON_A:
+    case BUTTON_TYPE_A:
       if (event.action == SHORT_PRESS) {
         // A短押し: 数字変更（同じ画面に留まる）
         return createNoChangeTransition();
@@ -90,7 +90,7 @@ TransitionResult StateTransitionManager::handleAbsTimeInputTransition(const Butt
       }
       break;
       
-    case BUTTON_B:
+    case BUTTON_TYPE_B:
       if (event.action == SHORT_PRESS) {
         // B短押し: 桁送り（同じ画面に留まる）
         return createNoChangeTransition();
@@ -100,7 +100,7 @@ TransitionResult StateTransitionManager::handleAbsTimeInputTransition(const Butt
       }
       break;
       
-    case BUTTON_C:
+    case BUTTON_TYPE_C:
       if (event.action == SHORT_PRESS) {
         // C短押し: 入力確定・アラーム追加
         return createValidTransition(MAIN_DISPLAY, ACTION_ADD_ALARM);
@@ -117,7 +117,7 @@ TransitionResult StateTransitionManager::handleAbsTimeInputTransition(const Butt
 // 相対時刻加算入力の遷移ハンドラー（完全版）
 TransitionResult StateTransitionManager::handleRelPlusTimeInputTransition(const ButtonEvent& event, const SystemState& state) {
   switch (event.button) {
-    case BUTTON_A:
+    case BUTTON_TYPE_A:
       if (event.action == SHORT_PRESS) {
         // A短押し: 数字変更（同じ画面に留まる）
         return createNoChangeTransition();
@@ -127,7 +127,7 @@ TransitionResult StateTransitionManager::handleRelPlusTimeInputTransition(const 
       }
       break;
       
-    case BUTTON_B:
+    case BUTTON_TYPE_B:
       if (event.action == SHORT_PRESS) {
         // B短押し: 桁送り（同じ画面に留まる）
         return createNoChangeTransition();
@@ -137,7 +137,7 @@ TransitionResult StateTransitionManager::handleRelPlusTimeInputTransition(const 
       }
       break;
       
-    case BUTTON_C:
+    case BUTTON_TYPE_C:
       if (event.action == SHORT_PRESS) {
         // C短押し: 入力確定・アラーム追加
         return createValidTransition(MAIN_DISPLAY, ACTION_ADD_ALARM);
@@ -159,21 +159,21 @@ TransitionResult StateTransitionManager::handleAlarmManagementTransition(const B
   }
   
   switch (event.button) {
-    case BUTTON_A:
+    case BUTTON_TYPE_A:
       if (event.action == SHORT_PRESS) {
         // A短押し: 前の項目へ（同じ画面に留まる）
         return createNoChangeTransition();
       }
       break;
       
-    case BUTTON_B:
+    case BUTTON_TYPE_B:
       if (event.action == SHORT_PRESS) {
         // B短押し: 次の項目へ（同じ画面に留まる）
         return createNoChangeTransition();
       }
       break;
       
-    case BUTTON_C:
+    case BUTTON_TYPE_C:
       if (event.action == SHORT_PRESS) {
         // C短押し: 削除確認（同じ画面に留まる）
         return createNoChangeTransition();
@@ -190,21 +190,21 @@ TransitionResult StateTransitionManager::handleAlarmManagementTransition(const B
 // 設定メニューの遷移ハンドラー（完全版）
 TransitionResult StateTransitionManager::handleSettingsMenuTransition(const ButtonEvent& event, const SystemState& state) {
   switch (event.button) {
-    case BUTTON_A:
+    case BUTTON_TYPE_A:
       if (event.action == SHORT_PRESS) {
         // A短押し: 前の項目へ（同じ画面に留まる）
         return createNoChangeTransition();
       }
       break;
       
-    case BUTTON_B:
+    case BUTTON_TYPE_B:
       if (event.action == SHORT_PRESS) {
         // B短押し: 次の項目へ（同じ画面に留まる）
         return createNoChangeTransition();
       }
       break;
       
-    case BUTTON_C:
+    case BUTTON_TYPE_C:
       if (event.action == SHORT_PRESS) {
         // C短押し: 設定変更/画面遷移
         switch (state.settingsMenu.selectedItem) {
@@ -240,7 +240,7 @@ TransitionResult StateTransitionManager::handleInfoDisplayTransition(const Butto
 
 // 警告色テストの遷移ハンドラー（完全版）
 TransitionResult StateTransitionManager::handleWarningColorTestTransition(const ButtonEvent& event, const SystemState& state) {
-  if (event.button == BUTTON_C && event.action == SHORT_PRESS) {
+  if (event.button == BUTTON_TYPE_C && event.action == SHORT_PRESS) {
     return createValidTransition(SETTINGS_MENU);
   }
   

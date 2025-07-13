@@ -8,7 +8,7 @@ ButtonEvent createButtonEvent(ButtonType button, ButtonAction action) {
 // ボタンイベント妥当性チェック
 bool isValidButtonEvent(const ButtonEvent& event) {
   // 基本的な妥当性チェック
-  if (event.button < BUTTON_A || event.button > BUTTON_C) {
+  if (event.button < BUTTON_TYPE_A || event.button > BUTTON_TYPE_C) {
     return false;
   }
   
