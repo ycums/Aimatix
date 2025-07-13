@@ -1,6 +1,16 @@
 {
-  "timestamp": "2025-07-14T04:39:35.719654",
-  "files": [],
+  "timestamp": "2025-07-14T04:48:22.171354",
+  "files": [
+    {
+      "filename": "src/settings.cpp",
+      "lines_total": 0,
+      "lines_covered": 0,
+      "line_coverage": 0,
+      "functions_total": 0,
+      "functions_covered": 0,
+      "function_coverage": 0
+    }
+  ],
   "summary": {
     "total_lines": 0,
     "covered_lines": 0,

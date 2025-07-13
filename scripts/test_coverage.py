@@ -77,9 +77,20 @@ def compile_with_coverage(test_file, test_name):
         print(f"エラー: Unityソースファイルが見つかりません")
         return False
     
+    # テスト名に応じてソースファイルを選択
+    source_files = {
+        "time_logic": "src/time_logic.cpp",
+        "input_logic": "src/input.cpp",
+        "settings_logic": "src/settings.cpp",
+        "alarm_logic": "src/alarm.cpp",
+        "warning_messages": "src/ui.cpp"
+    }
+    
+    source_file = source_files.get(test_name, "src/time_logic.cpp")
+    
     # カバレッジ測定用のコンパイルオプション
     coverage_flags = "-fprofile-arcs -ftest-coverage -g -O0"
-    compile_cmd = f"{compiler} {coverage_flags} -I{unity_path} -Ilib -Itest/mocks -Isrc -std=c++11 -o {output_name} {test_path} {unity_src} src/time_logic.cpp test/mocks/mock_m5stack.cpp"
+    compile_cmd = f"{compiler} {coverage_flags} -I{unity_path} -Ilib -Itest/mocks -Isrc -std=c++11 -o {output_name} {test_path} {unity_src} {source_file} test/mocks/mock_m5stack.cpp"
     
     print(f"コンパイル中: {compile_cmd}")
     result = subprocess.run(compile_cmd, shell=True, capture_output=True, text=True)
@@ -271,26 +282,36 @@ def main():
     
     # gcovコマンドで.gcovファイルを生成
     print("gcovファイル生成中...")
-    # 個別のソースファイルに対してgcovを実行
-    source_files = ['time_logic', 'mock_m5stack']
-    for source_file in source_files:
-        subprocess.run(['gcov', f'test_{test_name}_coverage-{source_file}'], shell=True, capture_output=True, text=True)
+    # テスト名に応じて対応するソースファイルに対してgcovを実行
+    source_file_map = {
+        "time_logic": "time_logic",
+        "input_logic": "input",
+        "settings_logic": "settings",
+        "alarm_logic": "alarm",
+        "warning_messages": "ui"
+    }
+    source_file = source_file_map.get(test_name, "time_logic")
+    subprocess.run(['gcov', f'test_{test_name}_coverage-{source_file}'], shell=True, capture_output=True, text=True)
+    
+    # 実際に生成される.gcovファイル名を確認
+    print("生成された.gcovファイル:")
+    for gcov_file in Path('.').glob('*.gcov'):
+        print(f"  {gcov_file}")
     
     # gcovファイルを解析
     coverage_results = []
     for gcov_file in Path('.').glob('*.gcov'):
-        # プロジェクトファイルのみを対象とする
-        if not any(project_path in str(gcov_file) for project_path in ['src/', 'test/']):
+        # テスト名に応じて対応する.gcovファイルを対象とする
+        expected_gcov_map = {
+            "time_logic": "time_logic.cpp.gcov",
+            "input_logic": "input.cpp.gcov",
+            "settings_logic": "settings.cpp.gcov",
+            "alarm_logic": "alarm.cpp.gcov",
+            "warning_messages": "ui.cpp.gcov"
+        }
+        expected_gcov = expected_gcov_map.get(test_name, f'{test_name}.cpp.gcov')
+        if not str(gcov_file).endswith(expected_gcov):
             continue
-            
-        if str(gcov_file) == 'time_logic.cpp.gcov':
-            print('--- time_logic.cpp.gcov の内容 ---')
-            with open(gcov_file, 'r', encoding='utf-8') as f:
-                for i, line in enumerate(f):
-                    print(line.rstrip())
-                    if i > 40:
-                        break
-            print('--- ここまで ---')
         print(f"gcovファイル発見: {gcov_file}")
         result = parse_gcov_file(gcov_file)
         if result:
@@ -314,7 +335,7 @@ def main():
     for gcov_file in Path('.').glob('*.gcov'):
         print(f"  {gcov_file}")
     
-    cleanup_gcov_files()
+    # cleanup_gcov_files()  # ← 一時的にコメントアウト
     
     if success:
         print("🎉 カバレッジ測定が完了しました！")
