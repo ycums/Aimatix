@@ -43,26 +43,32 @@ TransitionResult StateTransitionManager::handleStateTransition(
   }
 }
 
-// メイン画面の遷移ハンドラー（基本版）
+// メイン画面の遷移ハンドラー（完全版）
 TransitionResult StateTransitionManager::handleMainDisplayTransition(const ButtonEvent& event, const SystemState& state) {
   switch (event.button) {
     case BUTTON_A:
       if (event.action == SHORT_PRESS) {
+        // A短押し: 絶対時刻入力画面へ
         return createValidTransition(ABS_TIME_INPUT, ACTION_RESET_INPUT);
       }
       break;
       
     case BUTTON_B:
       if (event.action == SHORT_PRESS) {
+        // B短押し: 相対時刻加算入力画面へ
         return createValidTransition(REL_PLUS_TIME_INPUT, ACTION_RESET_INPUT);
+      } else if (event.action == LONG_PRESS) {
+        // B長押し: 何もしない（同じ画面に留まる）
+        return createNoChangeTransition();
       }
-      // B長押しは何もしない
       break;
       
     case BUTTON_C:
       if (event.action == SHORT_PRESS) {
+        // C短押し: アラーム管理画面へ
         return createValidTransition(ALARM_MANAGEMENT);
       } else if (event.action == LONG_PRESS) {
+        // C長押し: 設定メニューへ
         return createValidTransition(SETTINGS_MENU);
       }
       break;
@@ -71,74 +77,35 @@ TransitionResult StateTransitionManager::handleMainDisplayTransition(const Butto
   return createNoChangeTransition();
 }
 
-// 絶対時刻入力の遷移ハンドラー（基本版）
+// 絶対時刻入力の遷移ハンドラー（完全版）
 TransitionResult StateTransitionManager::handleAbsTimeInputTransition(const ButtonEvent& event, const SystemState& state) {
   switch (event.button) {
     case BUTTON_A:
-      // A短押し・長押しは入力処理（同じ画面に留まる）
-      return createNoChangeTransition();
+      if (event.action == SHORT_PRESS) {
+        // A短押し: 数字変更（同じ画面に留まる）
+        return createNoChangeTransition();
+      } else if (event.action == LONG_PRESS) {
+        // A長押し: 数字を+5（同じ画面に留まる）
+        return createNoChangeTransition();
+      }
+      break;
       
     case BUTTON_B:
-      // B短押し・長押しは入力処理（同じ画面に留まる）
-      return createNoChangeTransition();
+      if (event.action == SHORT_PRESS) {
+        // B短押し: 桁送り（同じ画面に留まる）
+        return createNoChangeTransition();
+      } else if (event.action == LONG_PRESS) {
+        // B長押し: 入力値をリセット（同じ画面に留まる）
+        return createNoChangeTransition();
+      }
+      break;
       
     case BUTTON_C:
       if (event.action == SHORT_PRESS) {
+        // C短押し: 入力確定・アラーム追加
         return createValidTransition(MAIN_DISPLAY, ACTION_ADD_ALARM);
       } else if (event.action == LONG_PRESS) {
-        return createValidTransition(MAIN_DISPLAY); // キャンセル
-      }
-      break;
-  }
-  
-  return createNoChangeTransition();
-}
-
-// 相対時刻加算入力の遷移ハンドラー（基本版）
-TransitionResult StateTransitionManager::handleRelPlusTimeInputTransition(const ButtonEvent& event, const SystemState& state) {
-  switch (event.button) {
-    case BUTTON_A:
-      // A短押し・長押しは入力処理（同じ画面に留まる）
-      return createNoChangeTransition();
-      
-    case BUTTON_B:
-      // B短押し・長押しは入力処理（同じ画面に留まる）
-      return createNoChangeTransition();
-      
-    case BUTTON_C:
-      if (event.action == SHORT_PRESS) {
-        return createValidTransition(MAIN_DISPLAY, ACTION_ADD_ALARM);
-      } else if (event.action == LONG_PRESS) {
-        return createValidTransition(MAIN_DISPLAY); // キャンセル
-      }
-      break;
-  }
-  
-  return createNoChangeTransition();
-}
-
-// アラーム管理の遷移ハンドラー（基本版）
-TransitionResult StateTransitionManager::handleAlarmManagementTransition(const ButtonEvent& event, const SystemState& state) {
-  switch (event.button) {
-    case BUTTON_A:
-      if (event.action == SHORT_PRESS) {
-        // 前の項目へ（同じ画面に留まる）
-        return createNoChangeTransition();
-      }
-      break;
-      
-    case BUTTON_B:
-      if (event.action == SHORT_PRESS) {
-        // 次の項目へ（同じ画面に留まる）
-        return createNoChangeTransition();
-      }
-      break;
-      
-    case BUTTON_C:
-      if (event.action == SHORT_PRESS) {
-        // 削除確認（同じ画面に留まる）
-        return createNoChangeTransition();
-      } else if (event.action == LONG_PRESS) {
+        // C長押し: キャンセル
         return createValidTransition(MAIN_DISPLAY);
       }
       break;
@@ -147,27 +114,36 @@ TransitionResult StateTransitionManager::handleAlarmManagementTransition(const B
   return createNoChangeTransition();
 }
 
-// 設定メニューの遷移ハンドラー（基本版）
-TransitionResult StateTransitionManager::handleSettingsMenuTransition(const ButtonEvent& event, const SystemState& state) {
+// 相対時刻加算入力の遷移ハンドラー（完全版）
+TransitionResult StateTransitionManager::handleRelPlusTimeInputTransition(const ButtonEvent& event, const SystemState& state) {
   switch (event.button) {
     case BUTTON_A:
       if (event.action == SHORT_PRESS) {
-        // 前の項目へ（同じ画面に留まる）
+        // A短押し: 数字変更（同じ画面に留まる）
+        return createNoChangeTransition();
+      } else if (event.action == LONG_PRESS) {
+        // A長押し: 数字を+5（同じ画面に留まる）
         return createNoChangeTransition();
       }
       break;
       
     case BUTTON_B:
       if (event.action == SHORT_PRESS) {
-        // 次の項目へ（同じ画面に留まる）
+        // B短押し: 桁送り（同じ画面に留まる）
+        return createNoChangeTransition();
+      } else if (event.action == LONG_PRESS) {
+        // B長押し: 入力値をリセット（同じ画面に留まる）
         return createNoChangeTransition();
       }
       break;
       
     case BUTTON_C:
       if (event.action == SHORT_PRESS) {
-        // 設定変更/画面遷移（同じ画面に留まる）
-        return createNoChangeTransition();
+        // C短押し: 入力確定・アラーム追加
+        return createValidTransition(MAIN_DISPLAY, ACTION_ADD_ALARM);
+      } else if (event.action == LONG_PRESS) {
+        // C長押し: キャンセル
+        return createValidTransition(MAIN_DISPLAY);
       }
       break;
   }
@@ -175,7 +151,84 @@ TransitionResult StateTransitionManager::handleSettingsMenuTransition(const Butt
   return createNoChangeTransition();
 }
 
-// 情報表示の遷移ハンドラー（基本版）
+// アラーム管理の遷移ハンドラー（完全版）
+TransitionResult StateTransitionManager::handleAlarmManagementTransition(const ButtonEvent& event, const SystemState& state) {
+  // アラームが存在しない場合はメイン画面に戻る
+  if (state.alarmCount == 0) {
+    return createValidTransition(MAIN_DISPLAY);
+  }
+  
+  switch (event.button) {
+    case BUTTON_A:
+      if (event.action == SHORT_PRESS) {
+        // A短押し: 前の項目へ（同じ画面に留まる）
+        return createNoChangeTransition();
+      }
+      break;
+      
+    case BUTTON_B:
+      if (event.action == SHORT_PRESS) {
+        // B短押し: 次の項目へ（同じ画面に留まる）
+        return createNoChangeTransition();
+      }
+      break;
+      
+    case BUTTON_C:
+      if (event.action == SHORT_PRESS) {
+        // C短押し: 削除確認（同じ画面に留まる）
+        return createNoChangeTransition();
+      } else if (event.action == LONG_PRESS) {
+        // C長押し: メイン画面に戻る
+        return createValidTransition(MAIN_DISPLAY);
+      }
+      break;
+  }
+  
+  return createNoChangeTransition();
+}
+
+// 設定メニューの遷移ハンドラー（完全版）
+TransitionResult StateTransitionManager::handleSettingsMenuTransition(const ButtonEvent& event, const SystemState& state) {
+  switch (event.button) {
+    case BUTTON_A:
+      if (event.action == SHORT_PRESS) {
+        // A短押し: 前の項目へ（同じ画面に留まる）
+        return createNoChangeTransition();
+      }
+      break;
+      
+    case BUTTON_B:
+      if (event.action == SHORT_PRESS) {
+        // B短押し: 次の項目へ（同じ画面に留まる）
+        return createNoChangeTransition();
+      }
+      break;
+      
+    case BUTTON_C:
+      if (event.action == SHORT_PRESS) {
+        // C短押し: 設定変更/画面遷移
+        switch (state.settingsMenu.selectedItem) {
+          case 0: // Sound
+            return createNoChangeTransition(); // 設定変更（同じ画面に留まる）
+          case 1: // LCD Brightness
+            return createNoChangeTransition(); // 設定変更（同じ画面に留まる）
+          case 2: // Warning Color Test
+            return createValidTransition(WARNING_COLOR_TEST);
+          case 3: // All Clear
+            return createNoChangeTransition(); // 確認ダイアログ（同じ画面に留まる）
+          case 4: // Info
+            return createValidTransition(INFO_DISPLAY);
+          default:
+            return createNoChangeTransition();
+        }
+      }
+      break;
+  }
+  
+  return createNoChangeTransition();
+}
+
+// 情報表示の遷移ハンドラー（完全版）
 TransitionResult StateTransitionManager::handleInfoDisplayTransition(const ButtonEvent& event, const SystemState& state) {
   // 任意ボタンでメイン画面へ戻る
   if (event.action == SHORT_PRESS || event.action == LONG_PRESS) {
@@ -185,7 +238,7 @@ TransitionResult StateTransitionManager::handleInfoDisplayTransition(const Butto
   return createNoChangeTransition();
 }
 
-// 警告色テストの遷移ハンドラー（基本版）
+// 警告色テストの遷移ハンドラー（完全版）
 TransitionResult StateTransitionManager::handleWarningColorTestTransition(const ButtonEvent& event, const SystemState& state) {
   if (event.button == BUTTON_C && event.action == SHORT_PRESS) {
     return createValidTransition(SETTINGS_MENU);
@@ -194,7 +247,7 @@ TransitionResult StateTransitionManager::handleWarningColorTestTransition(const 
   return createNoChangeTransition();
 }
 
-// アラーム鳴動中の遷移ハンドラー（基本版）
+// アラーム鳴動中の遷移ハンドラー（完全版）
 TransitionResult StateTransitionManager::handleAlarmActiveTransition(const ButtonEvent& event, const SystemState& state) {
   // 任意ボタンでアラーム停止
   if (event.action == SHORT_PRESS || event.action == LONG_PRESS) {

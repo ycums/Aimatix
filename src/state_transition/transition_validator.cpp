@@ -31,6 +31,22 @@ bool TransitionValidator::isValidTransition(Mode currentMode, const ButtonEvent&
     return false;
   }
   
+  // 入力モードでの特殊チェック
+  if (currentMode == ABS_TIME_INPUT || currentMode == REL_PLUS_TIME_INPUT) {
+    // 入力モードではCボタンの長押しでメイン画面に戻ることを許可
+    if (event.button == BUTTON_C && event.action == LONG_PRESS) {
+      return true;
+    }
+  }
+  
+  // アラーム管理画面での特殊チェック
+  if (currentMode == ALARM_MANAGEMENT) {
+    // アラームが存在しない場合はメイン画面に戻ることを許可
+    if (state.alarmCount == 0) {
+      return true;
+    }
+  }
+  
   return true;
 }
 
@@ -77,6 +93,20 @@ const char* TransitionValidator::getErrorMessage(Mode currentMode, const ButtonE
   
   if (!isAlarmCountValid(state.alarmCount)) {
     return "アラーム数が上限を超えています";
+  }
+  
+  // 入力モードでの特殊エラーメッセージ
+  if (currentMode == ABS_TIME_INPUT || currentMode == REL_PLUS_TIME_INPUT) {
+    if (event.button == BUTTON_C && event.action == SHORT_PRESS) {
+      return "入力値が無効です";
+    }
+  }
+  
+  // アラーム管理画面での特殊エラーメッセージ
+  if (currentMode == ALARM_MANAGEMENT) {
+    if (state.alarmCount == 0) {
+      return "アラームが存在しません";
+    }
   }
   
   return "不明なエラー";
