@@ -133,9 +133,11 @@ def parse_gcov_file(gcov_file):
                     functions_covered += 1
             
             # 行カバレッジ
-            if re.match(r'^\s*\d+:', line):
+            match = re.match(r'^\s*(\d+):', line)
+            if match:
                 lines_total += 1
-                if line.startswith('1:'):
+                execution_count = int(match.group(1))
+                if execution_count > 0:
                     lines_covered += 1
         
         return CoverageResult(filename, lines_total, lines_covered, functions_total, functions_covered)
@@ -277,6 +279,10 @@ def main():
     # gcovファイルを解析
     coverage_results = []
     for gcov_file in Path('.').glob('*.gcov'):
+        # プロジェクトファイルのみを対象とする
+        if not any(project_path in str(gcov_file) for project_path in ['src/', 'test/']):
+            continue
+            
         if str(gcov_file) == 'time_logic.cpp.gcov':
             print('--- time_logic.cpp.gcov の内容 ---')
             with open(gcov_file, 'r', encoding='utf-8') as f:

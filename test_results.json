@@ -1,37 +1,16 @@
-[
-  {
-    "test_name": "time_logic",
-    "success": true,
-    "output": "\n=== TimeLogic Unit Test ===\n=== テスト開始: test_time_validation ===\n✓ 時刻バリデーションテスト: 成功\n=== テスト完了: test_time_validation ===\ntest/test_time_logic_simple.cpp:129:test_time_validation:PASS\n=== テスト開始: test_absolute_time_calculation ===\n✓ 絶対時刻計算テスト: 成功\n=== テスト完了: test_absolute_time_calculation ===\ntest/test_time_logic_simple.cpp:130:test_absolute_time_calculation:PASS\n=== テスト開始: test_relative_time_calculation ===\n現在時刻: 10:46\n計算結果: 12:16\n期待値: 12:16\n✓ 相対時刻計算テスト: 成功\n=== テスト完了: test_relative_time_calculation ===\ntest/test_time_logic_simple.cpp:131:test_relative_time_calculation:PASS\n=== テスト開始: test_time_formatting ===\n✓ 時刻フォーマットテスト: 成功\n=== テスト完了: test_time_formatting ===\ntest/test_time_logic_simple.cpp:132:test_time_formatting:PASS\n=== テスト開始: test_alarm_time_calculation ===\n✓ アラーム時刻計算テスト: 成功\n=== テスト完了: test_alarm_time_calculation ===\ntest/test_time_logic_simple.cpp:133:test_alarm_time_calculation:PASS\n=== 全テスト完了 ===\n\n-----------------------\n5 Tests 0 Failures 0 Ignored \nOK\n",
-    "error_code": 0,
-    "timestamp": "2025-07-13T20:53:09.894412"
-  },
-  {
-    "test_name": "alarm_logic",
-    "success": true,
-    "output": "\n=== AlarmLogic Unit Test ===\n✓ アラーム追加テスト: 成功\ntest/test_alarm_logic_simple.cpp:152:test_alarm_addition:PASS\n✓ 最大アラーム数制限テスト: 成功\ntest/test_alarm_logic_simple.cpp:153:test_maximum_alarm_limit:PASS\n✓ アラーム削除テスト: 成功\ntest/test_alarm_logic_simple.cpp:154:test_alarm_removal:PASS\n✓ 重複チェックテスト: 成功\ntest/test_alarm_logic_simple.cpp:155:test_duplicate_check:PASS\n✓ ソートテスト: 成功\ntest/test_alarm_logic_simple.cpp:156:test_alarm_sorting:PASS\n✓ 過去アラーム削除テスト: 成功\ntest/test_alarm_logic_simple.cpp:157:test_past_alarm_removal:PASS\n✓ 次のアラーム取得テスト: 成功\ntest/test_alarm_logic_simple.cpp:158:test_next_alarm_time:PASS\n=== 全テスト完了 ===\n\n-----------------------\n7 Tests 0 Failures 0 Ignored \nOK\n",
-    "error_code": 0,
-    "timestamp": "2025-07-13T20:53:12.358369"
-  },
-  {
-    "test_name": "input_logic",
-    "success": true,
-    "output": "\n=== InputLogic Unit Test ===\n✓ 桁インクリメントテスト: 成功\ntest/test_input_logic_simple.cpp:172:test_digit_increment:PASS\n✓ 桁デクリメントテスト: 成功\ntest/test_input_logic_simple.cpp:173:test_digit_decrement:PASS\n✓ 時間の十の位バリデーションテスト: 成功\ntest/test_input_logic_simple.cpp:174:test_hour_tens_validation:PASS\n✓ 時間の一の位バリデーションテスト: 成功\ntest/test_input_logic_simple.cpp:175:test_hour_ones_validation:PASS\n✓ 分の十の位バリデーションテスト: 成功\ntest/test_input_logic_simple.cpp:176:test_minute_tens_validation:PASS\n✓ 分の一の位バリデーションテスト: 成功\ntest/test_input_logic_simple.cpp:177:test_minute_ones_validation:PASS\n✓ 入力値から時刻への変換テスト: 成功\ntest/test_input_logic_simple.cpp:178:test_input_to_time:PASS\n✓ 時刻から入力値への変換テスト: 成功\ntest/test_input_logic_simple.cpp:179:test_time_to_input:PASS\n=== 全テスト完了 ===\n\n-----------------------\n8 Tests 0 Failures 0 Ignored \nOK\n",
-    "error_code": 0,
-    "timestamp": "2025-07-13T20:53:14.139843"
-  },
-  {
-    "test_name": "settings_logic",
-    "success": true,
-    "output": "\n=== 設定管理ロジックテスト開始 ===\n✓ チェックサム計算テスト: 成功\ntest/test_settings_logic_simple.cpp:206:test_checksum_calculation:PASS\n✓ 設定バリデーションテスト: 成功\ntest/test_settings_logic_simple.cpp:207:test_settings_validation:PASS\n✓ デフォルト設定テスト: 成功\ntest/test_settings_logic_simple.cpp:208:test_default_settings:PASS\n✓ 設定値範囲テスト: 成功\ntest/test_settings_logic_simple.cpp:209:test_settings_range_validation:PASS\ntest/test_settings_logic_simple.cpp:114:test_settings_save_load_simulation:FAIL: Expected FALSE Was TRUE\n✓ 設定更新テスト: 成功\ntest/test_settings_logic_simple.cpp:211:test_settings_update:PASS\n✓ 設定整合性テスト: 成功\ntest/test_settings_logic_simple.cpp:212:test_settings_consistency:PASS\n✓ エラーケーステスト: 成功\ntest/test_settings_logic_simple.cpp:213:test_error_cases:PASS\n\n-----------------------\n8 Tests 1 Failures 0 Ignored \nFAIL\n=== 設定管理ロジックテスト完了 ===\n全テストが完了しました！\n",
-    "error_code": 0,
-    "timestamp": "2025-07-13T20:53:15.917541"
-  },
-  {
-    "test_name": "warning_messages",
-    "success": true,
-    "output": "\n=== 警告メッセージ機能テスト開始 ===\nWarning message cleared\nWarning message displayed: テスト警告メッセージ\ntest/test_warning_messages_simple.cpp:45:test_show_warning_message:FAIL: Expected TRUE Was FALSEWarning message cleared\n\nWarning message cleared\nWarning message displayed: 自動消去テスト\ntest/test_warning_messages_simple.cpp:54:test_warning_message_auto_clear:FAIL: Expected TRUE Was FALSEWarning message cleared\n\nWarning message cleared\nWarning message displayed: 手動消去テスト\ntest/test_warning_messages_simple.cpp:67:test_warning_message_manual_clear:FAIL: Expected TRUE Was FALSEWarning message cleared\n\nWarning message cleared\nWarning message displayed: メッセージ1\ntest/test_warning_messages_simple.cpp:81:test_multiple_warning_messages:FAIL: Expected TRUE Was FALSEWarning message cleared\n\n\n-----------------------\n4 Tests 4 Failures 0 Ignored \nFAIL\n=== 警告メッセージ機能テスト完了 ===\n全テストが完了しました！\n",
-    "error_code": 0,
-    "timestamp": "2025-07-13T20:53:16.856458"
-  }
-]
+{
+  "timestamp": "2025-07-14T04:20:49.962891",
+  "total_tests": 1,
+  "successful_tests": 1,
+  "failed_tests": 0,
+  "results": [
+    {
+      "name": "純粋ロジックテスト",
+      "success": true,
+      "duration": 9.181051969528198,
+      "timestamp": "2025-07-14T04:20:49.962868",
+      "output": "=== M5Stack集中タイマー 純粋ロジックテスト（Phase 0.6改善版） ===\nテストファイル数: 5\n\n--- time_logic テスト ---\n実行中: time_logicのコンパイル\nコマンド: g++ -I.pio/libdeps/native/Unity/src -Ilib -Itest/mocks -Isrc -Itest -std=c++11 -o time_logic test/test_time_logic_simple.cpp .pio/libdeps/native/Unity/src/unity.c test/mocks/mock_m5stack.cpp src/time_logic.cpp\n[OK] time_logicのコンパイル 成功\n実行中: time_logicの実行\nコマンド: time_logic.exe\n[OK] time_logicの実行 成功\n[OK] time_logicの実行 成功\n\n--- alarm_logic テスト ---\n実行中: alarm_logicのコンパイル\nコマンド: g++ -I.pio/libdeps/native/Unity/src -Ilib -Itest/mocks -Isrc -Itest -std=c++11 -o alarm_logic test/test_alarm_logic_simple.cpp .pio/libdeps/native/Unity/src/unity.c test/mocks/mock_m5stack.cpp src/time_logic.cpp src/alarm.cpp src/settings.cpp\n[OK] alarm_logicのコンパイル 成功\n実行中: alarm_logicの実行\nコマンド: alarm_logic.exe\n[OK] alarm_logicの実行 成功\n[OK] alarm_logicの実行 成功\n\n--- input_logic テスト ---\n実行中: input_logicのコンパイル\nコマンド: g++ -I.pio/libdeps/native/Unity/src -Ilib -Itest/mocks -Isrc -Itest -std=c++11 -o input_logic test/test_input_logic_simple.cpp .pio/libdeps/native/Unity/src/unity.c test/mocks/mock_m5stack.cpp src/time_logic.cpp\n[OK] input_logicのコンパイル 成功\n実行中: input_logicの実行\nコマンド: input_logic.exe\n[OK] input_logicの実行 成功\n[OK] input_logicの実行 成功\n\n--- settings_logic テスト ---\n実行中: settings_logicのコンパイル\nコマンド: g++ -I.pio/libdeps/native/Unity/src -Ilib -Itest/mocks -Isrc -Itest -std=c++11 -o settings_logic test/test_settings_logic_simple.cpp .pio/libdeps/native/Unity/src/unity.c test/mocks/mock_m5stack.cpp src/time_logic.cpp src/settings.cpp\n[OK] settings_logicのコンパイル 成功\n実行中: settings_logicの実行\nコマンド: settings_logic.exe\n[OK] settings_logicの実行 成功\n[OK] settings_logicの実行 成功\n\n--- warning_messages テスト ---\n実行中: warning_messagesのコンパイル\nコマンド: g++ -I.pio/libdeps/native/Unity/src -Ilib -Itest/mocks -Isrc -Itest -std=c++11 -o warning_messages test/test_warning_messages_simple.cpp .pio/libdeps/native/Unity/src/unity.c test/mocks/mock_m5stack.cpp\n[OK] warning_messagesのコンパイル 成功\n実行中: warning_messagesの実行\nコマンド: warning_messages.exe\n[OK] warning_messagesの実行 成功\n[OK] warning_messagesの実行 成功\n\n=== テスト結果 ===\n成功: 5/5\n[OK] 全テストが成功しました！\n\n[INFO] テスト結果を test_results.json に保存しました\n",
+      "error_output": ""
+    }
+  ]
+}

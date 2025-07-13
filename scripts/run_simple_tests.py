@@ -35,17 +35,17 @@ def run_command(command, description):
         output = result.stdout + result.stderr
         
         if success:
-            print(f"✓ {description} 成功")
+            print(f"[OK] {description} 成功")
         else:
-            print(f"✗ {description} 失敗")
+            print(f"[NG] {description} 失敗")
             print(f"エラー: {result.stderr}")
         
         return success, output, result.returncode
     except subprocess.TimeoutExpired:
-        print(f"✗ {description} タイムアウト")
+        print(f"[NG] {description} タイムアウト")
         return False, "タイムアウト", -1
     except Exception as e:
-        print(f"✗ {description} エラー: {e}")
+        print(f"[NG] {description} エラー: {e}")
         return False, str(e), -1
 
 def compile_test(test_name, source_file):
@@ -139,9 +139,9 @@ def main():
             
             if run_success:
                 success_count += 1
-                print(f"✓ {test_name}の実行 成功")
+                print(f"[OK] {test_name}の実行 成功")
             else:
-                print(f"✗ {test_name}の実行 失敗 (終了コード: {run_code})")
+                print(f"[NG] {test_name}の実行 失敗 (終了コード: {run_code})")
         else:
             # コンパイル失敗
             result = TestResult(
@@ -151,7 +151,7 @@ def main():
                 error_code=compile_code
             )
             results.append(result)
-            print(f"✗ {test_name}のコンパイル 失敗")
+            print(f"[NG] {test_name}のコンパイル 失敗")
         
         print()
     
@@ -160,9 +160,9 @@ def main():
     print(f"成功: {success_count}/{len(tests)}")
     
     if success_count == len(tests):
-        print("✓ 全テストが成功しました！")
+        print("[OK] 全テストが成功しました！")
     else:
-        print("⚠️  一部のテストが失敗しました。詳細を確認してください。")
+        print("[WARN] 一部のテストが失敗しました。詳細を確認してください。")
     
     # 結果をJSONファイルに保存
     results_data = []
@@ -178,7 +178,7 @@ def main():
     with open("test_results.json", "w", encoding="utf-8") as f:
         json.dump(results_data, f, ensure_ascii=False, indent=2)
     
-    print("\n📊 テスト結果を test_results.json に保存しました")
+    print("\n[INFO] テスト結果を test_results.json に保存しました")
     
     return success_count == len(tests)
 
