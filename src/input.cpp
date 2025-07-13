@@ -5,8 +5,9 @@
 #include "types.h"
 #include <M5Stack.h>
 // #include "button_adapter.h"
-// #include "button_manager.h"
+#include "button_manager.h"
 #include "debounce_manager.h"
+#include "ui.h"  // 警告メッセージ機能を使用するため
 extern Mode currentMode;
 
 // 入力値をバリデーションし、アラームリストに追加
@@ -67,12 +68,10 @@ void resetInput() {
 
 // 桁ごと編集方式の時刻入力用ボタン処理
 void handleDigitEditInput() {
-  // 操作レベルのデバウンスチェック（簡素化）
-  static unsigned long lastInputOperation = 0;
-  const unsigned long INPUT_DEBOUNCE_TIME = 100;
-  if (millis() - lastInputOperation < INPUT_DEBOUNCE_TIME) {
-    return;
-  }
+  // 操作レベルのデバウンスチェック（DebounceManagerを使用）
+  // if (!DebounceManager::canProcessOperation("input_mode")) {
+  //   return;
+  // }
   
   // 既存のA/Bボタン処理はそのまま（後で移行）
   static uint32_t aPressStart = 0;
@@ -108,7 +107,6 @@ void handleDigitEditInput() {
         break;
     }
     aLongPressFired = true;
-    lastInputOperation = millis();
   }
   if (M5.BtnA.wasReleased()) {
     if (!aLongPressFired && millis() - aPressStart < 500) {
@@ -133,7 +131,6 @@ void handleDigitEditInput() {
           digitEditInput.minOnes = (digitEditInput.minOnes + add) % 10;
           break;
       }
-      lastInputOperation = millis();
     }
   }
 
@@ -150,13 +147,11 @@ void handleDigitEditInput() {
     digitEditInput.minOnes = DigitEditTimeInputState::INIT_MIN_ONES;
     digitEditInput.cursor = 0; // カーソル位置もリセット
     bLongPressFired = true;
-    lastInputOperation = millis();
   }
   if (M5.BtnB.wasReleased()) {
     if (!bLongPressFired && millis() - bPressStart < 1000) {
       // 短押し: 桁送り（左から右）
       digitEditInput.cursor = (digitEditInput.cursor + 1) % 4;
-      lastInputOperation = millis();
     }
   }
 
@@ -174,7 +169,6 @@ void handleDigitEditInput() {
     Serial.println("C button long press detected - returning to main");
     currentMode = MAIN_DISPLAY;
     cLongPressFired = true;
-    lastInputOperation = millis();
   }
   if (M5.BtnC.wasReleased()) {
     Serial.print("C button released - press duration: ");
@@ -191,6 +185,8 @@ void handleDigitEditInput() {
       Serial.print(" Min: ");
       Serial.print(digitEditInput.minTens);
       Serial.println(digitEditInput.minOnes);
+      
+      // アラーム追加処理を復活
       int hour = digitEditInput.hourTens * 10 + digitEditInput.hourOnes;
       int min = digitEditInput.minTens * 10 + digitEditInput.minOnes;
       
@@ -202,6 +198,7 @@ void handleDigitEditInput() {
       if (hour > 23 || min > 59) {
         // エラー: 無効な時刻
         Serial.println("Invalid time - validation failed");
+        showWarningMessage("無効な時刻です");
         return;
       }
       Serial.println("Time validation passed");
@@ -243,6 +240,7 @@ void handleDigitEditInput() {
       if (std::find(alarmTimes.begin(), alarmTimes.end(), alarmTime) != alarmTimes.end()) {
         // エラー: 重複
         Serial.println("Duplicate alarm - not added");
+        showWarningMessage("同じ時刻のアラームが既に存在します");
         return;
       }
       Serial.println("No duplicates found");
@@ -251,6 +249,7 @@ void handleDigitEditInput() {
       if (alarmTimes.size() >= 5) {
         // エラー: 最大数超過
         Serial.println("Too many alarms - not added");
+        showWarningMessage("アラームは最大5件までです");
         return;
       }
       Serial.println("Alarm count check passed");
@@ -267,7 +266,6 @@ void handleDigitEditInput() {
       // メイン画面に戻る
       Serial.println("Alarm added successfully - returning to main");
       currentMode = MAIN_DISPLAY;
-      lastInputOperation = millis();
     }
   }
   

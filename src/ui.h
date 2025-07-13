@@ -57,6 +57,11 @@ void drawProgressBar(int x, int y, int width, int height, float progress);
 void drawInvertedText(const char* text, int x, int y, int font);
 bool showYesNoDialog(const char* title, const char* detail);
 
+// 警告メッセージ表示機能
+void showWarningMessage(const char* message, unsigned long duration = 3000);
+bool isWarningMessageDisplayed(const char* message);
+void clearWarningMessage();
+
 // Screen drawing functions
 void drawMainDisplay();
 void drawNTPSync();

@@ -546,3 +546,47 @@ void drawAlarmActive() {
     sprite.pushSprite(0, 0);
   }
 }
+
+// 警告メッセージ表示機能
+static unsigned long warningStartTime = 0;
+static char currentWarningMessage[64] = "";
+static bool warningActive = false;
+
+void showWarningMessage(const char* message, unsigned long duration) {
+  strncpy(currentWarningMessage, message, sizeof(currentWarningMessage) - 1);
+  currentWarningMessage[sizeof(currentWarningMessage) - 1] = '\0';
+  warningStartTime = millis();
+  warningActive = true;
+  
+  // 警告メッセージを表示
+  sprite.fillSprite(TFT_BLACK);
+  sprite.setTextDatum(MC_DATUM);
+  sprite.setTextColor(FLASH_ORANGE, TFT_BLACK);
+  sprite.setTextFont(4);
+  sprite.drawString(currentWarningMessage, SCREEN_WIDTH/2, SCREEN_HEIGHT/2);
+  sprite.pushSprite(0, 0);
+  
+  Serial.print("Warning message displayed: ");
+  Serial.println(message);
+}
+
+bool isWarningMessageDisplayed(const char* message) {
+  if (!warningActive) return false;
+  
+  // 指定されたメッセージと一致するかチェック
+  if (strcmp(currentWarningMessage, message) == 0) {
+    // 表示時間が経過したかチェック
+    if (millis() - warningStartTime >= 3000) {
+      warningActive = false;
+      return false;
+    }
+    return true;
+  }
+  return false;
+}
+
+void clearWarningMessage() {
+  warningActive = false;
+  currentWarningMessage[0] = '\0';
+  Serial.println("Warning message cleared");
+}
