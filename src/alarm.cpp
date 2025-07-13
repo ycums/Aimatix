@@ -5,7 +5,7 @@
 // Global variables
 std::vector<time_t> alarmTimes;
 
-// デバッグ用：初期値を5件追加
+// 開発用：初期値を5件追加
 void addDebugAlarms() {
   time_t now = time(NULL);
   struct tm *timeinfo = localtime(&now);

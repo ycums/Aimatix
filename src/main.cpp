@@ -9,10 +9,8 @@
 #include "alarm.h"
 #include "input.h"
 #include "types.h"
-// #include "button_manager.h"
 #include "debounce_manager.h"
 #include "button_manager.h"
-// #include "button_adapter.h"
 
 // 新しい状態遷移システムのインクルード
 #include "state_transition/button_event.h"
@@ -37,28 +35,27 @@ SettingsMenu settingsMenu;
 extern InputState inputState; // Declared in input.h
 extern Settings settings; // Declared in settings.h
 extern std::vector<time_t> alarmTimes; // Declared in alarm.h
+
+// グローバル変数（他のファイルでextern宣言されているもの）
 int scheduleSelectedIndex = 0;
+time_t lastReleaseTime = 0;
 
 // Function declarations defined in main.cpp
 bool connectWiFi();
 bool syncTime();
 void handleButtons();
-void handleSettingsMenu();
 void removePastAlarms();
 
 // WiFi credentials
 const char* ssid = "your-ssid"; // Placeholder
 const char* password = "your-password"; // Placeholder
 
-// スケジュール選択モード用の選択インデックス
-// static int scheduleSelectedIndex = 0; // This line is removed as it's now extern
-
-time_t lastReleaseTime = 0;
+// 古い変数は削除（新しい状態遷移システムで管理）
 
 void setup() {
   M5.begin();
   M5.Power.begin();
-  Serial.begin(115200); // デバッグ用シリアル通信を開始
+  Serial.begin(115200); // シリアル通信を開始
 
   initUI(); // スプライト初期化を追加
 
@@ -73,7 +70,7 @@ void setup() {
   M5.Lcd.fillScreen(TFT_BLACK);
   M5.Lcd.setTextColor(AMBER_COLOR, TFT_BLACK);
   
-  // デバッグ用：アラームリストに初期値を5件追加
+  // アラームリストに初期値を追加（開発用）
   addDebugAlarms();
   
   // ButtonManagerの初期化
@@ -85,7 +82,7 @@ void setup() {
   //   timeClient.begin();
   //   syncTime();
   // }
-  // デバッグ用: システム時刻を仮で設定（必要なら）
+  // システム時刻設定（必要に応じて）
   // settimeofday などで適当な時刻をセットしてもよい
 }
 
@@ -208,42 +205,7 @@ bool syncTime() {
 
 
 
-void handleSettingsMenu() {
-  if (M5.BtnA.wasPressed()) {
-    settingsMenu.selectedItem = (settingsMenu.selectedItem - 1 + settingsMenu.itemCount) % settingsMenu.itemCount;
-  }
-  if (M5.BtnB.wasPressed()) {
-    settingsMenu.selectedItem = (settingsMenu.selectedItem + 1) % settingsMenu.itemCount;
-  }
-  if (M5.BtnC.wasPressed()) {
-    switch (settingsMenu.selectedItem) {
-      case 0:  // Sound
-        settings.sound_enabled = !settings.sound_enabled;
-        break;
-      case 1:  // Vibration
-        // Vibration設定の処理（現在は未実装）
-        break;
-      case 2:  // LCD Brightness
-        settings.lcd_brightness = (settings.lcd_brightness + 50) % 251;
-        if (settings.lcd_brightness < 50) settings.lcd_brightness = 50;
-        M5.Lcd.setBrightness(settings.lcd_brightness);
-        break;
-      case 3:  // Warning Color Test
-        currentMode = WARNING_COLOR_TEST;
-        break;
-      case 4:  // All Clear
-        // 共通の確認画面を使用
-        if (showYesNoDialog("CLEAR ALL ALARMS?", NULL)) {
-          alarmTimes.clear();
-        }
-        break;
-      case 5:  // Info
-        currentMode = INFO_DISPLAY;
-        break;
-    }
-    saveSettings();
-  }
-}
+// handleSettingsMenu関数は削除（新しい状態遷移システムで管理）
 
 // ボタンイベントをM5Stackボタン状態から作成する関数
 ButtonEvent createButtonEventFromM5Stack() {
@@ -351,46 +313,11 @@ void handleButtons() {
     }
   }
   
-  // 入力モードの場合は既存の入力処理を実行
-  if (currentMode == ABS_TIME_INPUT || currentMode == REL_PLUS_TIME_INPUT) {
-    handleDigitEditInput();
-    drawInputMode();
-  }
+  // 入力モードの処理は新しい状態遷移システムで管理
   
-  // アラーム管理画面の場合は既存の処理を実行
-  if (currentMode == ALARM_MANAGEMENT) {
-    int listSize = alarmTimes.size();
-         if (event.button == BUTTON_TYPE_A && event.action == SHORT_PRESS) {
-       // PREV: 前の項目へ
-       if (scheduleSelectedIndex > 0) {
-         scheduleSelectedIndex--;
-       }
-     }
-     if (event.button == BUTTON_TYPE_B && event.action == SHORT_PRESS) {
-       // NEXT: 次の項目へ
-       if (scheduleSelectedIndex < listSize - 1) {
-         scheduleSelectedIndex++;
-       }
-     }
-     if (event.button == BUTTON_TYPE_C && event.action == SHORT_PRESS) {
-      // C短押し: DELETE処理
-      if (scheduleSelectedIndex < alarmTimes.size()) {
-        // 共通の確認画面を使用
-        if (showYesNoDialog("DELETE ALARM?", getTimeString(alarmTimes[scheduleSelectedIndex]).c_str())) {
-          // 削除実行
-          alarmTimes.erase(alarmTimes.begin() + scheduleSelectedIndex);
-          if (scheduleSelectedIndex >= alarmTimes.size() && alarmTimes.size() > 0) {
-            scheduleSelectedIndex = alarmTimes.size() - 1;
-          }
-        }
-      }
-    }
-  }
+  // アラーム管理画面の処理は新しい状態遷移システムで管理
   
-  // 設定メニューの場合は既存の処理を実行
-  if (currentMode == SETTINGS_MENU) {
-    handleSettingsMenu();
-  }
+  // 設定メニューの処理は新しい状態遷移システムで管理
   
   // ButtonManagerの状態更新
   ButtonManager::updateButtonStates();

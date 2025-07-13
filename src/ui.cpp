@@ -139,7 +139,7 @@ void drawInvertedText(const char* text, int x, int y, int font) {
   uint8_t currentDatum = sprite.getTextDatum();
   sprite.setTextDatum(TL_DATUM);
   int lineHeight = sprite.fontHeight(font);
-  // デバッグ用: 塗りつぶし範囲を明示
+  // 塗りつぶし範囲を明示
   sprite.fillRect(0, y, 320, lineHeight, AMBER_COLOR);
   sprite.setTextColor(TFT_BLACK); // 黒文字
   sprite.drawString(text, x, y);
