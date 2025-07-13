@@ -12,9 +12,17 @@
 typedef uint8_t byte;
 typedef uint16_t word;
 typedef uint32_t dword;
-#ifndef _TIME_T_DECLARED
-typedef long time_t;
-#define _TIME_T_DECLARED
+
+// Windows環境でのtime_t型の競合を回避
+#ifdef _WIN32
+  #ifndef _TIME_T_DECLARED
+    #define _TIME_T_DECLARED
+  #endif
+#else
+  #ifndef _TIME_T_DECLARED
+    typedef long time_t;
+    #define _TIME_T_DECLARED
+  #endif
 #endif
 
 // Arduino constants
@@ -32,14 +40,21 @@ int digitalRead(uint8_t pin);
 void pinMode(uint8_t pin, uint8_t mode);
 
 // Mock time functions
-#ifndef _STRUCT_TIMEVAL
-#ifndef __timeval_defined
-struct timeval {
-    long tv_sec;
-    long tv_usec;
-};
-#define __timeval_defined
-#endif
+#ifdef _WIN32
+  // Windows環境ではtimevalを再定義しない
+  #ifndef _STRUCT_TIMEVAL
+    #define _STRUCT_TIMEVAL
+  #endif
+#else
+  #ifndef _STRUCT_TIMEVAL
+  #ifndef __timeval_defined
+  struct timeval {
+      long tv_sec;
+      long tv_usec;
+  };
+  #define __timeval_defined
+  #endif
+  #endif
 #endif
 
 int settimeofday(const struct timeval* tv, void* tz) { return 0; }

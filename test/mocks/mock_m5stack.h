@@ -2,6 +2,28 @@
 #define MOCK_M5STACK_H
 
 #include <cstdint>
+#include <ctime>
+
+// Windows環境でのヘッダー競合を回避
+#ifdef _WIN32
+  // Windows環境ではtime_tを再定義しない
+  #ifndef MOCK_TIME_T_DEFINED
+    #define MOCK_TIME_T_DEFINED
+  #endif
+#else
+  // 非Windows環境ではArduinoの定義を使用
+  typedef long time_t;
+#endif
+
+// localtime_rの代替実装（Windows用）
+#ifdef _WIN32
+inline struct tm* localtime_r(const time_t* timep, struct tm* result) {
+    if (localtime_s(result, timep) == 0) {
+        return result;
+    }
+    return nullptr;
+}
+#endif
 
 // テスト用のM5Stackモッククラス
 class MockM5Stack {

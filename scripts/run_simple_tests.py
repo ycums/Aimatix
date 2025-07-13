@@ -70,8 +70,20 @@ def compile_and_run_test(test_file, test_name):
     test_path = Path("test") / test_file
     output_name = f"test_{test_name}"
     
-    # コンパイルコマンド
-    compile_cmd = f"{compiler} -I{unity_path} -std=c++11 -o {output_name} {test_path}"
+    # Unityライブラリのソースファイルを探す
+    unity_src = None
+    for unity_file in ["unity.c", "unity.cpp"]:
+        unity_src_path = Path(unity_path) / unity_file
+        if unity_src_path.exists():
+            unity_src = str(unity_src_path)
+            break
+    
+    if not unity_src:
+        print(f"✗ Unityライブラリのソースファイルが見つかりません")
+        return False
+    
+    # コンパイルコマンド（ヘッダーパスとライブラリリンクを含む）
+    compile_cmd = f"{compiler} -I{unity_path} -Isrc -Itest/mocks -std=c++11 -o {output_name} {test_path} {unity_src}"
     
     if not run_command(compile_cmd, f"{test_name}のコンパイル"):
         return False

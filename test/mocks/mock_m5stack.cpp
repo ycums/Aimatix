@@ -31,9 +31,15 @@ public:
   void print(const char* str) { printf("%s", str); }
   void print(int value) { printf("%d", value); }
   void print(unsigned long value) { printf("%lu", value); }
+  void print(long value) { printf("%ld", value); }
+  void print(long long value) { printf("%lld", value); }
+  void print(size_t value) { printf("%zu", value); }
   void println(const char* str) { printf("%s\n", str); }
   void println(int value) { printf("%d\n", value); }
   void println(unsigned long value) { printf("%lu\n", value); }
+  void println(long value) { printf("%ld\n", value); }
+  void println(long long value) { printf("%lld\n", value); }
+  void println(size_t value) { printf("%zu\n", value); }
   void println() { printf("\n"); }
 };
 
