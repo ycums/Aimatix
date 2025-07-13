@@ -7,6 +7,9 @@
 #include "types.h" // Mode enum と SettingsMenu 構造体を使用するため
 #include "settings.h" // Settings 構造体を使用するため
 #include "input.h" // InputState 構造体を使用するため
+#include <cstdint>
+#include <string>
+#include "../test/mocks/mock_m5stack.h"
 
 // カラーパレット定義
 #define AMBER_COLOR 0xFB20  // アンバー色 (RGB565: R=31, G=22, B=0) - 確定
@@ -34,9 +37,13 @@
 #define GRID_WIDTH 20   // 320/16
 #define GRID_HEIGHT 20  // 240/12
 
-// グリッド座標からピクセル座標への変換ヘルパー
+// グリッド座標からピクセル座標への変換ヘルパー（条件付きコンパイル）
+#ifndef GRID_X
 #define GRID_X(col) (col * GRID_WIDTH)
+#endif
+#ifndef GRID_Y
 #define GRID_Y(row) (TITLE_HEIGHT + row * GRID_HEIGHT)
+#endif
 
 // Declare the sprite object (TFT_eSprite is available via M5Stack library)
 extern TFT_eSprite sprite;
@@ -50,9 +57,9 @@ void drawTitleBar(const char* modeName);
 void drawButtonHintsGrid(const char* btnA, const char* btnB, const char* btnC);
 void drawCommonUI(const char* modeName);
 void drawGridLines();
-String getTimeString(time_t t);
-String getDateString(time_t t);
-String getRemainTimeString(time_t now, time_t target);
+std::string getTimeString(time_t t);
+std::string getDateString(time_t t);
+std::string getRemainTimeString(time_t now, time_t target);
 void drawProgressBar(int x, int y, int width, int height, float progress);
 void drawInvertedText(const char* text, int x, int y, int font);
 bool showYesNoDialog(const char* title, const char* detail);

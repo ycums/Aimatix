@@ -3,6 +3,7 @@
 
 #include <EEPROM.h>
 #include <M5Stack.h>
+#include <cstdint>
 
 // Constants
 #define EEPROM_SIZE 512

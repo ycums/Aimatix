@@ -1,7 +1,7 @@
 #include "debounce_manager.h"
 
 // 静的メンバ変数の定義
-std::map<String, unsigned long> DebounceManager::lastOperationTimes;
+std::map<std::string, unsigned long> DebounceManager::lastOperationTimes;
 unsigned long DebounceManager::lastModeChangeTime = 0;
 
 // ハードウェアレベルのデバウンス判定
@@ -23,7 +23,7 @@ bool DebounceManager::canProcessHardware(Button& button) {
 }
 
 // 操作レベルのデバウンス判定
-bool DebounceManager::canProcessOperation(const String& operationType) {
+bool DebounceManager::canProcessOperation(const std::string& operationType) {
   unsigned long currentTime = millis();
   
   // 指定された操作タイプの最後の処理時刻を取得

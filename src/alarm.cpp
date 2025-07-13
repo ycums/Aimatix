@@ -1,6 +1,7 @@
 #include "alarm.h"
 #include <M5Stack.h>
 #include "settings.h" // settings構造体を参照するため
+#include "../test/mocks/mock_m5stack.h"
 
 // Global variables
 std::vector<time_t> alarmTimes;

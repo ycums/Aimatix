@@ -3,11 +3,13 @@
 #include "alarm.h"
 #include <algorithm>
 #include "types.h"
-#include <M5Stack.h>
+// #include <M5Stack.h>  // mock_m5stack.hで代替
+#include <cstdint>
 // #include "button_adapter.h"
 #include "button_manager.h"
 #include "debounce_manager.h"
 #include "ui.h"  // 警告メッセージ機能を使用するため
+#include "../test/mocks/mock_m5stack.h"
 extern Mode currentMode;
 
 // 入力値をバリデーションし、アラームリストに追加

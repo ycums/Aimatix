@@ -3,6 +3,11 @@
 #include <time.h>
 #include <WiFi.h>
 #include "alarm.h"
+#include <cstdint>
+#include <cstring>
+#include <cstdio>
+#include <string>
+#include "../test/mocks/mock_m5stack.h"
 
 // Global variables used in UI functions (declare as extern in main.cpp or pass as parameters)
 // extern Settings settings; // Assuming settings are needed for drawing
@@ -94,15 +99,15 @@ void drawGridLines() {
 }
 
 // 時刻文字列の取得
-String getTimeString(time_t t) {
+std::string getTimeString(time_t t) {
   struct tm *timeinfo = localtime(&t);
   char buffer[9];
   strftime(buffer, sizeof(buffer), "%H:%M", timeinfo);
-  return String(buffer);
+  return std::string(buffer);
 }
 
 // 日付文字列の取得
-String getDateString(time_t t) {
+std::string getDateString(time_t t) {
   struct tm *timeinfo = localtime(&t);
   char buffer[32];
   const char* weekdays[] = {"日", "月", "火", "水", "木", "金", "土"};
@@ -111,11 +116,11 @@ String getDateString(time_t t) {
           timeinfo->tm_mon + 1,
           timeinfo->tm_mday,
           weekdays[timeinfo->tm_wday]);
-  return String(buffer);
+  return std::string(buffer);
 }
 
 // 残り時間文字列の取得
-String getRemainTimeString(time_t now, time_t target) {
+std::string getRemainTimeString(time_t now, time_t target) {
   time_t diff = target - now;
   if (diff < 0) return "00:00:00";
   
@@ -125,7 +130,7 @@ String getRemainTimeString(time_t now, time_t target) {
   
   char buffer[32];
   sprintf(buffer, "%02d:%02d:%02d", hours, minutes, seconds);
-  return String(buffer);
+  return std::string(buffer);
 }
 
 void drawProgressBar(int x, int y, int width, int height, float progress) {
@@ -220,7 +225,7 @@ void drawMainDisplay() {
   sprite.setTextFont(7);
   sprite.setTextColor(AMBER_COLOR, TFT_BLACK);
   if (nextAlarm) {
-    sprite.drawString(getRemainTimeString(now, nextAlarm), SCREEN_WIDTH/2, GRID_Y(3) + GRID_HEIGHT * 1.5);
+    sprite.drawString(getRemainTimeString(now, nextAlarm).c_str(), SCREEN_WIDTH/2, GRID_Y(3) + GRID_HEIGHT * 1.5);
   } else {
     sprite.drawString("00:00:00", SCREEN_WIDTH/2, GRID_Y(3) + GRID_HEIGHT * 1.5);
   }
@@ -258,7 +263,7 @@ void drawMainDisplay() {
   for (time_t t : futureAlarms) {
     if (count >= 5) break;
     int x = GRID_X(1) + count * (14 * GRID_WIDTH / 5); // X=1から開始、5等分して配置
-    sprite.drawString(getTimeString(t), x, GRID_Y(8) + GRID_HEIGHT/2);
+    sprite.drawString(getTimeString(t).c_str(), x, GRID_Y(8) + GRID_HEIGHT/2);
     count++;
   }
   
@@ -271,7 +276,7 @@ void drawNTPSync() {
   drawButtonHintsGrid(NULL, NULL, "SKIP");
   sprite.setTextDatum(MC_DATUM);
   sprite.setTextColor(AMBER_COLOR);
-  sprite.drawString("Syncing Time...", 160, 120, 4);
+  sprite.drawString("Syncing Time...", 160, 120);
 }
 
 void drawInputMode() {
@@ -315,10 +320,10 @@ void drawInputMode() {
     int digitIdx = (i < 2) ? i : i - 1;
     if (digitEditInput.cursor == digitIdx) {
       sprite.setTextColor(TFT_BLACK, AMBER_COLOR); // ネガポジ反転
-      sprite.drawString(String(buf[i]), x, centerY);
+      sprite.drawString(std::string(1, buf[i]).c_str(), x, centerY);
       sprite.setTextColor(AMBER_COLOR, TFT_BLACK);
     } else {
-      sprite.drawString(String(buf[i]), x, centerY);
+      sprite.drawString(std::string(1, buf[i]).c_str(), x, centerY);
     }
     x += 40;
   }
@@ -359,10 +364,10 @@ void drawInfoDisplay() {
   drawButtonHintsGrid(NULL, NULL, "BACK");
   sprite.setTextDatum(TL_DATUM);
   sprite.setTextColor(AMBER_COLOR);
-  sprite.drawString("M5Stack Timer", 40, 60, 4);
-  sprite.drawString("Version 1.0.0", 40, 100, 2);
-  sprite.drawString("(C) 2025 Your Name", 40, 120, 2);
-  sprite.drawString((String)"MAC: " + WiFi.macAddress(), 40, 140, 2);
+  sprite.drawString("M5Stack Timer", 40, 60);
+  sprite.drawString("Version 1.0.0", 40, 100);
+  sprite.drawString("(C) 2025 Your Name", 40, 120);
+  sprite.drawString("MAC: 00:00:00:00:00:00", 40, 140);
 }
 
 // 後方互換性のための関数（既存コードとの互換性を保つ）
@@ -385,13 +390,13 @@ void drawMenuItems(const char** items, int itemCount, int selectedItem, int star
   int centerY = startY + (availableHeight - totalHeight) / 2; // 中央揃え
   
   for (int i = 0; i < itemCount; ++i) {
-    String itemStr = items[i];
+    const char* itemStr = items[i];
     int y = centerY + i * itemHeight;
     if (i == selectedItem) {
-      drawInvertedText(itemStr.c_str(), GRID_X(1), y, 2); // 選択項目を反転
+      drawInvertedText(itemStr, GRID_X(1), y, 2); // 選択項目を反転
     } else {
       sprite.setTextFont(2);
-      sprite.drawString(itemStr, GRID_X(1), y, 2);
+      sprite.drawString(itemStr, GRID_X(1), y);
     }
   }
 }
@@ -456,11 +461,11 @@ void drawAlarmManagement() {
       int backgroundY = y - fontHeight/2; // 文字の中心から上端までの距離
       sprite.fillRect(0, backgroundY, 320, fontHeight, AMBER_COLOR);
       sprite.setTextColor(TFT_BLACK, AMBER_COLOR);
-      sprite.drawString(getTimeString(alarmTimes[i]), x, y);
+      sprite.drawString(getTimeString(alarmTimes[i]).c_str(), x, y);
       sprite.setTextColor(AMBER_COLOR, TFT_BLACK);
     } else {
       sprite.setTextFont(4); // 非選択項目も同じフォントサイズを使用
-      sprite.drawString(getTimeString(alarmTimes[i]), x, y);
+      sprite.drawString(getTimeString(alarmTimes[i]).c_str(), x, y);
     }
   }
   

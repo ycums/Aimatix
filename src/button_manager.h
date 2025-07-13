@@ -1,8 +1,8 @@
 #ifndef BUTTON_MANAGER_H
 #define BUTTON_MANAGER_H
 
-#include <M5Stack.h>
 #include <map>
+#include "../test/mocks/mock_m5stack.h"
 #include "debounce_manager.h"
 
 // ボタン状態の構造体

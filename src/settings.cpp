@@ -1,4 +1,5 @@
 #include "settings.h"
+#include "../test/mocks/mock_m5stack.h"
 
 // Global variables
 Settings settings = {true, 100, 0};  // デフォルト設定
