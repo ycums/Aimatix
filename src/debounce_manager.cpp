@@ -4,11 +4,6 @@
 std::map<String, unsigned long> DebounceManager::lastOperationTimes;
 unsigned long DebounceManager::lastModeChangeTime = 0;
 
-// デフォルトのデバウンス時間
-const unsigned long DebounceManager::DEFAULT_HARDWARE_DEBOUNCE = 50;
-const unsigned long DebounceManager::DEFAULT_OPERATION_DEBOUNCE = 200;
-const unsigned long DebounceManager::DEFAULT_MODE_CHANGE_DEBOUNCE = 300;
-
 // ハードウェアレベルのデバウンス判定
 bool DebounceManager::canProcessHardware(Button& button) {
   // 現在の時刻

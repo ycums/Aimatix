@@ -9,8 +9,10 @@
 #include "alarm.h"
 #include "input.h"
 #include "types.h"
-#include "button_manager.h"
+// #include "button_manager.h"
 #include "debounce_manager.h"
+#include "button_manager.h"
+// #include "button_adapter.h"
 
 // Constants
 #define WIFI_TIMEOUT 20000  // 20秒のタイムアウト
@@ -36,6 +38,53 @@ bool syncTime();
 void handleButtons();
 void handleSettingsMenu();
 void removePastAlarms();
+
+// ButtonManagerの基本機能テスト（Phase 1確認用）
+void testButtonManagerFunctions() {
+  Serial.println("=== Testing ButtonManager Functions ===");
+  
+  // 短押し判定テスト
+  bool shortPressA = ButtonManager::isShortPress(M5.BtnA, 1000);
+  bool shortPressB = ButtonManager::isShortPress(M5.BtnB, 1000);
+  bool shortPressC = ButtonManager::isShortPress(M5.BtnC, 1000);
+  
+  Serial.printf("Short Press - A: %s, B: %s, C: %s\n",
+                shortPressA ? "YES" : "NO",
+                shortPressB ? "YES" : "NO",
+                shortPressC ? "YES" : "NO");
+  
+  // 長押し判定テスト
+  bool longPressA = ButtonManager::isLongPress(M5.BtnA, 1000);
+  bool longPressB = ButtonManager::isLongPress(M5.BtnB, 1000);
+  bool longPressC = ButtonManager::isLongPress(M5.BtnC, 1000);
+  
+  Serial.printf("Long Press - A: %s, B: %s, C: %s\n",
+                longPressA ? "YES" : "NO",
+                longPressB ? "YES" : "NO",
+                longPressC ? "YES" : "NO");
+  
+  // リリース判定テスト
+  bool releasedA = ButtonManager::isReleased(M5.BtnA);
+  bool releasedB = ButtonManager::isReleased(M5.BtnB);
+  bool releasedC = ButtonManager::isReleased(M5.BtnC);
+  
+  Serial.printf("Released - A: %s, B: %s, C: %s\n",
+                releasedA ? "YES" : "NO",
+                releasedB ? "YES" : "NO",
+                releasedC ? "YES" : "NO");
+  
+  // デバウンス処理テスト
+  bool canProcessA = ButtonManager::canProcessButton(M5.BtnA);
+  bool canProcessB = ButtonManager::canProcessButton(M5.BtnB);
+  bool canProcessC = ButtonManager::canProcessButton(M5.BtnC);
+  
+  Serial.printf("Can Process - A: %s, B: %s, C: %s\n",
+                canProcessA ? "YES" : "NO",
+                canProcessB ? "YES" : "NO",
+                canProcessC ? "YES" : "NO");
+  
+  Serial.println("=== ButtonManager Test Complete ===");
+}
 
 // WiFi credentials
 const char* ssid = "your-ssid"; // Placeholder
@@ -68,7 +117,7 @@ void setup() {
   addDebugAlarms();
   
   // ButtonManagerの初期化
-  ButtonManager::resetButtonStates();
+  ButtonManager::initialize(); // ButtonManagerの初期化を追加
   Serial.println("ButtonManager initialized");
   
   // Wi-Fi/NTP同期は一時的にスキップ
@@ -84,8 +133,8 @@ void loop() {
   removePastAlarms();
   M5.update();  // ボタン状態を更新
   
-  // ButtonManagerの状態更新（既存処理には影響なし）
-  ButtonManager::updateButtonStates();
+  // ButtonManagerの状態更新（IButtonインターフェース対応）
+  ButtonManager::updateButtonStates(); // ButtonManagerの状態更新を追加
   
   handleButtons(); // ボタン処理を追加
 
@@ -232,18 +281,22 @@ void handleSettingsMenu() {
 }
 
 void handleButtons() {
-  static unsigned long lastPress = 0;
-  static unsigned long lastModeChange = 0;
-  const unsigned long LONG_PRESS_TIME = 1000;  // 1秒間の長押し
-  const unsigned long DEBOUNCE_TIME = 200;     // デバウンス時間200ms
-  static bool cLongPressHandled = false;
+  // ButtonManager::updateButtonStates(); // ButtonManager依存部分を一時的にコメントアウト
   
-  // デバウンス処理：前回のモード変更から一定時間経過していない場合は処理をスキップ
+  // デバウンスチェック（簡素化）
+  static unsigned long lastModeChange = 0;
+  const unsigned long DEBOUNCE_TIME = 200;
   if (millis() - lastModeChange < DEBOUNCE_TIME) {
     return;
   }
   
-  // 入力モード以外での全画面共通のC長押し処理（メイン画面に戻る）
+  // ボタン処理用の変数
+  static unsigned long lastPress = 0;
+  static bool cLongPressHandled = false;
+  static bool bLongPressHandled = false;
+  const unsigned long LONG_PRESS_TIME = 1000;  // 1秒間の長押し
+  
+  // Cボタン処理（元の実装に戻す）
   if (currentMode != ABS_TIME_INPUT && currentMode != REL_PLUS_TIME_INPUT && currentMode != REL_MINUS_TIME_INPUT) {
     if (M5.BtnC.wasPressed()) {
       lastPress = millis();
@@ -255,22 +308,21 @@ void handleButtons() {
         Serial.println("Main: C button long press - returning to main");
         currentMode = MAIN_DISPLAY;
         cLongPressHandled = true;
-        lastModeChange = millis();
         return; // 他の処理をスキップ
       }
     }
   }
   
-  // メイン画面でのC長押し処理（設定画面へ）
+  // メイン画面C長押し処理（元の実装に戻す）
   if (currentMode == MAIN_DISPLAY && M5.BtnC.pressedFor(LONG_PRESS_TIME)) {
     if (!cLongPressHandled) {
       currentMode = SETTINGS_MENU;
       cLongPressHandled = true;
-      lastModeChange = millis();
       return; // 他の処理をスキップ
     }
   }
   
+  // 既存のswitch文（そのまま）
   switch (currentMode) {
     case MAIN_DISPLAY:
       if (M5.BtnA.wasPressed()) {
@@ -280,15 +332,21 @@ void handleButtons() {
       }
       if (M5.BtnB.wasPressed()) {
         lastPress = millis();
+        bLongPressHandled = false;
       }
       if (M5.BtnB.pressedFor(LONG_PRESS_TIME)) {
-        currentMode = REL_MINUS_TIME_INPUT;
-        resetInput();
-        lastModeChange = millis();
+        if (!bLongPressHandled) {
+          // Bボタン長押しは削除（相対時刻減算画面への遷移を無効化）
+          bLongPressHandled = true;
+        }
       } else if (M5.BtnB.wasReleased() && millis() - lastPress < LONG_PRESS_TIME) {
         currentMode = REL_PLUS_TIME_INPUT;
         resetInput();
         lastModeChange = millis();
+      }
+      if (M5.BtnC.wasPressed()) {
+        lastPress = millis();
+        cLongPressHandled = false;
       }
       if (M5.BtnC.wasReleased() && millis() - lastPress < LONG_PRESS_TIME) {
         currentMode = ALARM_MANAGEMENT; // C短押しでアラーム管理画面へ
@@ -322,7 +380,19 @@ void handleButtons() {
         }
       }
       if (M5.BtnC.wasPressed()) {
-        // DELETE: 二段階確認でアラーム削除
+        lastPress = millis();
+        cLongPressHandled = false;
+      }
+      if (M5.BtnC.pressedFor(LONG_PRESS_TIME)) {
+        if (!cLongPressHandled) {
+          // C長押し: メイン画面に戻る
+          currentMode = MAIN_DISPLAY;
+          cLongPressHandled = true;
+          lastModeChange = millis();
+          return;
+        }
+      } else if (M5.BtnC.wasReleased() && millis() - lastPress < LONG_PRESS_TIME) {
+        // C短押し: DELETE処理
         if (scheduleSelectedIndex < alarmTimes.size()) {
           // 共通の確認画面を使用
           if (showYesNoDialog("DELETE ALARM?", getTimeString(alarmTimes[scheduleSelectedIndex]).c_str())) {
@@ -362,11 +432,9 @@ void handleButtons() {
       if (M5.BtnC.pressedFor(LONG_PRESS_TIME) || M5.BtnB.pressedFor(LONG_PRESS_TIME)) {
         if (scheduleSelectedIndex == alarmTimes.size()) {
           currentMode = SETTINGS_MENU;
-          lastModeChange = millis();
         } else {
           // アラーム選択時は何もしない（将来編集モード等に拡張可）
           currentMode = MAIN_DISPLAY;
-          lastModeChange = millis();
         }
       }
       break;
@@ -376,4 +444,5 @@ void handleButtons() {
       drawInfoDisplay();
       break;
   }
+  
 }

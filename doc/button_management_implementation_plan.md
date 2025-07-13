@@ -4,25 +4,55 @@
 
 現在のプロジェクトにおけるボタン管理の分散とデバウンス処理の重複を解決し、将来的な拡張性（AB同時押しなど）に対応できる統一されたシステムを実装する。
 
-## 現状の問題点
+## 現状の分析（2024年12月時点）
 
-### 1. ボタン管理の分散
-- `main.cpp`と`input.cpp`でボタン処理が重複
-- 各画面で個別にボタン判定ロジックを実装
-- 長押し/短押し判定の基準が不統一
+### 1. 既に実装済みのコンポーネント
+- ✅ **DebounceManager**: 階層化されたデバウンス管理システム
+  - ハードウェアレベル（50ms）
+  - 操作レベル（200ms）
+  - 画面遷移レベル（300ms）
+- ✅ **基本的なUIシステム**: Amber CRTテーマ、グリッドレイアウト
+- ✅ **設定管理**: EEPROMベースの設定保存・読み込み
+- ✅ **アラーム管理**: 基本的なアラーム機能
 
-### 2. デバウンス処理の重複
-- ハードウェアレベル、操作レベル、画面遷移レベルで重複
-- デバウンス時間の管理が分散
-- 保守性と拡張性の低下
+### 2. 現在の問題点
+- ❌ **ButtonManager未実装**: 統一されたボタン管理システムが存在しない
+- ❌ **ボタン処理の分散**: `main.cpp`と`input.cpp`でボタン処理が重複
+- ❌ **長押し/短押し判定の不統一**: 各画面で個別に実装
+- ❌ **将来拡張への対応困難**: AB同時押し、ABC同時押しの実装が困難
 
-### 3. 将来拡張への対応困難
-- AB同時押し、ABC同時押しの実装が困難
-- 新しいボタン操作パターンの追加が複雑
+### 3. 現在のボタン処理状況
+```cpp
+// main.cpp - 分散したボタン処理
+void handleButtons() {
+  static unsigned long lastModeChange = 0;
+  const unsigned long DEBOUNCE_TIME = 200;
+  static unsigned long lastPress = 0;
+  static bool cLongPressHandled = false;
+  const unsigned long LONG_PRESS_TIME = 1000;
+  
+  // 各モードで個別にボタン判定
+  switch (currentMode) {
+    case MAIN_DISPLAY:
+      if (M5.BtnA.wasPressed()) { /* ... */ }
+      if (M5.BtnB.wasPressed()) { /* ... */ }
+      if (M5.BtnC.pressedFor(LONG_PRESS_TIME)) { /* ... */ }
+      break;
+    // 他のモードも同様...
+  }
+}
+
+// input.cpp - 重複したボタン処理
+void handleDigitEditInput() {
+  static uint32_t aPressStart = 0;
+  static bool aLongPressFired = false;
+  // 同様の長押し判定ロジックが重複...
+}
+```
 
 ## 設計方針
 
-### 1. 階層化されたデバウンス管理
+### 1. 階層化されたデバウンス管理（既存のDebounceManagerを活用）
 ```
 ┌─────────────────────────────────────┐
 │ 画面遷移レベル (ModeManager)         │
@@ -39,7 +69,7 @@
 └─────────────────────────────────────┘
 ```
 
-### 2. 統一されたボタン管理システム
+### 2. 統一されたボタン管理システム（新規実装）
 ```
 ┌─────────────────────────────────────┐
 │ ButtonManager (一元管理)             │
@@ -58,33 +88,56 @@
 └─────────────────────────────────────┘
 ```
 
-## 段階的実装戦略
+### 3. UI/UX設計（既存のAmber CRTテーマを維持）
+- Amber CRTテーマ: 黒/ダークグレー背景、アンバー文字、オレンジ警告
+- フォント階層: Font7（主要）、Font4（補助）、Font2（ヒント）
+- グリッドレイアウト: 一貫した画面構成
+- データ永続化: SSID/パスワード、LCD明度、音/振動設定をフラッシュ保存
+- **エラー/警告時のユーザーフィードバック**
+  - アラーム最大件数超過時は、画面下部にオレンジ色で「アラームは最大5件までです」と2秒間表示
+  - 警告表示中はバイブレーションを1回鳴動
+  - 他のエラー時も同様に警告色・バイブ・音で通知
+
+## 段階的実装戦略（更新版）
 
 ### 段階的実装の原則
 1. **各ステップでコンパイルが通る状態を維持**
 2. **既存機能を壊さずに段階的に移行**
 3. **動作確認しながら進める**
 4. **必要に応じてロールバック可能**
+5. **既存のDebounceManagerを活用**
 
-### 実装順序
+### 実装順序（更新版）
 ```
-Step 1: 最小限のButtonManager（既存コードは変更なし）
+Step 1: ButtonManagerクラスの実装（既存コードは変更なし）
 Step 2: 既存コードにButtonManagerを並行導入
 Step 3: 段階的に既存コードをButtonManagerに移行
 Step 4: 完全移行と最適化
+Step 5: 同時押し機能の実装
 ```
 
-## 実装計画
+## 実装計画（更新版）
 
-### Phase 1: 基盤システムの構築（コンパイル通る状態を維持）
+### Phase 1: ButtonManagerクラスの実装（コンパイル通る状態を維持）
 
-#### Step 1.1: 最小限のButtonManagerクラス
+#### Step 1.1: ButtonManagerクラスの基本実装
 **ファイル**: `src/button_manager.h`, `src/button_manager.cpp`
 
 ```cpp
-// Step 1.1: 最小限の実装（既存コードは一切変更しない）
+// Step 1.1: 基本的なButtonManagerクラス（既存コードは一切変更しない）
 class ButtonManager {
 public:
+  // ボタン状態の構造体
+  struct ButtonState {
+    bool isPressed;
+    bool wasPressed;
+    bool wasReleased;
+    unsigned long pressStartTime;
+    unsigned long lastChangeTime;
+    int pressCount;
+    bool longPressHandled;
+  };
+
   // 基本的な判定（既存のM5.BtnX.wasPressed()をラップ）
   static bool isShortPress(Button& button, unsigned long threshold = 1000);
   static bool isLongPress(Button& button, unsigned long threshold = 1000);
@@ -93,19 +146,15 @@ public:
   // 状態管理
   static void updateButtonStates();
   static void resetButtonStates();
+  static ButtonState* getButtonState(Button& button);
+  
+  // デバウンス処理（DebounceManagerと連携）
+  static bool canProcessButton(Button& button);
   
 private:
   static std::map<Button*, ButtonState> buttonStates;
   static void applyHardwareDebounce(ButtonState& state);
-};
-
-struct ButtonState {
-  bool isPressed;
-  bool wasPressed;
-  bool wasReleased;
-  unsigned long pressStartTime;
-  unsigned long lastChangeTime;
-  int pressCount;
+  static unsigned long lastUpdateTime;
 };
 ```
 
@@ -114,32 +163,51 @@ struct ButtonState {
 - 既存のボタン処理は一切変更されない
 - ButtonManagerは並行して動作するだけ
 
-#### Step 1.2: 最小限のDebounceManagerクラス
-**ファイル**: `src/debounce_manager.h`, `src/debounce_manager.cpp`
-
+#### Step 1.2: ButtonManagerとDebounceManagerの連携
 ```cpp
-// Step 1.2: 最小限の実装（既存コードは一切変更しない）
-class DebounceManager {
-public:
-  // 階層別デバウンス判定
-  static bool canProcessHardware(Button& button);
-  static bool canProcessOperation(const String& operationType);
-  static bool canProcessModeChange();
-  
-private:
-  static const unsigned long DEFAULT_HARDWARE_DEBOUNCE = 50;
-  static const unsigned long DEFAULT_OPERATION_DEBOUNCE = 200;
-  static const unsigned long DEFAULT_MODE_CHANGE_DEBOUNCE = 300;
-  
-  static std::map<String, unsigned long> lastOperationTimes;
-  static unsigned long lastModeChangeTime;
-};
-```
+// Step 1.2: DebounceManagerとの連携（既存のDebounceManagerを活用）
+bool ButtonManager::canProcessButton(Button& button) {
+  // 既存のDebounceManagerを使用
+  return DebounceManager::canProcessHardware(button);
+}
 
-**このステップでの動作確認**:
-- コンパイルが通ることを確認
-- 既存のデバウンス処理は一切変更されない
-- DebounceManagerは並行して動作するだけ
+void ButtonManager::updateButtonStates() {
+  unsigned long currentTime = millis();
+  
+  // 各ボタンの状態を更新
+  updateButtonState(M5.BtnA, currentTime);
+  updateButtonState(M5.BtnB, currentTime);
+  updateButtonState(M5.BtnC, currentTime);
+  
+  lastUpdateTime = currentTime;
+}
+
+void ButtonManager::updateButtonState(Button& button, unsigned long currentTime) {
+  ButtonState& state = buttonStates[&button];
+  
+  // 現在の状態を保存
+  bool wasPressed = state.isPressed;
+  state.isPressed = button.isPressed();
+  
+  // 状態変化の検出
+  if (state.isPressed && !wasPressed) {
+    // 押下開始
+    state.wasPressed = true;
+    state.pressStartTime = currentTime;
+    state.longPressHandled = false;
+    state.pressCount++;
+  } else if (!state.isPressed && wasPressed) {
+    // リリース
+    state.wasReleased = true;
+  } else {
+    // 状態変化なし
+    state.wasPressed = false;
+    state.wasReleased = false;
+  }
+  
+  state.lastChangeTime = currentTime;
+}
+```
 
 ### Phase 2: 並行導入（既存コードを壊さずに段階的移行）
 
@@ -148,14 +216,14 @@ private:
 // Step 2.1: 既存のhandleButtons()はそのまま、ButtonManagerを並行導入
 void handleButtons() {
   // 既存のコードはそのまま
-  static unsigned long lastPress = 0;
   static unsigned long lastModeChange = 0;
-  const unsigned long LONG_PRESS_TIME = 1000;
   const unsigned long DEBOUNCE_TIME = 200;
+  static unsigned long lastPress = 0;
   static bool cLongPressHandled = false;
+  const unsigned long LONG_PRESS_TIME = 1000;
   
-  // 既存のデバウンス処理
-  if (millis() - lastModeChange < DEBOUNCE_TIME) {
+  // 既存のデバウンス処理（DebounceManagerを使用）
+  if (!DebounceManager::canProcessModeChange()) {
     return;
   }
   
@@ -171,7 +239,6 @@ void handleButtons() {
         Serial.println("Main: C button long press - returning to main");
         currentMode = MAIN_DISPLAY;
         cLongPressHandled = true;
-        lastModeChange = millis();
         return;
       }
     }
@@ -202,12 +269,18 @@ void handleButtons() {
 **このステップでの動作確認**:
 - 既存のボタン処理が正常に動作することを確認
 - ButtonManagerが並行して動作することを確認
+- DebounceManagerとの連携が正常に動作することを確認
 - コンパイルが通ることを確認
 
 #### Step 2.2: input.cppにButtonManagerを並行導入
 ```cpp
 // Step 2.2: 既存のhandleDigitEditInput()はそのまま、ButtonManagerを並行導入
 void handleDigitEditInput() {
+  // 操作レベルのデバウンスチェック（既存のDebounceManagerを使用）
+  if (!DebounceManager::canProcessOperation("input_mode")) {
+    return;
+  }
+  
   // 既存のコードはそのまま
   static uint32_t aPressStart = 0;
   static bool aLongPressFired = false;
@@ -242,11 +315,6 @@ void handleDigitEditInput() {
 }
 ```
 
-**このステップでの動作確認**:
-- 既存の入力処理が正常に動作することを確認
-- ButtonManagerが並行して動作することを確認
-- コンパイルが通ることを確認
-
 ### Phase 3: 段階的移行（既存コードを少しずつ置き換え）
 
 #### Step 3.1: main.cppの一部をButtonManagerに移行
@@ -255,7 +323,7 @@ void handleDigitEditInput() {
 void handleButtons() {
   ButtonManager::updateButtonStates();
   
-  // デバウンスチェック（既存のロジックをDebounceManagerに移行）
+  // デバウンスチェック（既存のDebounceManagerを使用）
   if (!DebounceManager::canProcessModeChange()) return;
   
   // 既存のCボタン処理はそのまま（後で移行）
@@ -296,16 +364,11 @@ void handleButtons() {
 }
 ```
 
-**このステップでの動作確認**:
-- 既存のボタン処理が正常に動作することを確認
-- DebounceManagerが正常に動作することを確認
-- コンパイルが通ることを確認
-
 #### Step 3.2: input.cppの一部をButtonManagerに移行
 ```cpp
 // Step 3.2: 一部のボタン処理をButtonManagerに移行（段階的）
 void handleDigitEditInput() {
-  // 操作レベルのデバウンスチェック
+  // 操作レベルのデバウンスチェック（既存のDebounceManagerを使用）
   if (!DebounceManager::canProcessOperation("input_mode")) return;
   
   // 既存のAボタン処理はそのまま（後で移行）
@@ -365,6 +428,8 @@ void handleDigitEditInput() {
     
     // 最大数チェック
     if (alarmTimes.size() >= 5) {
+      // 警告表示（新機能）
+      showWarningMessage("アラームは最大5件までです");
       return;
     }
     
@@ -386,14 +451,9 @@ void handleDigitEditInput() {
 }
 ```
 
-**このステップでの動作確認**:
-- Cボタンの短押し/長押し判定が正常に動作することを確認
-- 既存のA/Bボタン処理が正常に動作することを確認
-- コンパイルが通ることを確認
-
 ### Phase 4: 完全移行と最適化
 
-#### Step 4.1: 残りのボタン処理を完全移行
+#### Phase 4.1: 残りのボタン処理を完全移行
 ```cpp
 // Step 4.1: 全てのボタン処理をButtonManagerに移行
 void handleButtons() {
@@ -474,9 +534,31 @@ void handleInputModeButtons() {
 }
 ```
 
-#### Step 4.2: 同時押し機能の実装
+#### Phase 4.2: 警告メッセージ機能の実装
 ```cpp
-// Step 4.2: 同時押し機能を追加
+// Step 4.2: 警告メッセージ機能の実装
+void showWarningMessage(const char* message) {
+  // 画面下部に警告メッセージを表示
+  sprite.setTextFont(2);
+  sprite.setTextColor(FLASH_ORANGE, TFT_BLACK);
+  sprite.setTextDatum(MC_DATUM);
+  sprite.drawString(message, SCREEN_WIDTH/2, SCREEN_HEIGHT - 30);
+  sprite.pushSprite(0, 0);
+  
+  // バイブレーション1回
+  M5.setVibration(100);
+  
+  // 2秒間表示
+  delay(2000);
+  
+  // 画面を再描画
+  drawCurrentScreen();
+}
+```
+
+#### Phase 4.3: 同時押し機能の実装
+```cpp
+// Step 4.3: 同時押し機能の実装（将来の拡張）
 class ButtonManager {
 public:
   // 同時押し判定
@@ -484,69 +566,151 @@ public:
   static bool isAllButtonsPressed();
   static bool isCombinationPress(const std::vector<Button*>& buttons);
   
-  // 使用例
-  if (ButtonManager::isSimultaneousPress(M5.BtnA, M5.BtnB)) {
-    // AB同時押し処理
-  }
-  if (ButtonManager::isAllButtonsPressed()) {
-    // ABC同時押し処理
-  }
+private:
+  static std::vector<Button*> getPressedButtons();
 };
+
+bool ButtonManager::isSimultaneousPress(Button& button1, Button& button2, unsigned long tolerance) {
+  ButtonState* state1 = getButtonState(button1);
+  ButtonState* state2 = getButtonState(button2);
+  
+  if (!state1 || !state2) return false;
+  
+  // 両方のボタンが押されているかチェック
+  if (!state1->isPressed || !state2->isPressed) return false;
+  
+  // 押下開始時刻の差が許容範囲内かチェック
+  unsigned long timeDiff = abs((long)(state1->pressStartTime - state2->pressStartTime));
+  return timeDiff <= tolerance;
+}
+
+bool ButtonManager::isAllButtonsPressed() {
+  return M5.BtnA.isPressed() && M5.BtnB.isPressed() && M5.BtnC.isPressed();
+}
 ```
 
-### Phase 5: 最適化とテスト
+## Unit Test戦略（更新版）
 
-#### 5.1 パフォーマンス最適化
-- メモリ使用量の最適化
-- 処理速度の改善
-- バッテリー消費の最適化
+### テスト環境の構築（既存のplatformio.iniを活用）
+```ini
+# 既存のplatformio.iniに追加（必要に応じて）
+[env:native]
+platform = native
+build_flags = 
+    -Ilib
+    -DUNITY_INCLUDE_DOUBLE
+    -DUNITY_DOUBLE_PRECISION=1e-12
+    -DMOCK_M5STACK
+    -DTEST_MODE
+    -DARDUINO=100
+    -D__XTENSA__=0
+    -std=c++11
+lib_deps =
+    throwtheswitch/Unity @ ^2.5.2
+build_unflags = -std=gnu++11
 
-#### 5.2 テストと検証
-- 各ボタン操作の動作確認
-- デバウンス処理の効果検証
-- 同時押し機能のテスト
-- 実機での動作確認
+[env:test-m5stack-fire]
+platform = espressif32
+board = m5stack-fire
+framework = arduino
+lib_deps =
+    throwtheswitch/Unity @ ^2.5.2
+    m5stack/M5Stack @ ^0.4.3
+    arduino-libraries/NTPClient @ ^3.2.1
+build_flags = 
+    -DTEST_MODE
+    -DCORE_DEBUG_LEVEL=3
+    -DM5STACK_FIRE
+    -DUNITY_INCLUDE_CONFIG_H
+test_framework = unity
+test_build_src = yes
+build_src_filter = -<main.cpp> +<test/*>
+```
 
-## 実装スケジュール
+### テスト対象の分類（更新版）
 
-### Day 1: Phase 1
-- Step 1.1: 最小限のButtonManagerクラス
-- Step 1.2: 最小限のDebounceManagerクラス
-- 基本的なテスト
+#### 1. ロジックテスト（Native環境）
+- **ButtonManager**: ボタン判定ロジック（新規）
+- **DebounceManager**: デバウンス処理（既存、拡張）
+- **AlarmManager**: アラーム管理ロジック（既存）
+- **TimeUtils**: 時刻計算・変換（既存）
 
-### Day 2: Phase 2
+#### 2. 統合テスト（ESP32環境）
+- **UI描画**: 画面表示の正確性（既存）
+- **ボタン処理**: 実際のハードウェア連携（新規）
+- **メモリ管理**: フラッシュ保存・読み込み（既存）
+
+#### 3. シナリオテスト（実機環境）
+- **ユーザー操作フロー**: 実際の使用シナリオ（既存、拡張）
+- **エッジケース**: 境界値・異常系（新規）
+
+### テストファイル構成（更新版）
+```
+test/
+├── test_button_manager.cpp      # ボタン管理ロジックテスト（新規）
+├── test_debounce_manager.cpp    # デバウンス処理テスト（既存、拡張）
+├── test_alarm_manager.cpp       # アラーム管理テスト（既存）
+├── test_time_utils.cpp          # 時刻処理テスト（既存）
+├── test_ui_integration.cpp      # UI統合テスト（既存）
+├── test_scenarios.cpp           # シナリオテスト（既存、拡張）
+└── mocks/
+    ├── mock_m5stack.h           # M5Stackライブラリのモック（既存）
+    ├── mock_button.h            # ボタンクラスのモック（新規）
+    └── mock_display.h           # ディスプレイクラスのモック（既存）
+```
+
+## 実装スケジュール（更新版）
+
+### Day 1: Phase 1 + テスト基盤
+- Step 1.1: ButtonManagerクラスの基本実装
+- Step 1.2: ButtonManagerとDebounceManagerの連携
+- **テスト基盤構築**: Unity framework導入、モック作成
+- **Unit Test**: ButtonManager基本機能テスト
+- **動作確認**: 既存機能の動作確認
+
+### Day 2: Phase 2 + 統合テスト
 - Step 2.1: main.cppにButtonManagerを並行導入
 - Step 2.2: input.cppにButtonManagerを並行導入
-- 既存機能の動作確認
+- **統合テスト**: 既存機能との並行動作確認
+- **回帰テスト**: 全ボタン操作の動作確認
+- **パフォーマンステスト**: メモリ使用量・処理速度
 
-### Day 3: Phase 3
+### Day 3: Phase 3 + 段階的テスト
 - Step 3.1: main.cppの一部をButtonManagerに移行
 - Step 3.2: input.cppの一部をButtonManagerに移行
-- 段階的な動作確認
+- **段階的テスト**: 移行前後の動作比較
+- **エッジケーステスト**: 境界値・異常系の確認
+- **デバウンステスト**: 各階層のデバウンス効果確認
 
-### Day 4: Phase 4-5
+### Day 4: Phase 4 + 完全テスト
 - Step 4.1: 完全移行
-- Step 4.2: 同時押し機能の実装
-- 最適化とテスト
+- Step 4.2: 警告メッセージ機能の実装
+- Step 4.3: 同時押し機能の実装
+- **完全テスト**: 全機能の統合テスト
+- **シナリオテスト**: 実際の使用フロー確認
+- **最適化**: パフォーマンス・メモリ使用量の最適化
 
-## 段階的実装のメリット
+## 段階的実装のメリット（更新版）
 
 ### 1. リスクの最小化
 - 各ステップでコンパイルが通る状態を維持
 - 既存機能を壊さずに段階的に移行
 - 問題が発生した場合の早期発見と修正
+- 既存のDebounceManagerを活用して開発効率を向上
 
 ### 2. 動作確認の容易さ
 - 各ステップで動作確認が可能
 - 問題の特定が容易
 - 必要に応じてロールバック可能
+- 既存のテスト環境を活用
 
 ### 3. 開発効率の向上
 - 並行して開発とテストが可能
 - 段階的なデバッグが可能
 - 自信を持って進められる
+- 既存のコードベースとの整合性を維持
 
-## 将来の拡張性
+## 将来の拡張性（更新版）
 
 ### シーケンス操作への対応
 ```cpp
@@ -581,46 +745,54 @@ public:
 };
 ```
 
-## 期待される効果
+## 期待される効果（更新版）
 
 ### 1. 保守性の向上
 - ボタン処理ロジックの一元化
-- デバウンス処理の統一
+- デバウンス処理の統一（既存のDebounceManagerを活用）
 - コードの重複削除
+- 既存コードとの整合性維持
 
 ### 2. 拡張性の向上
 - 新しいボタン操作パターンの簡単追加
 - 同時押し機能への対応
 - 将来的な機能拡張への対応
+- 既存のDebounceManagerとの連携
 
 ### 3. デバッグ性の向上
 - ボタン操作の履歴管理
 - デバウンス処理の可視化
 - 問題の特定と解決の容易化
+- 既存のテスト環境との統合
 
 ### 4. ユーザビリティの向上
 - より直感的なボタン操作
 - 意図しない操作の防止
 - 一貫した操作感
+- 警告メッセージによるユーザーフィードバック
 
-## リスクと対策
+## リスクと対策（更新版）
 
 ### 1. 既存機能への影響
 **リスク**: リファクタリングによる既存機能の破綻
-**対策**: 段階的な移行と十分なテスト
+**対策**: 段階的な移行と十分なテスト、既存のDebounceManagerを活用
 
 ### 2. パフォーマンスへの影響
 **リスク**: 新しいシステムによる処理負荷の増加
-**対策**: 最適化とプロファイリング
+**対策**: 最適化とプロファイリング、既存のデバウンス処理を活用
 
 ### 3. メモリ使用量の増加
 **リスク**: 新しいクラスによるメモリ消費の増加
-**対策**: メモリ効率の良い実装
+**対策**: メモリ効率の良い実装、既存のメモリ管理との統合
 
-## 次のステップ
+### 4. 既存コードとの整合性
+**リスク**: 既存のDebounceManagerとの不整合
+**対策**: 既存のDebounceManagerを活用し、拡張する形で実装
+
+## 次のステップ（更新版）
 
 1. **Step 1.1の実装開始**
-   - 最小限のButtonManagerクラスの実装
+   - ButtonManagerクラスの基本実装
    - コンパイル確認
    - 基本的なテスト
 
@@ -628,8 +800,188 @@ public:
    - 現在のボタン処理の詳細分析
    - 移行対象の特定
    - 移行順序の決定
+   - 既存のDebounceManagerとの連携方法の確認
 
 3. **テスト計画の策定**
    - 各ステップでのテスト項目の定義
    - 実機テストの計画
-   - 回帰テストの計画 
+   - 回帰テストの計画
+   - 既存のテスト環境との統合
+
+## 具体的なテスト例（更新版）
+
+### ButtonManager Unit Test例
+```cpp
+// test/test_button_manager.cpp
+#include <unity.h>
+#include "button_manager.h"
+#include "mocks/mock_button.h"
+
+void test_short_press_detection() {
+    // セットアップ
+    MockButton button;
+    button.simulatePress(100);  // 100ms押下
+    
+    // 実行
+    bool result = ButtonManager::isShortPress(button, 1000);
+    
+    // 検証
+    TEST_ASSERT_TRUE(result);
+}
+
+void test_long_press_detection() {
+    // セットアップ
+    MockButton button;
+    button.simulatePress(1500);  // 1.5秒押下
+    
+    // 実行
+    bool result = ButtonManager::isLongPress(button, 1000);
+    
+    // 検証
+    TEST_ASSERT_TRUE(result);
+}
+
+void test_debounce_effectiveness() {
+    // セットアップ
+    MockButton button;
+    button.simulateChattering(50);  // 50ms間隔でチャタリング
+    
+    // 実行
+    ButtonManager::updateButtonStates();
+    bool result = ButtonManager::isShortPress(button, 1000);
+    
+    // 検証（チャタリングは無視されるべき）
+    TEST_ASSERT_FALSE(result);
+}
+
+void test_simultaneous_press_detection() {
+    // セットアップ
+    MockButton buttonA, buttonB;
+    buttonA.simulatePress(100);
+    buttonB.simulatePress(150);  // 50ms遅れて押下
+    
+    // 実行
+    bool result = ButtonManager::isSimultaneousPress(buttonA, buttonB, 100);
+    
+    // 検証（100ms以内なので同時押しと判定されるべき）
+    TEST_ASSERT_TRUE(result);
+}
+```
+
+### シナリオテスト例（更新版）
+```cpp
+// test/test_scenarios.cpp
+void test_alarm_creation_flow() {
+    // 1. メイン画面から時刻入力画面へ
+    TEST_ASSERT_EQUAL(MAIN_DISPLAY, currentMode);
+    simulateButtonPress(M5.BtnA, 100);
+    TEST_ASSERT_EQUAL(ABS_TIME_INPUT, currentMode);
+    
+    // 2. 時刻入力
+    simulateDigitInput(10, 30);
+    TEST_ASSERT_EQUAL(10, digitEditInput.hourTens * 10 + digitEditInput.hourOnes);
+    TEST_ASSERT_EQUAL(30, digitEditInput.minTens * 10 + digitEditInput.minOnes);
+    
+    // 3. 時刻確定
+    simulateButtonPress(M5.BtnC, 100);
+    TEST_ASSERT_EQUAL(MAIN_DISPLAY, currentMode);
+    TEST_ASSERT_EQUAL(1, alarmTimes.size());
+}
+
+void test_alarm_management_flow() {
+    // 1. アラーム管理画面へ
+    simulateButtonPress(M5.BtnC, 100);
+    TEST_ASSERT_EQUAL(ALARM_MANAGEMENT, currentMode);
+    
+    // 2. アラーム削除
+    simulateButtonPress(M5.BtnC, 100);
+    TEST_ASSERT_TRUE(showYesNoDialog("DELETE ALARM?", "10:30"));
+    
+    // 3. メイン画面に戻る
+    simulateButtonPress(M5.BtnC, 1500);  // 長押し
+    TEST_ASSERT_EQUAL(MAIN_DISPLAY, currentMode);
+}
+
+void test_warning_message_flow() {
+    // 1. 最大アラーム数（5件）まで追加
+    for (int i = 0; i < 5; i++) {
+        addTestAlarm(10 + i, 0);
+    }
+    TEST_ASSERT_EQUAL(5, alarmTimes.size());
+    
+    // 2. 6件目を追加しようとする
+    simulateAlarmCreation(15, 0);
+    
+    // 3. 警告メッセージが表示されることを確認
+    TEST_ASSERT_TRUE(isWarningMessageDisplayed("アラームは最大5件までです"));
+    TEST_ASSERT_EQUAL(5, alarmTimes.size());  // 追加されていないことを確認
+}
+```
+
+### テスト実行方法（更新版）
+```bash
+# Native環境でのUnit Test実行
+pio test -e native
+
+# ESP32環境での統合テスト実行
+pio test -e test-m5stack-fire
+
+# 特定のテストファイルのみ実行
+pio test -e native -f test_button_manager
+
+# テスト結果の詳細表示
+pio test -e native --verbose
+```
+
+### 継続的テスト（CI/CD）（更新版）
+```yaml
+# .github/workflows/test.yml
+name: Unit Tests
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+      - run: pip install platformio
+      - run: pio test -e native
+      - run: pio test -e test-m5stack-fire
+```
+
+## 実装の優先順位（更新版）
+
+### 高優先度（Phase 1-2）
+1. **ButtonManagerクラスの基本実装**
+2. **既存コードとの並行導入**
+3. **基本的なテスト環境構築**
+
+### 中優先度（Phase 3）
+1. **段階的な移行**
+2. **警告メッセージ機能**
+3. **統合テストの拡張**
+
+### 低優先度（Phase 4）
+1. **同時押し機能**
+2. **高度なテストシナリオ**
+3. **パフォーマンス最適化**
+
+## 成功指標（更新版）
+
+### 技術的指標
+- コンパイルエラー0件
+- 既存機能の動作確認100%
+- 新機能のテストカバレッジ80%以上
+- メモリ使用量の増加20%以下
+
+### 品質指標
+- ボタン操作の応答性維持
+- デバウンス処理の効果確認
+- ユーザビリティの向上
+- コードの保守性向上
+
+### 開発効率指標
+- 段階的実装の成功
+- テスト環境の活用
+- 既存コードとの整合性維持
+- 将来拡張への対応準備 

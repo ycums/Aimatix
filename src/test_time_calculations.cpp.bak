@@ -1,0 +1,135 @@
+#include <unity.h>
+#include "alarm.h"
+#include "types.h"
+#include <vector>
+#include <ctime>
+
+// テスト用のグローバル変数
+std::vector<time_t> alarmTimes;
+
+void setUp(void) {
+    alarmTimes.clear();
+}
+
+void tearDown(void) {
+    // クリーンアップ
+}
+
+// 絶対時刻のバリデーションテスト
+void test_absolute_time_validation() {
+    // 正常な時刻
+    TEST_ASSERT_TRUE(isValidTime(12, 30));
+    TEST_ASSERT_TRUE(isValidTime(0, 0));
+    TEST_ASSERT_TRUE(isValidTime(23, 59));
+    
+    // 異常な時刻
+    TEST_ASSERT_FALSE(isValidTime(24, 0));
+    TEST_ASSERT_FALSE(isValidTime(12, 60));
+    TEST_ASSERT_FALSE(isValidTime(-1, 30));
+    TEST_ASSERT_FALSE(isValidTime(12, -1));
+}
+
+// 相対時刻計算のテスト
+void test_relative_time_calculation() {
+    time_t now = time(NULL);
+    struct tm* tm_now = localtime(&now);
+    
+    // 現在時刻を基準にテスト
+    int test_hour = tm_now->tm_hour;
+    int test_min = tm_now->tm_min;
+    
+    // +1時間の計算
+    time_t expected = now + 3600; // 1時間後
+    time_t calculated = calculateRelativeTime(test_hour, test_min, 1, 0, true);
+    
+    // 1分以内の誤差は許容
+    TEST_ASSERT_INT_WITHIN(60, expected, calculated);
+}
+
+// アラーム重複チェックのテスト
+void test_alarm_duplicate_check() {
+    time_t test_time = time(NULL) + 3600; // 1時間後
+    
+    // 空のリスト
+    TEST_ASSERT_FALSE(isDuplicateAlarm(test_time));
+    
+    // 同じ時刻を追加
+    alarmTimes.push_back(test_time);
+    TEST_ASSERT_TRUE(isDuplicateAlarm(test_time));
+    
+    // 異なる時刻
+    TEST_ASSERT_FALSE(isDuplicateAlarm(test_time + 1800)); // 30分後
+}
+
+// アラームソートのテスト
+void test_alarm_sorting() {
+    time_t now = time(NULL);
+    
+    // ランダムな順序でアラームを追加
+    alarmTimes.push_back(now + 7200); // 2時間後
+    alarmTimes.push_back(now + 3600); // 1時間後
+    alarmTimes.push_back(now + 10800); // 3時間後
+    
+    sortAlarms();
+    
+    // ソートされていることを確認
+    TEST_ASSERT_TRUE(alarmTimes[0] < alarmTimes[1]);
+    TEST_ASSERT_TRUE(alarmTimes[1] < alarmTimes[2]);
+}
+
+// 最大アラーム数のテスト
+void test_max_alarm_limit() {
+    time_t now = time(NULL);
+    
+    // 5個のアラームを追加
+    for (int i = 1; i <= 5; i++) {
+        alarmTimes.push_back(now + i * 3600);
+    }
+    
+    TEST_ASSERT_EQUAL(5, alarmTimes.size());
+    
+    // 6個目は追加できない
+    TEST_ASSERT_FALSE(canAddAlarm());
+}
+
+// ヘルパー関数（テスト用）
+bool isValidTime(int hour, int minute) {
+    return hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59;
+}
+
+time_t calculateRelativeTime(int base_hour, int base_min, int add_hour, int add_min, bool is_plus) {
+    time_t now = time(NULL);
+    struct tm tm_info;
+    localtime_r(&now, &tm_info);
+    
+    tm_info.tm_hour = base_hour;
+    tm_info.tm_min = base_min;
+    tm_info.tm_sec = 0;
+    
+    time_t base_time = mktime(&tm_info);
+    int total_minutes = add_hour * 60 + add_min;
+    
+    if (!is_plus) total_minutes = -total_minutes;
+    
+    return base_time + total_minutes * 60;
+}
+
+bool isDuplicateAlarm(time_t alarm_time) {
+    return std::find(alarmTimes.begin(), alarmTimes.end(), alarm_time) != alarmTimes.end();
+}
+
+bool canAddAlarm() {
+    return alarmTimes.size() < 5;
+}
+
+int main() {
+    UNITY_BEGIN();
+    
+    RUN_TEST(test_absolute_time_validation);
+    RUN_TEST(test_relative_time_calculation);
+    RUN_TEST(test_alarm_duplicate_check);
+    RUN_TEST(test_alarm_sorting);
+    RUN_TEST(test_max_alarm_limit);
+    
+    return UNITY_END();
+} 

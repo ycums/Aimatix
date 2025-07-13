@@ -3,16 +3,17 @@
 
 #include <M5Stack.h>
 #include <map>
-#include <vector>
+#include "debounce_manager.h"
 
-// ボタン状態を管理する構造体
+// ボタン状態の構造体
 struct ButtonState {
-  bool isPressed;
-  bool wasPressed;
-  bool wasReleased;
-  unsigned long pressStartTime;
-  unsigned long lastChangeTime;
-  int pressCount;
+  bool isPressed;           // 現在押されているか
+  bool wasPressed;          // 前回の更新で押されたか
+  bool wasReleased;         // 前回の更新でリリースされたか
+  unsigned long pressStartTime;  // 押下開始時刻
+  unsigned long lastChangeTime;  // 最後の状態変化時刻
+  int pressCount;           // 押下回数
+  bool longPressHandled;    // 長押し処理済みフラグ
 };
 
 // ButtonManagerクラス（静的クラス）
@@ -26,13 +27,23 @@ public:
   // 状態管理
   static void updateButtonStates();
   static void resetButtonStates();
+  static ButtonState* getButtonState(Button& button);
   
+  // デバウンス処理（DebounceManagerと連携）
+  static bool canProcessButton(Button& button);
+  
+  // 初期化
+  static void initialize();
+
 private:
+  // 静的メンバ変数
   static std::map<Button*, ButtonState> buttonStates;
-  static void applyHardwareDebounce(ButtonState& state);
+  static unsigned long lastUpdateTime;
   
-  // ハードウェアデバウンス時間（50ms）
-  static const unsigned long HARDWARE_DEBOUNCE_TIME = 50;
+  // 内部処理関数
+  static void updateButtonState(Button& button, unsigned long currentTime);
+  static void applyHardwareDebounce(ButtonState& state);
+  static ButtonState& getOrCreateButtonState(Button& button);
 };
 
 #endif // BUTTON_MANAGER_H 
