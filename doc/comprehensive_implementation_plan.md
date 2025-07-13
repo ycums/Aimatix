@@ -60,20 +60,20 @@
   - ButtonEvent型、SystemState型、TransitionResult型、TransitionAction型の設計
   - 純粋関数としての状態遷移ロジックの設計
 
-- [ ] **基盤修正の実施**
+- [x] **基盤修正の実施**
   - `src/types.h`のMode列挙型修正
   - 状態遷移表の最終確認・修正
 
 #### 2.2 成果物
 - doc/state_transition_matrix.md（修正済み）
 - doc/state_transition_separation_plan.md（修正済み）
-- src/types.h（修正予定）
+- src/types.h（修正済み）
 
 #### 2.3 成功指標
 - [x] 状態遷移ロジックの分析完了
 - [x] 分離方針の決定
 - [x] インターフェース設計の完了
-- [ ] 基盤修正の完了
+- [x] 基盤修正の完了
 
 ### Phase 1: 基盤構築（2日目）
 
