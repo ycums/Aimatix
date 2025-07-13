@@ -32,7 +32,7 @@ struct ButtonEvent {
 | -------------------- | --------------- | --------------------------------------------- | -------------- | ---------------------- |
 | MAIN_DISPLAY         | A短押し         | ABS_TIME_INPUT                                | -              | 入力状態リセット       |
 | MAIN_DISPLAY         | B短押し         | REL_PLUS_TIME_INPUT                           | -              | 入力状態リセット       |
-| MAIN_DISPLAY         | B長押し         | MAIN_DISPLAY                                  | -              | 何もしない |
+| MAIN_DISPLAY         | B長押し         | MAIN_DISPLAY                                  | -              | 何もしない             |
 | MAIN_DISPLAY         | C短押し         | ALARM_MANAGEMENT                              | -              | アラーム管理画面へ     |
 | MAIN_DISPLAY         | C長押し         | SETTINGS_MENU                                 | -              | 設定メニューへ         |
 | ABS_TIME_INPUT       | A短押し         | ABS_TIME_INPUT                                | -              | 数字変更               |
@@ -47,7 +47,6 @@ struct ButtonEvent {
 | REL_PLUS_TIME_INPUT  | B長押し         | REL_PLUS_TIME_INPUT                           | -              | 入力値をリセット       |
 | REL_PLUS_TIME_INPUT  | C短押し         | MAIN_DISPLAY                                  | 入力確定時     | アラーム追加           |
 | REL_PLUS_TIME_INPUT  | C長押し         | MAIN_DISPLAY                                  | -              | キャンセル             |
-
 | ALARM_MANAGEMENT     | A短押し         | ALARM_MANAGEMENT                              | -              | 前の項目へ             |
 | ALARM_MANAGEMENT     | B短押し         | ALARM_MANAGEMENT                              | -              | 次の項目へ             |
 | ALARM_MANAGEMENT     | C短押し         | ALARM_MANAGEMENT                              | -              | 削除確認               |
@@ -55,7 +54,6 @@ struct ButtonEvent {
 | SETTINGS_MENU        | A短押し         | SETTINGS_MENU                                 | -              | 前の項目へ             |
 | SETTINGS_MENU        | B短押し         | SETTINGS_MENU                                 | -              | 次の項目へ             |
 | SETTINGS_MENU        | C短押し         | SETTINGS_MENU/WARNING_COLOR_TEST/INFO_DISPLAY | 項目による     | 設定変更/画面遷移      |
-
 | INFO_DISPLAY         | 任意ボタン      | MAIN_DISPLAY                                  | -              | メイン画面へ戻る       |
 | WARNING_COLOR_TEST   | C短押し         | SETTINGS_MENU                                 | -              | 設定メニューへ戻る     |
 | ALARM_ACTIVE         | 任意ボタン      | MAIN_DISPLAY                                  | -              | アラーム停止           |

@@ -39,12 +39,11 @@ time_t TimeLogic::calculateAbsoluteTime(int hour, int minute) {
 }
 
 time_t TimeLogic::calculateAlarmTime(int input_hour, int input_min, int mode, time_t current_time) {
-    if (mode == 1 || mode == 2) { // REL_PLUS_TIME_INPUT || REL_MINUS_TIME_INPUT
+    if (mode == 1) { // REL_PLUS_TIME_INPUT
         // 相対時刻入力
         struct tm tm_info;
         localtime_r(&current_time, &tm_info);
         int total = input_hour * 60 + input_min;
-        if (mode == 2) total = -total; // REL_MINUS_TIME_INPUT
         
         time_t base = current_time;
         base += total * 60;

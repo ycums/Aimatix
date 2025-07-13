@@ -17,12 +17,11 @@ bool confirmInputAndAddAlarm() {
   if (inputState.minutes < 0 || inputState.minutes > 59) return false;
   time_t now = time(NULL);
   time_t alarmT = 0;
-  if (currentMode == REL_PLUS_TIME_INPUT || currentMode == REL_MINUS_TIME_INPUT) {
-    // 相対時刻入力: 現在時刻±入力値
+  if (currentMode == REL_PLUS_TIME_INPUT) {
+    // 相対時刻入力: 現在時刻+入力値
     struct tm tminfo;
     localtime_r(&now, &tminfo);
     int total = inputState.hours * 60 + inputState.minutes;
-    if (currentMode == REL_MINUS_TIME_INPUT) total = -total;
     // 現在時刻+total分
     time_t base = now;
     base += total * 60;

@@ -280,7 +280,6 @@ void drawInputMode() {
   const char* modeTitle = "SET TIME";
   if (currentMode == ABS_TIME_INPUT) modeTitle = "SET ABS TIME";
   else if (currentMode == REL_PLUS_TIME_INPUT) modeTitle = "ADD REL TIME";
-  else if (currentMode == REL_MINUS_TIME_INPUT) modeTitle = "SUB REL TIME";
   drawTitleBar(modeTitle);
   drawButtonHintsGrid("+1/+5", "NEXT/RESET", "SET");
 
@@ -327,29 +326,7 @@ void drawInputMode() {
 
 
 
-void drawScheduleSelection() {
-  sprite.fillSprite(TFT_BLACK);
-  drawTitleBar("SCHEDULE");
-  drawButtonHintsGrid("PREV", "NEXT", "SELECT/BACK");
-  
-  // アラームリストを文字列配列に変換
-  String alarmStrings[alarmTimes.size()];
-  for (int i = 0; i < alarmTimes.size(); ++i) {
-    alarmStrings[i] = getTimeString(alarmTimes[i]);
-  }
-  
-  // 文字列ポインタの配列を作成
-  const char* items[alarmTimes.size()];
-  for (int i = 0; i < alarmTimes.size(); ++i) {
-    items[i] = alarmStrings[i].c_str();
-  }
-  
-  // 共通メニュー描画関数を使用（グリッドセル(1,0)-(6,2)、1pxマージン）
-  extern int scheduleSelectedIndex;
-  drawMenuItems(items, alarmTimes.size(), scheduleSelectedIndex, 0, 2, 1);
-  
-  sprite.pushSprite(0, 0);
-}
+
 
 
 

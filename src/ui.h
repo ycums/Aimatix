@@ -66,7 +66,6 @@ void clearWarningMessage();
 void drawMainDisplay();
 void drawNTPSync();
 void drawInputMode();
-void drawScheduleSelection();
 void drawAlarmManagement(); // アラーム管理画面を追加
 void drawAlarmActive();
 void drawSettingsMenu();
@@ -80,7 +79,6 @@ void drawMenuItems(const char** items, int itemCount, int selectedItem, int star
 void drawMainDisplay();
 void drawNTPSync();
 void drawInputMode();
-void drawScheduleSelection();
 
 void drawAlarmActive();
 void drawSettingsMenu();

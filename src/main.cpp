@@ -121,11 +121,7 @@ void loop() {
         break;
       case ABS_TIME_INPUT:
       case REL_PLUS_TIME_INPUT:
-      case REL_MINUS_TIME_INPUT:
         drawInputMode();
-        break;
-      case SCHEDULE_SELECT:
-        drawScheduleSelection();
         break;
       case ALARM_MANAGEMENT:
         drawAlarmManagement();
@@ -262,7 +258,7 @@ void handleButtons() {
   const unsigned long LONG_PRESS_TIME = 1000;  // 1秒間の長押し
   
   // Cボタン処理（元の実装に戻す）
-  if (currentMode != ABS_TIME_INPUT && currentMode != REL_PLUS_TIME_INPUT && currentMode != REL_MINUS_TIME_INPUT) {
+  if (currentMode != ABS_TIME_INPUT && currentMode != REL_PLUS_TIME_INPUT) {
     if (M5.BtnC.wasPressed()) {
       lastPress = millis();
       cLongPressHandled = false;
@@ -318,7 +314,6 @@ void handleButtons() {
 
     case ABS_TIME_INPUT:
     case REL_PLUS_TIME_INPUT:
-    case REL_MINUS_TIME_INPUT:
       handleDigitEditInput();
       drawInputMode();
       break;
@@ -368,34 +363,7 @@ void handleButtons() {
       handleSettingsMenu();
       break;
 
-    case SCHEDULE_SELECT: {
-      int listSize = alarmTimes.size() + 1; // +1 for SETTINGS
-      if (M5.BtnB.wasPressed()) {
-        scheduleSelectedIndex = (scheduleSelectedIndex + 1) % listSize;
-      }
-      if (M5.BtnC.wasPressed()) {
-        scheduleSelectedIndex = (scheduleSelectedIndex - 1 + listSize) % listSize;
-      }
-      if (M5.BtnA.wasPressed()) {
-        // アラーム削除（SETTINGS選択時は無効）
-        if (scheduleSelectedIndex < alarmTimes.size()) {
-          alarmTimes.erase(alarmTimes.begin() + scheduleSelectedIndex);
-          if (scheduleSelectedIndex >= alarmTimes.size() && alarmTimes.size() > 0) {
-            scheduleSelectedIndex = alarmTimes.size() - 1;
-          }
-        }
-      }
-      // 決定（SETTINGSならSETTINGS_MENUへ遷移）
-      if (M5.BtnC.pressedFor(LONG_PRESS_TIME) || M5.BtnB.pressedFor(LONG_PRESS_TIME)) {
-        if (scheduleSelectedIndex == alarmTimes.size()) {
-          currentMode = SETTINGS_MENU;
-        } else {
-          // アラーム選択時は何もしない（将来編集モード等に拡張可）
-          currentMode = MAIN_DISPLAY;
-        }
-      }
-      break;
-    }
+
     
     case INFO_DISPLAY:
       drawInfoDisplay();
