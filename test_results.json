@@ -1,15 +1,55 @@
 {
-  "timestamp": "2025-07-14T04:20:49.962891",
-  "total_tests": 1,
-  "successful_tests": 1,
-  "failed_tests": 0,
+  "timestamp": "2025-07-14T07:25:23.542533",
+  "total_tests": 6,
+  "successful_tests": 2,
+  "failed_tests": 4,
   "results": [
     {
-      "name": "純粋ロジックテスト",
+      "name": "InputLogic純粋ロジックの実行",
       "success": true,
-      "duration": 9.181051969528198,
-      "timestamp": "2025-07-14T04:20:49.962868",
-      "output": "=== M5Stack集中タイマー 純粋ロジックテスト（Phase 0.6改善版） ===\nテストファイル数: 5\n\n--- time_logic テスト ---\n実行中: time_logicのコンパイル\nコマンド: g++ -I.pio/libdeps/native/Unity/src -Ilib -Itest/mocks -Isrc -Itest -std=c++11 -o time_logic test/test_time_logic_simple.cpp .pio/libdeps/native/Unity/src/unity.c test/mocks/mock_m5stack.cpp src/time_logic.cpp\n[OK] time_logicのコンパイル 成功\n実行中: time_logicの実行\nコマンド: time_logic.exe\n[OK] time_logicの実行 成功\n[OK] time_logicの実行 成功\n\n--- alarm_logic テスト ---\n実行中: alarm_logicのコンパイル\nコマンド: g++ -I.pio/libdeps/native/Unity/src -Ilib -Itest/mocks -Isrc -Itest -std=c++11 -o alarm_logic test/test_alarm_logic_simple.cpp .pio/libdeps/native/Unity/src/unity.c test/mocks/mock_m5stack.cpp src/time_logic.cpp src/alarm.cpp src/settings.cpp\n[OK] alarm_logicのコンパイル 成功\n実行中: alarm_logicの実行\nコマンド: alarm_logic.exe\n[OK] alarm_logicの実行 成功\n[OK] alarm_logicの実行 成功\n\n--- input_logic テスト ---\n実行中: input_logicのコンパイル\nコマンド: g++ -I.pio/libdeps/native/Unity/src -Ilib -Itest/mocks -Isrc -Itest -std=c++11 -o input_logic test/test_input_logic_simple.cpp .pio/libdeps/native/Unity/src/unity.c test/mocks/mock_m5stack.cpp src/time_logic.cpp\n[OK] input_logicのコンパイル 成功\n実行中: input_logicの実行\nコマンド: input_logic.exe\n[OK] input_logicの実行 成功\n[OK] input_logicの実行 成功\n\n--- settings_logic テスト ---\n実行中: settings_logicのコンパイル\nコマンド: g++ -I.pio/libdeps/native/Unity/src -Ilib -Itest/mocks -Isrc -Itest -std=c++11 -o settings_logic test/test_settings_logic_simple.cpp .pio/libdeps/native/Unity/src/unity.c test/mocks/mock_m5stack.cpp src/time_logic.cpp src/settings.cpp\n[OK] settings_logicのコンパイル 成功\n実行中: settings_logicの実行\nコマンド: settings_logic.exe\n[OK] settings_logicの実行 成功\n[OK] settings_logicの実行 成功\n\n--- warning_messages テスト ---\n実行中: warning_messagesのコンパイル\nコマンド: g++ -I.pio/libdeps/native/Unity/src -Ilib -Itest/mocks -Isrc -Itest -std=c++11 -o warning_messages test/test_warning_messages_simple.cpp .pio/libdeps/native/Unity/src/unity.c test/mocks/mock_m5stack.cpp\n[OK] warning_messagesのコンパイル 成功\n実行中: warning_messagesの実行\nコマンド: warning_messages.exe\n[OK] warning_messagesの実行 成功\n[OK] warning_messagesの実行 成功\n\n=== テスト結果 ===\n成功: 5/5\n[OK] 全テストが成功しました！\n\n[INFO] テスト結果を test_results.json に保存しました\n",
+      "duration": 0.16068077087402344,
+      "timestamp": "2025-07-14T07:25:16.321414",
+      "output": "=== InputLogic 純粋ロジックテスト ===\n✓ DigitEditTimeInputState初期化テスト: 成功\ntest/test_input_logic_pure.cpp:175:test_digit_edit_initialization:PASS\n✓ 時刻バリデーションテスト: 成功\ntest/test_input_logic_pure.cpp:176:test_time_validation:PASS\n✓ 時刻計算ロジックテスト: 成功\ntest/test_input_logic_pure.cpp:177:test_time_calculation:PASS\n✓ 桁制限ロジックテスト: 成功\ntest/test_input_logic_pure.cpp:178:test_digit_limitation:PASS\n✓ カーソル移動ロジックテスト: 成功\ntest/test_input_logic_pure.cpp:179:test_cursor_movement:PASS\n✓ 桁インクリメントロジックテスト: 成功\ntest/test_input_logic_pure.cpp:180:test_digit_increment:PASS\n✓ 複合時刻バリデーションテスト: 成功\ntest/test_input_logic_pure.cpp:181:test_composite_time_validation:PASS\n=== 全テスト完了 ===\n\n-----------------------\n7 Tests 0 Failures 0 Ignored \nOK\n",
+      "error_output": ""
+    },
+    {
+      "name": "SettingsLogic純粋ロジックの実行",
+      "success": false,
+      "duration": 0.14699721336364746,
+      "timestamp": "2025-07-14T07:25:17.291770",
+      "output": "=== SettingsLogic 純粋ロジックテスト ===\n✓ Settings初期化テスト: 成功\ntest/test_settings_logic_pure.cpp:168:test_settings_initialization:PASS\n✓ チェックサム計算ロジックテスト: 成功\ntest/test_settings_logic_pure.cpp:169:test_checksum_calculation:PASS\n✓ チェックサム検証ロジックテスト: 成功\ntest/test_settings_logic_pure.cpp:170:test_checksum_validation:PASS\n✓ 設定値境界値テスト: 成功\ntest/test_settings_logic_pure.cpp:171:test_settings_boundary_values:PASS\n✓ 設定整合性テスト: 成功\ntest/test_settings_logic_pure.cpp:172:test_settings_consistency:PASS\n✓ デフォルト設定値テスト: 成功\ntest/test_settings_logic_pure.cpp:173:test_default_settings:PASS\n✓ 設定変更ロジックテスト: 成功\ntest/test_settings_logic_pure.cpp:174:test_settings_modification:PASS\ntest/test_settings_logic_pure.cpp:150:test_composite_settings:FAIL: Expected 201 Was -55\n=== 全テスト完了 ===\n\n-----------------------\n8 Tests 1 Failures 0 Ignored \nFAIL\n",
+      "error_output": ""
+    },
+    {
+      "name": "AlarmLogic純粋ロジックの実行",
+      "success": false,
+      "duration": 0.14296555519104004,
+      "timestamp": "2025-07-14T07:25:18.877440",
+      "output": "=== AlarmLogic 純粋ロジックテスト ===\n✓ アラームリスト初期化テスト: 成功\ntest/test_alarm_logic_pure.cpp:233:test_alarm_list_initialization:PASS\ntest/test_alarm_logic_pure.cpp:36:test_alarm_addition:FAIL: Expected 1752445518 to be greater than 1752445518\ntest/test_alarm_logic_pure.cpp:53:test_alarm_sorting:FAIL: Expected 1752449118 to be greater than 1752452718\ntest/test_alarm_logic_pure.cpp:89:test_next_alarm_time:FAIL: Expected 1752445518 to be greater than 1752449118\ntest/test_alarm_logic_pure.cpp:120:test_remove_past_alarms:FAIL: Expected 1752445518 to be greater than 1752449118\n✓ アラーム重複チェックロジックテスト: 成功\ntest/test_alarm_logic_pure.cpp:238:test_alarm_duplicate_check:PASS\n✓ アラーム数制限ロジックテスト: 成功\ntest/test_alarm_logic_pure.cpp:239:test_alarm_count_limit:PASS\ntest/test_alarm_logic_pure.cpp:187:test_time_calculation:FAIL: Expected 1752445518 to be greater than 1752531918\ntest/test_alarm_logic_pure.cpp:215:test_composite_alarm_management:FAIL: Expected 1752452718 to be less than 1752449118\n=== 全テスト完了 ===\n\n-----------------------\n9 Tests 6 Failures 0 Ignored \nFAIL\n",
+      "error_output": ""
+    },
+    {
+      "name": "WarningMessages純粋ロジックの実行",
+      "success": false,
+      "duration": 0.15336203575134277,
+      "timestamp": "2025-07-14T07:25:19.738364",
+      "output": "=== WarningMessages 純粋ロジックテスト ===\n✓ 警告メッセージ表示テスト: 成功\ntest/test_warning_messages_pure.cpp:258:test_show_warning_message:PASS\n✓ 警告メッセージ自動クリアテスト: 成功\ntest/test_warning_messages_pure.cpp:259:test_warning_message_auto_clear:PASS\n✓ 警告メッセージ手動クリアテスト: 成功\ntest/test_warning_messages_pure.cpp:260:test_warning_message_manual_clear:PASS\n✓ 複数警告メッセージテスト: 成功\ntest/test_warning_messages_pure.cpp:261:test_multiple_warning_messages:PASS\n✓ 空の警告メッセージテスト: 成功\ntest/test_warning_messages_pure.cpp:262:test_empty_warning_message:PASS\ntest/test_warning_messages_pure.cpp:151:test_long_warning_message:FAIL: Expected TRUE Was FALSE\n✓ 特殊文字を含む警告メッセージテスト: 成功\ntest/test_warning_messages_pure.cpp:264:test_special_characters_warning_message:PASS\n✓ 連続警告メッセージテスト: 成功\ntest/test_warning_messages_pure.cpp:265:test_consecutive_warning_messages:PASS\n✓ 警告メッセージ状態管理テスト: 成功\ntest/test_warning_messages_pure.cpp:266:test_warning_message_state_management:PASS\ntest/test_warning_messages_pure.cpp:230:test_warning_message_time_progression:FAIL: Expected TRUE Was FALSE\n=== 全テスト完了 ===\n\n-----------------------\n10 Tests 2 Failures 0 Ignored \nFAIL\n",
+      "error_output": ""
+    },
+    {
+      "name": "ButtonManager純粋ロジックの実行",
+      "success": true,
+      "duration": 0.14200663566589355,
+      "timestamp": "2025-07-14T07:25:21.318967",
+      "output": "=== ButtonManager 純粋ロジックテスト ===\n✓ ボタン状態初期化テスト: 成功\ntest/test_button_manager_pure.cpp:449:test_button_state_initialization:PASS\n✓ ボタン押下検出テスト: 成功\ntest/test_button_manager_pure.cpp:450:test_button_press_detection:PASS\n✓ ボタンリリース検出テスト: 成功\ntest/test_button_manager_pure.cpp:451:test_button_release_detection:PASS\n✓ 短押し判定テスト: 成功\ntest/test_button_manager_pure.cpp:452:test_short_press_detection:PASS\n✓ 長押し判定テスト: 成功\ntest/test_button_manager_pure.cpp:453:test_long_press_detection:PASS\n✓ リリース判定テスト: 成功\ntest/test_button_manager_pure.cpp:454:test_release_detection:PASS\n✓ 押下回数カウントテスト: 成功\ntest/test_button_manager_pure.cpp:455:test_press_count:PASS\n✓ 長押し重複処理防止テスト: 成功\ntest/test_button_manager_pure.cpp:456:test_long_press_duplicate_prevention:PASS\n✓ 複数ボタン管理テスト: 成功\ntest/test_button_manager_pure.cpp:457:test_multiple_button_management:PASS\n✓ 状態リセットテスト: 成功\ntest/test_button_manager_pure.cpp:458:test_state_reset:PASS\n✓ 複合ボタン操作テスト: 成功\ntest/test_button_manager_pure.cpp:459:test_composite_button_operations:PASS\n=== 全テスト完了 ===\n\n-----------------------\n11 Tests 0 Failures 0 Ignored \nOK\n",
+      "error_output": ""
+    },
+    {
+      "name": "DebounceManager純粋ロジックの実行",
+      "success": false,
+      "duration": 0.06866860389709473,
+      "timestamp": "2025-07-14T07:25:23.542522",
+      "output": "=== DebounceManager 純粋ロジックテスト ===\ntest/test_debounce_manager_pure.cpp:112:test_hardware_debounce:FAIL: Expected TRUE Was FALSE\n✓ 操作デバウンステスト: 成功\ntest/test_debounce_manager_pure.cpp:398:test_operation_debounce:PASS\n✓ 複数操作タイプのデバウンステスト: 成功\ntest/test_debounce_manager_pure.cpp:399:test_multiple_operation_debounce:PASS\ntest/test_debounce_manager_pure.cpp:177:test_mode_change_debounce:FAIL: Expected TRUE Was FALSE\ntest/test_debounce_manager_pure.cpp:198:test_hierarchical_debounce:FAIL: Expected TRUE Was FALSE\ntest/test_debounce_manager_pure.cpp:228:test_debounce_time_boundaries:FAIL: Expected TRUE Was FALSE\ntest/test_debounce_manager_pure.cpp:269:test_consecutive_processing:FAIL: Expected TRUE Was FALSE\ntest/test_debounce_manager_pure.cpp:293:test_reset_functionality:FAIL: Expected TRUE Was FALSE\ntest/test_debounce_manager_pure.cpp:323:test_long_duration_operation:FAIL: Expected TRUE Was FALSE\ntest/test_debounce_manager_pure.cpp:347:test_composite_debounce_scenario:FAIL: Expected TRUE Was FALSE\n=== 全テスト完了 ===\n\n-----------------------\n10 Tests 8 Failures 0 Ignored \nFAIL\n",
       "error_output": ""
     }
   ]

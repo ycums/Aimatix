@@ -10,6 +10,7 @@ M5Stack集中タイマー テスト実行スクリプト（Phase 0.4改善版）
     alarm_validation  - アラームバリデーション機能のテスト
     button_manager    - ボタン管理機能のテスト
     simple           - 純粋ロジックテスト（推奨）
+    pure             - 新規作成した純粋ロジックテスト
     all              - 全テストを実行
 """
 
@@ -39,22 +40,31 @@ def run_command(command, description, timeout=60):
     start_time = time.time()
     
     try:
-        result = subprocess.run(command, shell=True, capture_output=True, text=True, timeout=timeout)
+        result = subprocess.run(command, shell=True, capture_output=True, text=True, timeout=timeout, encoding='utf-8', errors='replace')
         duration = time.time() - start_time
         
         if result.returncode == 0:
             print("✅ 成功")
             if result.stdout:
-                print("出力:")
-                print(result.stdout)
+                try:
+                    print("出力:")
+                    print(result.stdout)
+                except UnicodeDecodeError:
+                    print("[出力デコードエラー] (一部の文字が表示できません)")
         else:
             print("❌ 失敗")
             if result.stderr:
-                print("エラー:")
-                print(result.stderr)
+                try:
+                    print("エラー:")
+                    print(result.stderr)
+                except UnicodeDecodeError:
+                    print("[エラーデコードエラー] (一部の文字が表示できません)")
             if result.stdout:
-                print("出力:")
-                print(result.stdout)
+                try:
+                    print("出力:")
+                    print(result.stdout)
+                except UnicodeDecodeError:
+                    print("[出力デコードエラー] (一部の文字が表示できません)")
         
         return TestResult(description, result.returncode == 0, duration, result.stdout, result.stderr)
     except subprocess.TimeoutExpired:
@@ -73,6 +83,31 @@ def run_simple_test():
     """純粋ロジックテストを実行"""
     command = "python scripts/run_simple_tests.py"
     return run_command(command, "純粋ロジックテスト")
+
+def run_pure_logic_tests():
+    """新規作成した純粋ロジックテストを実行"""
+    tests = [
+        ("test_input_logic_pure", "InputLogic純粋ロジック"),
+        ("test_settings_logic_pure", "SettingsLogic純粋ロジック"),
+        ("test_alarm_logic_pure", "AlarmLogic純粋ロジック"),
+        ("test_warning_messages_pure", "WarningMessages純粋ロジック"),
+        ("test_button_manager_pure", "ButtonManager純粋ロジック"),
+        ("test_debounce_manager_pure", "DebounceManager純粋ロジック")
+    ]
+    
+    results = []
+    for test_file, description in tests:
+        # mock_m5stack.cppをリンクしない
+        command = f"g++ -I.pio/libdeps/native/Unity/src -Ilib -Isrc -Itest -std=c++11 -o {test_file} test/{test_file}.cpp .pio/libdeps/native/Unity/src/unity.c"
+        compile_result = run_command(command, f"{description}のコンパイル")
+        if compile_result.success:
+            run_cmd = f"{test_file}.exe"
+            run_result = run_command(run_cmd, f"{description}の実行")
+            results.append(run_result)
+        else:
+            results.append(compile_result)
+    
+    return results
 
 def save_test_results(results, filename="test_results.json"):
     """テスト結果をJSONファイルに保存"""
@@ -169,6 +204,11 @@ def main():
         # 純粋ロジックテスト（推奨）
         results.append(run_simple_test())
     
+    elif test_name == "pure":
+        # 新規作成した純粋ロジックテスト
+        pure_results = run_pure_logic_tests()
+        results.extend(pure_results)
+    
     elif test_name == "all":
         # 全テストを実行
         tests = [
@@ -182,6 +222,10 @@ def main():
         
         # 純粋ロジックテストも追加
         results.append(run_simple_test())
+        
+        # 新規作成した純粋ロジックテストも追加
+        pure_results = run_pure_logic_tests()
+        results.extend(pure_results)
     
     else:
         print(f"❌ 不明なテスト名: {test_name}")
