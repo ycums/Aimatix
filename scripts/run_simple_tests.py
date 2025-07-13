@@ -55,24 +55,34 @@ def run_command(command, description):
     
     if result.stdout:
         print("出力:")
-        print(result.stdout)
+        # Unicode文字を安全に処理（Windows環境対応）
+        try:
+            print(result.stdout)
+        except UnicodeEncodeError:
+            safe_output = result.stdout.encode('cp932', errors='replace').decode('cp932')
+            print(safe_output)
     
     if result.stderr:
         print("エラー:")
-        print(result.stderr)
+        # Unicode文字を安全に処理（Windows環境対応）
+        try:
+            print(result.stderr)
+        except UnicodeEncodeError:
+            safe_error = result.stderr.encode('cp932', errors='replace').decode('cp932')
+            print(safe_error)
     
     if result.returncode != 0:
-        print(f"✗ {description} 失敗 (終了コード: {result.returncode})")
+        print(f"X {description} 失敗 (終了コード: {result.returncode})")
         return False
     
-    print(f"✓ {description} 成功")
+    print(f"O {description} 成功")
     return True
 
 def compile_and_run_test(test_file, test_name):
     """テストファイルをコンパイルして実行"""
     unity_path = get_unity_path()
     if not unity_path:
-        print(f"✗ Unityライブラリが見つかりません")
+        print(f"X Unityライブラリが見つかりません")
         return False
     
     compiler = get_compiler()
@@ -91,7 +101,7 @@ def compile_and_run_test(test_file, test_name):
             break
     
     if not unity_src:
-        print(f"✗ Unityソースファイルが見つかりません: {unity_path}")
+        print(f"X Unityソースファイルが見つかりません: {unity_path}")
         return False
     
     # コンパイルコマンド（src/time_logic.cppも明示的に追加）
@@ -143,10 +153,10 @@ def run_all_tests():
     print(f"成功: {success_count}/{total_count}")
     
     if success_count == total_count:
-        print("🎉 全テスト成功！")
+        print("O 全テスト成功！")
         return True
     else:
-        print("❌ 一部のテストが失敗しました")
+        print("X 一部のテストが失敗しました")
         return False
 
 def main():
