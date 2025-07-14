@@ -3,25 +3,15 @@
 #include <cstring>
 #include <map>
 #include <string>
+#include "mocks/mock_m5stack.h"
 
 // DebounceManagerの純粋ロジックテスト
 // M5Stack依存を排除し、標準C++のみでテスト
 
-// モックButtonクラス
-class MockButton {
-public:
-  bool pressed;
-  unsigned long lastChangeTime;
-  
-  MockButton() : pressed(false), lastChangeTime(0) {}
-  
-  bool isPressed() const { return pressed; }
-  void setPressed(bool state) { pressed = state; }
-  void setLastChangeTime(unsigned long time) { lastChangeTime = time; }
-};
+// mock_m5stack.hのButton型を使用
+using Button = MockM5Stack::Button;
 
 // モック時間管理
-static unsigned long mockMillis = 0;
 unsigned long millis() { return mockMillis; }
 void setMockTime(unsigned long time) { mockMillis = time; }
 
@@ -45,7 +35,7 @@ public:
   }
   
   // ハードウェアレベルのデバウンス判定
-  static bool canProcessHardware(MockButton& button) {
+  static bool canProcessHardware(Button& button) {
     unsigned long currentTime = mockMillis;
     
     // 前回の処理から一定時間経過しているかチェック
@@ -103,7 +93,7 @@ unsigned long PureDebounceManager::lastButtonChangeTime = 0;
 
 // ハードウェアデバウンステスト
 void test_hardware_debounce() {
-  MockButton button;
+  Button button;
   PureDebounceManager::initialize();
   
   setMockTime(0);
@@ -189,7 +179,7 @@ void test_mode_change_debounce() {
 
 // 階層化デバウンステスト
 void test_hierarchical_debounce() {
-  MockButton button;
+  Button button;
   PureDebounceManager::initialize();
   
   setMockTime(0);
@@ -219,7 +209,7 @@ void test_hierarchical_debounce() {
 
 // デバウンス時間境界値テスト
 void test_debounce_time_boundaries() {
-  MockButton button;
+  Button button;
   PureDebounceManager::initialize();
   
   setMockTime(0);
@@ -255,7 +245,7 @@ void test_debounce_time_boundaries() {
 
 // 連続処理テスト
 void test_consecutive_processing() {
-  MockButton button;
+  Button button;
   PureDebounceManager::initialize();
   
   setMockTime(0);
@@ -284,7 +274,7 @@ void test_consecutive_processing() {
 
 // リセット機能テスト
 void test_reset_functionality() {
-  MockButton button;
+  Button button;
   PureDebounceManager::initialize();
   
   setMockTime(0);
@@ -314,7 +304,7 @@ void test_reset_functionality() {
 
 // 長時間動作テスト
 void test_long_duration_operation() {
-  MockButton button;
+  Button button;
   PureDebounceManager::initialize();
   
   setMockTime(0);
@@ -338,7 +328,7 @@ void test_long_duration_operation() {
 
 // 複合デバウンスシナリオテスト
 void test_composite_debounce_scenario() {
-  MockButton button;
+  Button button;
   PureDebounceManager::initialize();
   
   setMockTime(0);

@@ -3,7 +3,14 @@
 
 #include <map>
 #include <string>
-#include "../test/mocks/mock_m5stack.h"
+
+// テスト環境と実環境の切り替え
+#ifdef TESTING
+  #include "../test/mocks/mock_m5stack.h"
+  using Button = MockM5Stack::Button;
+#else
+  #include <M5Stack.h>
+#endif
 
 // DebounceManagerクラス（静的クラス）
 class DebounceManager {

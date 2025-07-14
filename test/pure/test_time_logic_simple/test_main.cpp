@@ -2,7 +2,7 @@
 #include <cstdio>
 #include <cstring>
 #include <ctime>
-#include "time_logic.h"
+#include <time_logic.h>
 #include "test_framework.h"
 
 // TimeLogicクラスの純粋ロジックテスト

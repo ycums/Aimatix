@@ -1,5 +1,13 @@
 #include "button_manager.h"
 
+// テスト環境と実環境の切り替え
+#ifdef TESTING
+  #include "../test/mocks/mock_m5stack.h"
+  extern MockM5Stack M5;
+#else
+  #include <M5Stack.h>
+#endif
+
 // 静的メンバ変数の定義
 std::map<Button*, ButtonState> ButtonManager::buttonStates;
 unsigned long ButtonManager::lastUpdateTime = 0;

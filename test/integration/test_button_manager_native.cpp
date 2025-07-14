@@ -1,48 +1,16 @@
 #include <unity.h>
 #include "button_manager.h"
-#include <M5Stack.h>
+#include "mocks/mock_m5stack.h"
 
-// テスト用のモックボタンクラス
-class MockButton {
-public:
-  bool isPressed() const { return pressed; }
-  bool wasPressed() const { return wasPressedFlag; }
-  
-  void simulatePress(unsigned long duration) {
-    pressed = true;
-    wasPressedFlag = true;
-    pressTime = millis();
-    this->duration = duration;
-  }
-  
-  void simulateRelease() {
-    pressed = false;
-    wasPressedFlag = false;
-  }
-  
-  void reset() {
-    pressed = false;
-    wasPressedFlag = false;
-    pressTime = 0;
-    duration = 0;
-  }
-  
-private:
-  bool pressed = false;
-  bool wasPressedFlag = false;
-  unsigned long pressTime = 0;
-  unsigned long duration = 0;
-};
-
-// テスト用のグローバル変数
-MockButton mockButtonA, mockButtonB, mockButtonC;
+// mock_m5stack.hのButton型を使用
+using Button = MockM5Stack::Button;
 
 // テスト前のセットアップ
 void setUp(void) {
   ButtonManager::initialize();
-  mockButtonA.reset();
-  mockButtonB.reset();
-  mockButtonC.reset();
+  M5.BtnA.reset();
+  M5.BtnB.reset();
+  M5.BtnC.reset();
 }
 
 // テスト後のクリーンアップ
@@ -70,8 +38,8 @@ void test_button_manager_initialization() {
 
 // テスト2: 短押し判定
 void test_short_press_detection() {
-  // 短押しをシミュレート（500ms）
-  mockButtonA.simulatePress(500);
+  // 短押しをシミュレート
+  M5.BtnA.simulatePress();
   
   // ボタン状態を更新
   ButtonManager::updateButtonStates();
@@ -79,14 +47,14 @@ void test_short_press_detection() {
   // 短押し判定をテスト
   bool isShort = ButtonManager::isShortPress(M5.BtnA, 1000);
   
-  // 500msは1000ms未満なので短押しとして判定されるべき
+  // 短押しとして判定されるべき
   TEST_ASSERT_TRUE(isShort);
 }
 
 // テスト3: 長押し判定
 void test_long_press_detection() {
-  // 長押しをシミュレート（1500ms）
-  mockButtonA.simulatePress(1500);
+  // 長押しをシミュレート
+  M5.BtnA.simulatePress();
   
   // ボタン状態を更新
   ButtonManager::updateButtonStates();
@@ -94,17 +62,17 @@ void test_long_press_detection() {
   // 長押し判定をテスト
   bool isLong = ButtonManager::isLongPress(M5.BtnA, 1000);
   
-  // 1500msは1000ms以上なので長押しとして判定されるべき
+  // 長押しとして判定されるべき
   TEST_ASSERT_TRUE(isLong);
 }
 
 // テスト4: リリース判定
 void test_release_detection() {
   // ボタンを押してからリリース
-  mockButtonA.simulatePress(500);
+  M5.BtnA.simulatePress();
   ButtonManager::updateButtonStates();
   
-  mockButtonA.simulateRelease();
+  M5.BtnA.simulateRelease();
   ButtonManager::updateButtonStates();
   
   // リリース判定をテスト
@@ -135,8 +103,8 @@ void test_state_management() {
 // テスト7: 複数ボタンの同時管理
 void test_multiple_button_management() {
   // 複数のボタンを同時に管理できるかテスト
-  mockButtonA.simulatePress(500);
-  mockButtonB.simulatePress(1000);
+  M5.BtnA.simulatePress();
+  M5.BtnB.simulatePress();
   
   ButtonManager::updateButtonStates();
   
@@ -152,7 +120,7 @@ void test_multiple_button_management() {
 // テスト8: 状態リセット
 void test_state_reset() {
   // 状態リセットが正しく動作するかテスト
-  mockButtonA.simulatePress(500);
+  M5.BtnA.simulatePress();
   ButtonManager::updateButtonStates();
   
   ButtonManager::resetButtonStates();

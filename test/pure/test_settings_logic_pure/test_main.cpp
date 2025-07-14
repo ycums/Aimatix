@@ -1,7 +1,13 @@
 #include <unity.h>
 #include <cstdio>
 #include <cstring>
-#include "settings.h"
+
+// 純粋ロジックテスト用のSettings構造体定義
+struct Settings {
+  bool sound_enabled;
+  uint8_t lcd_brightness;
+  char checksum;  // 設定が有効かどうかを確認するためのチェックサム
+};
 
 // SettingsLogicの純粋ロジックテスト
 // M5Stack依存を排除し、標準C++のみでテスト

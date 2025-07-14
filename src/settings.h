@@ -22,5 +22,7 @@ extern Settings settings;
 // Function prototypes
 void loadSettings();
 void saveSettings();
+void resetSettings();
+bool validateSettings();
 
 #endif // SETTINGS_H

@@ -2,7 +2,15 @@
 #define BUTTON_MANAGER_H
 
 #include <map>
-#include "../test/mocks/mock_m5stack.h"
+
+// テスト環境と実環境の切り替え
+#ifdef TESTING
+  #include "../test/mocks/mock_m5stack.h"
+  using Button = MockM5Stack::Button;
+#else
+  #include <M5Stack.h>
+#endif
+
 #include "debounce_manager.h"
 
 // ボタン状態の構造体

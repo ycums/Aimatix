@@ -11,6 +11,8 @@
 #include "types.h"
 #include "debounce_manager.h"
 #include "button_manager.h"
+#include "wifi_manager.h"
+#include "time_sync.h"
 
 // 新しい状態遷移システムのインクルード
 #include "state_transition/button_event.h"
@@ -24,9 +26,7 @@
 #define MAX_ALARMS 5
 
 // Global variables defined in main.cpp
-WiFiUDP ntpUDP;
-NTPClient timeClient(ntpUDP, "ntp.nict.jp", 32400, 3600);  // JST (+9:00)
-enum Mode currentMode = MAIN_DISPLAY; // Wi-Fi同期をスキップし直接メイン画面へ
+enum Mode currentMode = MAIN_DISPLAY; // 初期モード
 
 // settingsMenuの唯一の定義（types.hでextern宣言されているもの）
 SettingsMenu settingsMenu;
@@ -41,14 +41,10 @@ int scheduleSelectedIndex = 0;
 time_t lastReleaseTime = 0;
 
 // Function declarations defined in main.cpp
-bool connectWiFi();
-bool syncTime();
 void handleButtons();
 void removePastAlarms();
-
-// WiFi credentials
-const char* ssid = "your-ssid"; // Placeholder
-const char* password = "your-password"; // Placeholder
+void initializeSystem();
+void updateSystem();
 
 // 古い変数は削除（新しい状態遷移システムで管理）
 
@@ -57,38 +53,18 @@ void setup() {
   M5.Power.begin();
   Serial.begin(115200); // シリアル通信を開始
 
-  initUI(); // スプライト初期化を追加
-
-  // Initialize EEPROM
-  EEPROM.begin(EEPROM_SIZE);
-  loadSettings();
+  // システム初期化
+  initializeSystem();
   
-  // Set initial LCD brightness
-  M5.Lcd.setBrightness(settings.lcd_brightness);
-  
-  // Set display properties
-  M5.Lcd.fillScreen(TFT_BLACK);
-  M5.Lcd.setTextColor(AMBER_COLOR, TFT_BLACK);
-  
-  // アラームリストに初期値を追加（開発用）
-  addDebugAlarms();
-  
-  // ButtonManagerの初期化
-  ButtonManager::initialize(); // ButtonManagerの初期化を追加
-  Serial.println("ButtonManager initialized");
-  
-  // Wi-Fi/NTP同期は一時的にスキップ
-  // if (connectWiFi()) {
-  //   timeClient.begin();
-  //   syncTime();
-  // }
-  // システム時刻設定（必要に応じて）
-  // settimeofday などで適当な時刻をセットしてもよい
+  Serial.println("System initialization completed");
 }
 
 void loop() {
   removePastAlarms();
   M5.update();  // ボタン状態を更新
+  
+  // システム更新
+  updateSystem();
   
   // ButtonManagerの状態更新（IButtonインターフェース対応）
   ButtonManager::updateButtonStates(); // ButtonManagerの状態更新を追加
@@ -174,34 +150,65 @@ void loop() {
   delay(10);  // CPU負荷軽減のための短い遅延
 }
 
-bool connectWiFi() {
-  WiFi.begin(ssid, password);
-  unsigned long startAttemptTime = millis();
+void initializeSystem() {
+  Serial.println("Starting system initialization...");
   
-  while (WiFi.status() != WL_CONNECTED && 
-         millis() - startAttemptTime < WIFI_TIMEOUT) {
-    delay(500);
-    M5.Lcd.drawString("Connecting to WiFi...", 10, 120, 4);
+  // UI初期化
+  initUI();
+  Serial.println("UI initialized");
+  
+  // 設定読み込み
+  loadSettings();
+  Serial.println("Settings loaded");
+  
+  // LCD明度設定
+  M5.Lcd.setBrightness(settings.lcd_brightness);
+  M5.Lcd.fillScreen(TFT_BLACK);
+  M5.Lcd.setTextColor(AMBER_COLOR, TFT_BLACK);
+  Serial.println("Display configured");
+  
+  // ButtonManager初期化
+  ButtonManager::initialize();
+  Serial.println("ButtonManager initialized");
+  
+  // WiFi管理初期化
+  wifiManager = WiFiManager::getInstance();
+  if (wifiManager->initialize()) {
+    Serial.println("WiFiManager initialized");
+    wifiManager->begin();
+  } else {
+    Serial.println("WiFiManager initialization failed");
   }
   
-  if (WiFi.status() == WL_CONNECTED) {
-    M5.Lcd.drawString("WiFi Connected!", 10, 120, 4);
-    delay(1000);
-    return true;
+  // 時刻同期初期化
+  timeSync = TimeSync::getInstance();
+  if (timeSync->initialize()) {
+    Serial.println("TimeSync initialized");
+    timeSync->begin();
   } else {
-    M5.Lcd.drawString("WiFi Connection Failed!", 10, 120, 4);
-    delay(2000);
-    return false;
+    Serial.println("TimeSync initialization failed");
+  }
+  
+  // アラームリストに初期値を追加（開発用）
+  addDebugAlarms();
+  Serial.println("Debug alarms added");
+  
+  Serial.println("System initialization completed successfully");
+}
+
+void updateSystem() {
+  // WiFi管理の更新
+  if (wifiManager) {
+    wifiManager->update();
+  }
+  
+  // 時刻同期の更新
+  if (timeSync) {
+    timeSync->update();
   }
 }
 
-bool syncTime() {
-  timeClient.update();
-  // Unix時間をローカルタイムに設定
-  timeval tv = { (time_t)timeClient.getEpochTime(), 0 }; // Cast to time_t
-  settimeofday(&tv, NULL);
-  return true; // NTPClient::update() は成功/失敗を返さないため常にtrueを返す
-}
+
 
 
 

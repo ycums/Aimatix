@@ -3,27 +3,13 @@
 #include <cstring>
 #include <map>
 #include <vector>
+#include "mocks/mock_m5stack.h"
 
 // ButtonManagerの純粋ロジックテスト
 // M5Stack依存を排除し、標準C++のみでテスト
 
-// モックButtonクラス
-class MockButton {
-public:
-  bool pressed;
-  bool wasPressedFlag;
-  bool wasReleasedFlag;
-  
-  MockButton() : pressed(false), wasPressedFlag(false), wasReleasedFlag(false) {}
-  
-  bool isPressed() const { return pressed; }
-  bool wasPressed() const { return wasPressedFlag; }
-  bool wasReleased() const { return wasReleasedFlag; }
-  
-  void setPressed(bool state) { pressed = state; }
-  void setWasPressed(bool state) { wasPressedFlag = state; }
-  void setWasReleased(bool state) { wasReleasedFlag = state; }
-};
+// mock_m5stack.hのButton型を使用
+using Button = MockM5Stack::Button;
 
 // ボタン状態の構造体
 struct ButtonState {
@@ -40,14 +26,13 @@ struct ButtonState {
 };
 
 // モック時間管理
-static unsigned long mockMillis = 0;
 unsigned long millis() { return mockMillis; }
 void setMockTime(unsigned long time) { mockMillis = time; }
 
 // モックDebounceManager
 class DebounceManager {
 public:
-  static bool canProcessHardware(MockButton& button) {
+  static bool canProcessHardware(Button& button) {
     return true; // 簡略化のため常にtrue
   }
 };
@@ -55,7 +40,7 @@ public:
 // 純粋ロジックButtonManager
 class PureButtonManager {
 private:
-  static std::map<MockButton*, ButtonState> buttonStates;
+  static std::map<Button*, ButtonState> buttonStates;
   static unsigned long lastUpdateTime;
   
 public:
@@ -64,7 +49,7 @@ public:
     lastUpdateTime = 0;
   }
   
-  static void updateButtonStates(MockButton& btnA, MockButton& btnB, MockButton& btnC) {
+  static void updateButtonStates(Button& btnA, Button& btnB, Button& btnC) {
     unsigned long currentTime = mockMillis;
     
     updateButtonState(btnA, currentTime);
@@ -74,7 +59,7 @@ public:
     lastUpdateTime = currentTime;
   }
   
-  static void updateButtonState(MockButton& button, unsigned long currentTime) {
+  static void updateButtonState(Button& button, unsigned long currentTime) {
     ButtonState& state = getOrCreateButtonState(button);
     
     // 現在の状態を保存
@@ -100,7 +85,7 @@ public:
     }
   }
   
-  static bool isShortPress(MockButton& button, unsigned long threshold = 1000) {
+  static bool isShortPress(Button& button, unsigned long threshold = 1000) {
     ButtonState* state = getButtonState(button);
     if (!state) return false;
     
@@ -117,7 +102,7 @@ public:
     return false;
   }
   
-  static bool isLongPress(MockButton& button, unsigned long threshold = 1000) {
+  static bool isLongPress(Button& button, unsigned long threshold = 1000) {
     ButtonState* state = getButtonState(button);
     if (!state) return false;
     
@@ -137,7 +122,7 @@ public:
     return false;
   }
   
-  static bool isReleased(MockButton& button) {
+  static bool isReleased(Button& button) {
     ButtonState* state = getButtonState(button);
     if (!state) return false;
     
@@ -153,7 +138,7 @@ public:
     lastUpdateTime = 0;
   }
   
-  static ButtonState* getButtonState(MockButton& button) {
+  static ButtonState* getButtonState(Button& button) {
     auto it = buttonStates.find(&button);
     if (it != buttonStates.end()) {
       return &(it->second);
@@ -162,7 +147,7 @@ public:
   }
   
 private:
-  static ButtonState& getOrCreateButtonState(MockButton& button) {
+  static ButtonState& getOrCreateButtonState(Button& button) {
     auto it = buttonStates.find(&button);
     if (it == buttonStates.end()) {
       ButtonState newState;
@@ -174,12 +159,12 @@ private:
 };
 
 // 静的メンバ変数の定義
-std::map<MockButton*, ButtonState> PureButtonManager::buttonStates;
+std::map<Button*, ButtonState> PureButtonManager::buttonStates;
 unsigned long PureButtonManager::lastUpdateTime = 0;
 
 // ボタン状態初期化テスト
 void test_button_state_initialization() {
-  MockButton button;
+  Button button;
   PureButtonManager::initialize();
   
   ButtonState* state = PureButtonManager::getButtonState(button);
@@ -190,13 +175,13 @@ void test_button_state_initialization() {
 
 // ボタン押下検出テスト
 void test_button_press_detection() {
-  MockButton button;
+  Button button;
   PureButtonManager::initialize();
   
   setMockTime(0);
   
   // ボタンを押す
-  button.setPressed(true);
+  button.simulatePress();
   PureButtonManager::updateButtonState(button, mockMillis);
   
   ButtonState* state = PureButtonManager::getButtonState(button);
@@ -210,18 +195,18 @@ void test_button_press_detection() {
 
 // ボタンリリース検出テスト
 void test_button_release_detection() {
-  MockButton button;
+  Button button;
   PureButtonManager::initialize();
   
   setMockTime(0);
   
   // ボタンを押す
-  button.setPressed(true);
+  button.simulatePress();
   PureButtonManager::updateButtonState(button, mockMillis);
   
   // ボタンを離す
   setMockTime(100);
-  button.setPressed(false);
+  button.simulateRelease();
   PureButtonManager::updateButtonState(button, mockMillis);
   
   ButtonState* state = PureButtonManager::getButtonState(button);
@@ -233,18 +218,18 @@ void test_button_release_detection() {
 
 // 短押し判定テスト
 void test_short_press_detection() {
-  MockButton button;
+  Button button;
   PureButtonManager::initialize();
   
   setMockTime(0);
   
   // ボタンを押す
-  button.setPressed(true);
+  button.simulatePress();
   PureButtonManager::updateButtonState(button, mockMillis);
   
   // 短時間後に離す
   setMockTime(500);
-  button.setPressed(false);
+  button.simulateRelease();
   PureButtonManager::updateButtonState(button, mockMillis);
   
   // 短押し判定
@@ -256,13 +241,13 @@ void test_short_press_detection() {
 
 // 長押し判定テスト
 void test_long_press_detection() {
-  MockButton button;
+  Button button;
   PureButtonManager::initialize();
   
   setMockTime(0);
   
   // ボタンを押す
-  button.setPressed(true);
+  button.simulatePress();
   PureButtonManager::updateButtonState(button, mockMillis);
   
   // 長時間押し続ける
@@ -278,13 +263,13 @@ void test_long_press_detection() {
 
 // リリース判定テスト
 void test_release_detection() {
-  MockButton button;
+  Button button;
   PureButtonManager::initialize();
   
   setMockTime(0);
   
   // ボタンを押す
-  button.setPressed(true);
+  button.simulatePress();
   PureButtonManager::updateButtonState(button, mockMillis);
   
   // リリース判定（まだ押されている）
@@ -292,7 +277,7 @@ void test_release_detection() {
   
   // ボタンを離す
   setMockTime(100);
-  button.setPressed(false);
+  button.simulateRelease();
   PureButtonManager::updateButtonState(button, mockMillis);
   
   // リリース判定
@@ -303,26 +288,26 @@ void test_release_detection() {
 
 // 押下回数カウントテスト
 void test_press_count() {
-  MockButton button;
+  Button button;
   PureButtonManager::initialize();
   
   setMockTime(0);
   
   // 1回目の押下
-  button.setPressed(true);
+  button.simulatePress();
   PureButtonManager::updateButtonState(button, mockMillis);
   
   setMockTime(100);
-  button.setPressed(false);
+  button.simulateRelease();
   PureButtonManager::updateButtonState(button, mockMillis);
   
   // 2回目の押下
   setMockTime(200);
-  button.setPressed(true);
+  button.simulatePress();
   PureButtonManager::updateButtonState(button, mockMillis);
   
   setMockTime(300);
-  button.setPressed(false);
+  button.simulateRelease();
   PureButtonManager::updateButtonState(button, mockMillis);
   
   ButtonState* state = PureButtonManager::getButtonState(button);
@@ -333,13 +318,13 @@ void test_press_count() {
 
 // 長押し重複処理防止テスト
 void test_long_press_duplicate_prevention() {
-  MockButton button;
+  Button button;
   PureButtonManager::initialize();
   
   setMockTime(0);
   
   // ボタンを押す
-  button.setPressed(true);
+  button.simulatePress();
   PureButtonManager::updateButtonState(button, mockMillis);
   
   // 長押し判定（1回目）
@@ -357,15 +342,15 @@ void test_long_press_duplicate_prevention() {
 
 // 複数ボタン管理テスト
 void test_multiple_button_management() {
-  MockButton btnA, btnB, btnC;
+  Button btnA, btnB, btnC;
   PureButtonManager::initialize();
   
   setMockTime(0);
   
   // 複数のボタンを同時に押す
-  btnA.setPressed(true);
-  btnB.setPressed(true);
-  btnC.setPressed(false);
+  btnA.simulatePress();
+  btnB.simulatePress();
+  // btnCは押さない
   
   PureButtonManager::updateButtonStates(btnA, btnB, btnC);
   
@@ -379,13 +364,13 @@ void test_multiple_button_management() {
 
 // 状態リセットテスト
 void test_state_reset() {
-  MockButton button;
+  Button button;
   PureButtonManager::initialize();
   
   setMockTime(0);
   
   // ボタンを押す
-  button.setPressed(true);
+  button.simulatePress();
   PureButtonManager::updateButtonState(button, mockMillis);
   
   // 状態確認
@@ -402,13 +387,13 @@ void test_state_reset() {
 
 // 複合ボタン操作テスト
 void test_composite_button_operations() {
-  MockButton button;
+  Button button;
   PureButtonManager::initialize();
   
   setMockTime(0);
   
   // 押下→長押し→リリースの一連の操作
-  button.setPressed(true);
+  button.simulatePress();
   PureButtonManager::updateButtonState(button, mockMillis);
   
   // 短押し判定（まだ押されている）
@@ -421,7 +406,7 @@ void test_composite_button_operations() {
   
   // リリース
   setMockTime(2000);
-  button.setPressed(false);
+  button.simulateRelease();
   PureButtonManager::updateButtonState(button, mockMillis);
   
   // 短押し判定（リリース後）

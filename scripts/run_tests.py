@@ -9,6 +9,11 @@ M5Stack集中タイマー テスト実行スクリプト（Phase 0.4改善版）
     warning_messages  - 警告メッセージ機能のテスト
     alarm_validation  - アラームバリデーション機能のテスト
     button_manager    - ボタン管理機能のテスト
+    wifi_manager      - Wi-Fi管理機能のテスト（Phase 1）
+    time_sync         - NTP同期機能のテスト（Phase 1）
+    settings_preferences - 設定管理Preferences移行テスト（Phase 1）
+    timer_basic       - 基本タイマー機能のテスト（Phase 1）
+    phase1            - Phase 1全機能のテスト
     simple           - 純粋ロジックテスト（推奨）
     pure             - 新規作成した純粋ロジックテスト
     all              - 全テストを実行
@@ -199,6 +204,34 @@ def main():
     elif test_name == "button_manager":
         # ボタン管理機能のテスト
         results.append(run_native_test("test_button_manager_native"))
+    
+    elif test_name == "wifi_manager":
+        # Wi-Fi管理機能のテスト（Phase 1）
+        results.append(run_native_test("test_wifi_manager"))
+    
+    elif test_name == "time_sync":
+        # NTP同期機能のテスト（Phase 1）
+        results.append(run_native_test("test_time_sync"))
+    
+    elif test_name == "settings_preferences":
+        # 設定管理Preferences移行テスト（Phase 1）
+        results.append(run_native_test("test_settings_preferences"))
+    
+    elif test_name == "timer_basic":
+        # 基本タイマー機能のテスト（Phase 1）
+        results.append(run_native_test("test_timer_basic"))
+    
+    elif test_name == "phase1":
+        # Phase 1全機能のテスト
+        phase1_tests = [
+            ("test_wifi_manager", "Wi-Fi管理機能"),
+            ("test_time_sync", "NTP同期機能"),
+            ("test_settings_preferences", "設定管理Preferences移行"),
+            ("test_timer_basic", "基本タイマー機能")
+        ]
+        
+        for test_file, description in phase1_tests:
+            results.append(run_native_test(test_file))
     
     elif test_name == "simple":
         # 純粋ロジックテスト（推奨）
