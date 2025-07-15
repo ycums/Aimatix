@@ -14,7 +14,7 @@ Aimatix本体のlib/aimatix_lib/src/とtest/pure/配下の各ペア（例：butt
         2. include記法・ディレクトリ構成は本体と同じにする
         3. `pio test` でビルド・テスト
         4. テストが通れば次のペアへ進む
-        5. テストが失敗・ビルドエラーの場合、その時点の構成・エラー内容・include記法・依存関係を記録
+        5. テストが失敗・ビルドエラーの場合、その時点の構成・エラー内容・include記法・依存関係を記録して、巻き戻す。
 
 3. **他ペアも同様に追加し、都度ビルド・テスト**
     - alarm, debounce_manager, input, settings, time_logic など順次追加
