@@ -65,3 +65,52 @@
 
 ## 考察・原因
 - test_framework.hがtest_minimal_project/test/に存在しない 
+
+
+# LDF動作検証レポート: テストディレクトリ構造問題
+
+## 構成
+- test_minimal_project/test/
+  - test_main.cpp
+  - test_button_manager_pure_test_main.cpp
+  - mocks/
+
+## エラー内容
+- リンカーエラー: `multiple definition of main`
+- 複数のtest_main.cppが同じディレクトリに存在
+
+## 原因
+- PlatformIOのテスト構成ベストプラクティスに違反
+- 複数のtest_main.cppを同じディレクトリに配置している
+
+## 解決策
+### PlatformIOのテスト構成ベストプラクティス
+
+#### 正しいディレクトリ構造
+```
+test_minimal_project/test/
+├── test_button_manager_pure/     # 独立したディレクトリ
+│   └── test_main.cpp            # ButtonManager専用テスト
+├── test_alarm_logic_pure/       # 独立したディレクトリ
+│   └── test_main.cpp            # Alarm専用テスト
+└── mocks/
+    ├── mock_button_manager.h
+    └── ...
+```
+
+#### 重要なポイント
+- **各テストは独立したディレクトリに配置**: 複数のtest_main.cppを同じディレクトリに配置しない
+- **ディレクトリ名は`test_`プレフィックスで開始**: PlatformIOが自動検出するため
+- **各test_main.cppは単一の責務**: 特定のモジュール/機能のテストのみ
+
+#### 修正手順
+1. 不要なtest_main.cppを削除
+2. 各テストを独立したディレクトリに配置
+3. ディレクトリ名を`test_`プレフィックスで開始
+4. `pio test`でビルド・テスト確認
+
+## 学んだこと
+- PlatformIOでは、テストごとに独立したディレクトリとtest_main.cppを作成するのが標準的なアプローチ
+- 複数のtest_main.cppを同じディレクトリに配置するとリンカーエラーが発生
+- テストディレクトリの命名規則は重要（`test_`プレフィックス必須）
+- 各test_main.cppは単一の責務を持つべき 
