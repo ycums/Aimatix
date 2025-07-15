@@ -1,8 +1,8 @@
-#include <time.h>
-// 入力確定処理
-bool confirmInputAndAddAlarm();
 #ifndef INPUT_H
 #define INPUT_H
+
+#include <time.h>
+#include "../include/IButtonManager.h"
 
 // 入力モード用の構造体
 struct InputState {
@@ -40,7 +40,8 @@ extern RightJustifiedInputState rjInputState;
 extern DigitEditTimeInputState digitEditInput;
 
 // 関数プロトタイプ
+bool confirmInputAndAddAlarm();
 void resetInput();
-void handleDigitEditInput();
+void handleDigitEditInput(IButtonManager* buttonManager);
 
 #endif // INPUT_H

@@ -1,7 +1,5 @@
 #include "alarm.h"
-#include <M5Stack.h>
 #include "settings.h" // settings構造体を参照するため
-#include "../test/mocks/mock_m5stack.h"
 
 // Global variables
 std::vector<time_t> alarmTimes;
@@ -10,14 +8,10 @@ std::vector<time_t> alarmTimes;
 void addDebugAlarms() {
   time_t now = time(NULL);
   struct tm *timeinfo = localtime(&now);
-  
-  // 現在時刻から1時間後、2時間後、3時間後、4時間後、5時間後の時刻を追加
   for (int i = 1; i <= 5; i++) {
     time_t debugTime = now + (i * 3600); // i時間後
     alarmTimes.push_back(debugTime);
   }
-  
-  // 時刻順にソート
   std::sort(alarmTimes.begin(), alarmTimes.end());
 }
 
@@ -29,7 +23,6 @@ void sortAlarms() {
 time_t getNextAlarmTime() {
   time_t now = time(NULL);
   time_t next = 0;
-  
   for (time_t t : alarmTimes) {
     if (t > now) {
       next = t;
@@ -39,20 +32,17 @@ time_t getNextAlarmTime() {
   return next;
 }
 
-void playAlarm() {
-  // settings構造体を参照
-  if (settings.sound_enabled) {
-    M5.Speaker.tone(880, 500);  // 880Hz, 500ms
+void playAlarm(ISpeaker* speaker, bool soundEnabled) {
+  if (soundEnabled && speaker) {
+    speaker->beep(880, 500);  // 880Hz, 500ms
   }
-  // バイブレーション機能は非搭載のため削除
+  // バイブレーション機能は非搭載のため省略
 }
 
-void stopAlarm() {
-  // settings構造体を参照
-  if (settings.sound_enabled) {
-    M5.Speaker.mute();
+void stopAlarm(ISpeaker* speaker, bool soundEnabled) {
+  if (soundEnabled && speaker) {
+    speaker->stop();
   }
-  // バイブレーション停止は不要
 }
 
 void removePastAlarms() {

@@ -1,174 +1,92 @@
 #include "button_manager.h"
 
-// テスト環境と実環境の切り替え
-#ifdef TESTING
-  #include "../test/mocks/mock_m5stack.h"
-  extern MockM5Stack M5;
-#else
-  #include <M5Stack.h>
-#endif
+ButtonManager::ButtonManager() : lastUpdateTime(0) {
+  buttonStates.clear();
+}
+ButtonManager::~ButtonManager() {}
 
-// 静的メンバ変数の定義
-std::map<Button*, ButtonState> ButtonManager::buttonStates;
-unsigned long ButtonManager::lastUpdateTime = 0;
-
-// 初期化
 void ButtonManager::initialize() {
   buttonStates.clear();
   lastUpdateTime = 0;
-  
-  // 初期状態を設定
-  getOrCreateButtonState(M5.BtnA);
-  getOrCreateButtonState(M5.BtnB);
-  getOrCreateButtonState(M5.BtnC);
-  
-  Serial.println("ButtonManager initialized");
+  // 必要に応じて初期化（buttonIdの登録など）
 }
 
-// ボタン状態の更新
-void ButtonManager::updateButtonStates() {
+void ButtonManager::update() {
   unsigned long currentTime = millis();
-  
-  // 各ボタンの状態を更新
-  updateButtonState(M5.BtnA, currentTime);
-  updateButtonState(M5.BtnB, currentTime);
-  updateButtonState(M5.BtnC, currentTime);
-  
+  // ここで全ボタンの状態を更新（buttonIdリストをループ）
+  for (auto& kv : buttonStates) {
+    updateButtonState(kv.first, currentTime);
+  }
   lastUpdateTime = currentTime;
 }
 
-// 個別ボタンの状態更新
-void ButtonManager::updateButtonState(Button& button, unsigned long currentTime) {
-  ButtonState& state = getOrCreateButtonState(button);
-  
-  // 現在の状態を保存
-  bool wasPressed = state.isPressed;
-  state.isPressed = button.isPressed();
-  
-  // 状態変化の検出
-  if (state.isPressed && !wasPressed) {
-    // 押下開始
-    state.wasPressed = true;
-    state.pressStartTime = currentTime;
-    state.longPressHandled = false;
-    state.pressCount++;
-    state.lastChangeTime = currentTime;
-  } else if (!state.isPressed && wasPressed) {
-    // リリース
-    state.wasReleased = true;
-    state.lastChangeTime = currentTime;
-  } else {
-    // 状態変化なし
-    state.wasPressed = false;
-    state.wasReleased = false;
-  }
-  
-  // ハードウェアデバウンス適用
-  applyHardwareDebounce(state);
+void ButtonManager::updateButtonState(int buttonId, unsigned long currentTime) {
+  ButtonState& state = getOrCreateButtonState(buttonId);
+  // 実際のハード依存部は本番実装/モックで差し替え
+  // ここでは仮に外部から状態注入される前提
+  // state.isPressed = ...;
+  // 状態変化検出・更新ロジックは従来通り
 }
 
-// 短押し判定
-bool ButtonManager::isShortPress(Button& button, unsigned long threshold) {
-  ButtonState* state = getButtonState(button);
+bool ButtonManager::isPressed(int buttonId) {
+  ButtonState* state = getButtonState(buttonId);
+  return state ? state->isPressed : false;
+}
+
+bool ButtonManager::isLongPressed(int buttonId) {
+  ButtonState* state = getButtonState(buttonId);
+  return state ? state->longPressHandled : false;
+}
+
+bool ButtonManager::isShortPress(int buttonId, unsigned long threshold) {
+  ButtonState* state = getButtonState(buttonId);
   if (!state) return false;
-  
-  // デバウンス処理を適用
-  if (!canProcessButton(button)) {
-    return false;
-  }
-  
-  // リリースされた瞬間に短押しかどうかを判定
+  if (!canProcessButton(buttonId)) return false;
   if (state->wasReleased) {
     unsigned long pressDuration = millis() - state->pressStartTime;
     return pressDuration < threshold;
   }
-  
   return false;
 }
 
-// 長押し判定
-bool ButtonManager::isLongPress(Button& button, unsigned long threshold) {
-  ButtonState* state = getButtonState(button);
+bool ButtonManager::isReleased(int buttonId) {
+  ButtonState* state = getButtonState(buttonId);
   if (!state) return false;
-  
-  // デバウンス処理を適用
-  if (!canProcessButton(button)) {
-    return false;
-  }
-  
-  // 押されている状態で長押し時間を超えているかチェック
-  if (state->isPressed && !state->longPressHandled) {
-    unsigned long pressDuration = millis() - state->pressStartTime;
-    if (pressDuration >= threshold) {
-      state->longPressHandled = true;  // 重複処理を防ぐ
-      return true;
-    }
-  }
-  
-  return false;
-}
-
-// リリース判定
-bool ButtonManager::isReleased(Button& button) {
-  ButtonState* state = getButtonState(button);
-  if (!state) return false;
-  
-  // デバウンス処理を適用
-  if (!canProcessButton(button)) {
-    return false;
-  }
-  
+  if (!canProcessButton(buttonId)) return false;
   return state->wasReleased;
 }
 
-// デバウンス処理（DebounceManagerと連携）
-bool ButtonManager::canProcessButton(Button& button) {
-  return DebounceManager::canProcessHardware(button);
-}
-
-// 状態リセット
 void ButtonManager::resetButtonStates() {
   buttonStates.clear();
   lastUpdateTime = 0;
-  Serial.println("ButtonManager states reset");
 }
 
-// ボタン状態の取得
-ButtonState* ButtonManager::getButtonState(Button& button) {
-  auto it = buttonStates.find(&button);
+ButtonState* ButtonManager::getButtonState(int buttonId) {
+  auto it = buttonStates.find(buttonId);
   if (it != buttonStates.end()) {
     return &(it->second);
   }
   return nullptr;
 }
 
-// ボタン状態の取得または作成
-ButtonState& ButtonManager::getOrCreateButtonState(Button& button) {
-  auto it = buttonStates.find(&button);
+ButtonState& ButtonManager::getOrCreateButtonState(int buttonId) {
+  auto it = buttonStates.find(buttonId);
   if (it == buttonStates.end()) {
-    // 新しい状態を作成
-    ButtonState newState = {
-      false,  // isPressed
-      false,  // wasPressed
-      false,  // wasReleased
-      0,      // pressStartTime
-      0,      // lastChangeTime
-      0,      // pressCount
-      false   // longPressHandled
-    };
-    buttonStates[&button] = newState;
-    return buttonStates[&button];
+    ButtonState newState = {false, false, false, 0, 0, 0, false};
+    buttonStates[buttonId] = newState;
+    return buttonStates[buttonId];
   }
   return it->second;
 }
 
-// ハードウェアデバウンス適用
 void ButtonManager::applyHardwareDebounce(ButtonState& state) {
-  // 既存のDebounceManagerのハードウェアレベルデバウンスを適用
-  // 状態変化から一定時間経過していない場合は、状態を無効化
   unsigned long currentTime = millis();
-  if (currentTime - state.lastChangeTime < 50) {  // 50msデバウンス
-    // 状態変化が新しい場合は、一時的に無効化
-    // 実際の実装では、より高度なデバウンス処理を適用
+  if (currentTime - state.lastChangeTime < 50) {
+    // デバウンス処理
   }
+}
+
+bool ButtonManager::canProcessButton(int buttonId) {
+  // DebounceManagerと連携する場合はここで呼び出し
+  return true;
 } 

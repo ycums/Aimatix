@@ -1,9 +1,8 @@
 #ifndef SETTINGS_H
 #define SETTINGS_H
 
-#include <EEPROM.h>
-#include <M5Stack.h>
 #include <cstdint>
+#include "../include/IEEPROM.h"
 
 // Constants
 #define EEPROM_SIZE 512
@@ -20,9 +19,9 @@ struct Settings {
 extern Settings settings;
 
 // Function prototypes
-void loadSettings();
-void saveSettings();
-void resetSettings();
-bool validateSettings();
+void loadSettings(IEEPROM* eeprom);
+void saveSettings(IEEPROM* eeprom);
+void resetSettings(IEEPROM* eeprom);
+bool validateSettings(IEEPROM* eeprom);
 
 #endif // SETTINGS_H
