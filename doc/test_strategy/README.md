@@ -88,3 +88,14 @@ M5Stack集中タイマープロジェクトのテスト戦略に関する文書�
 - 両文書は相互補完的な関係にあります
 - 基本戦略の変更時は両文書の更新が必要です
 - 実装改善はPhase 0.7文書に記録してください 
+
+# 【2024年7月最新】Aimatix純粋ロジック配置・テスト方針
+
+- 純粋ロジック（TimeLogic, AlarmLogic, InputLogic, SettingsLogic等）は lib/aimatix_lib/src/ 配下に移動する。
+- test/pure/ からは lib/aimatix_lib/src/ の純粋ロジックのみをテストする。
+- src/ 配下はM5Stack依存やUI/ハード制御など、純粋ロジック以外の実装のみとする。
+- M5Stack依存部は引き続きモックでテスト可能な設計を維持する。
+- lib/aimatix_lib/src/ 配下のものはLDF（Library Dependency Finder）機能で自動ビルド＆インクルードされるため、test/pure/やplatformio.iniで明示的にインクルードパスを追加する必要はない。
+- うまくいかない場合は .platformio.ini の余計な設定（build_flags, build_src_filter等）を疑うこと。
+
+> ※lib/README も参照：「lib/配下のライブラリは lib/PackageName/src/ にソース・ヘッダを配置する必要がある」 

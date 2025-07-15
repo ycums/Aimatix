@@ -5,12 +5,12 @@
 #include <vector>
 #include <EEPROM.h>
 #include "ui.h"
-#include "settings.h"
-#include "alarm.h"
-#include "input.h"
-#include "types.h"
-#include "debounce_manager.h"
-#include "button_manager.h"
+#include <settings.h>
+#include <alarm.h>
+#include <input.h>
+#include <types.h>
+#include <debounce_manager.h>
+#include <button_manager.h>
 #include "wifi_manager.h"
 #include "time_sync.h"
 

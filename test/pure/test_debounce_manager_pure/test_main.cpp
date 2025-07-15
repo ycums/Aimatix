@@ -4,6 +4,7 @@
 #include <map>
 #include <string>
 #include "mocks/mock_m5stack.h"
+#include <debounce_manager.h>
 
 // DebounceManagerの純粋ロジックテスト
 // M5Stack依存を排除し、標準C++のみでテスト

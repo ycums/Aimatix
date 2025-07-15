@@ -4,7 +4,7 @@
 #include <vector>
 #include <algorithm>
 #include <ctime>
-#include "alarm.h"
+#include <alarm.h>
 
 // AlarmLogicの純粋ロジックテスト
 // M5Stack依存を排除し、標準C++のみでテスト

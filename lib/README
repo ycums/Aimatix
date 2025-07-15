@@ -1,3 +1,4 @@
+【重要】PlatformIOの仕様により、lib/配下のライブラリは「lib/PackageName/src/foo.cpp」「lib/PackageName/src/foo.h」のようにsrcディレクトリ内にソース・ヘッダファイルを配置する必要があります。srcディレクトリを作成せずに直接配置した場合、ビルド時に認識されませんのでご注意ください。
 
 This directory is intended for project specific (private) libraries.
 PlatformIO will compile them to static libraries and link into the executable file.

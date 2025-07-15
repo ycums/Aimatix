@@ -1,6 +1,7 @@
 #include <unity.h>
 #include <cstdio>
 #include <cstring>
+#include <settings.h>
 
 // 純粋ロジックテスト用のSettings構造体定義
 struct Settings {

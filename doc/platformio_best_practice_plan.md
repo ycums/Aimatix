@@ -128,3 +128,81 @@ test_build_src = yes
 - nativeテストと実機テストの両立により、ロジックの純粋性と実装の信頼性を両立
 
 --- 
+
+## 【2024年7月 最新】lib/構成・LDF活用 是正プラン
+
+### 背景
+- 最小PlatformIO+Unityプロジェクトでlib/xxx/src/xxx.h構成がLDFで自動認識されることを確認。
+- しかしAimatix本体では同様の構成でincludeエラー等が発生するケースがあった。
+
+### 主な是正ポイント
+1. **lib/配下は必ず `lib/パッケージ名/src/ヘッダ・ソース` 構成に統一する**
+    - 例: `lib/aimatix_lib/src/button_manager.h`
+    - srcサブディレクトリ必須（PlatformIO仕様）
+2. **include記法は `<button_manager.h>` でも "button_manager.h" でもLDFが有効ならどちらでもOK**
+    - ただしプロジェクト内で統一推奨
+    - 外部/標準は山括弧、自作はダブルクォート等の流儀も可
+3. **platformio.iniでbuild_src_filterやbuild_flagsでlib/配下を除外しない**
+    - 例: `build_src_filter = +<src/>` だけだとlib/が無視される
+    - 基本的にbuild_src_filterは使わない、またはlib/も明示的に含める
+4. **循環依存や依存解決失敗に注意**
+    - 複数lib間の相互#includeは極力避ける
+    - 依存が複雑な場合は設計見直し
+5. **テスト/本体srcからlib/配下を参照する際は、LDFが有効なら追加の-I指定は不要**
+    - ただし特殊な構成やLDFが効かない場合のみbuild_flagsで-Ilib/xxx/srcを追加
+6. **キャッシュ不整合時は `pio run --target clean` を実施**
+
+### 推奨ディレクトリ構成（例）
+```
+Aimatix/
+├── lib/
+│   └── aimatix_lib/
+│       └── src/
+│           ├── button_manager.h
+│           ├── button_manager.cpp
+│           └── ...
+├── src/
+│   └── main.cpp
+├── test/
+│   └── pure/
+│       └── test_button_manager_pure/
+│           └── test_main.cpp
+├── platformio.ini
+```
+
+### トラブルシューティング
+- includeエラー時は
+    - ヘッダの配置場所・記法・lib/xxx/src/構成を再確認
+    - platformio.iniのbuild_src_filter, build_flagsを確認
+    - `pio run --target clean` でキャッシュクリア
+- それでも解決しない場合は、具体的なエラー内容・include記法・ディレクトリ構成を記録し、issue化
+
+### 備考
+- LDFの詳細: https://docs.platformio.org/en/latest/librarymanager/ldf.html
+- 本ドキュメントは今後の構成変更・トラブル時の参照用とする 
+
+### 【付録】Aimatixプロジェクト構成 是正のための手順
+
+1. **lib/配下の構成を見直す**
+    - すべての自作ライブラリは `lib/パッケージ名/src/` 配下にヘッダ・ソースを移動する
+    - 例: `lib/aimatix_lib/src/button_manager.h` など
+    - 旧: `lib/aimatix_lib/button_manager.h` → 新: `lib/aimatix_lib/src/button_manager.h`
+2. **src/やtest/からの#include記法を統一する**
+    - 基本は `#include <button_manager.h>` もしくは `#include "button_manager.h"` で統一
+    - 相対パスやlib/aimatix_lib/src/を含む記法は避ける
+3. **platformio.iniのbuild_src_filter, build_flagsを確認・修正**
+    - `build_src_filter` を使っている場合はlib/も明示的に含める、または削除
+    - `build_flags` で不要な-I指定があれば削除（LDFが有効なら不要）
+4. **循環依存がないか確認し、必要なら設計を見直す**
+    - 複数lib間の相互#includeを避ける
+    - 依存が複雑な場合は分割・抽象化を検討
+5. **不要なキャッシュ・ビルド生成物を削除する**
+    - `pio run --target clean` でクリーンビルド
+    - 必要に応じて `.pio/` ディレクトリを手動削除
+6. **テスト・本体ビルドが通ることを確認する**
+    - `pio test` および `pio run` でエラーが出ないか確認
+7. **問題が解決しない場合は、エラー内容・ディレクトリ構成・include記法を記録し、issue化**
+
+---
+
+この手順に従うことで、lib/構成・LDF活用のトラブルを大幅に減らすことができます。 

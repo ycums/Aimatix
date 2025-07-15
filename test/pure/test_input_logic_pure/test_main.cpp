@@ -1,8 +1,8 @@
 #include <unity.h>
 #include <cstdio>
 #include <cstring>
-#include "input.h"
-#include "alarm.h"
+#include <input.h>
+#include <alarm.h>
 #include "types.h"
 
 // InputLogicの純粋ロジックテスト

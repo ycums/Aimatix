@@ -4,7 +4,7 @@
 #include <vector>
 #include <time.h>
 #include "types.h"
-#include "input.h"
+#include <input.h>
 
 // システム状態構造体
 struct SystemState {

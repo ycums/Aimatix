@@ -5,8 +5,8 @@
 #include <time.h>
 #include <vector> // std::vector を使用するため
 #include "types.h" // Mode enum と SettingsMenu 構造体を使用するため
-#include "settings.h" // Settings 構造体を使用するため
-#include "input.h" // InputState 構造体を使用するため
+#include <settings.h> // Settings 構造体を使用するため
+#include <input.h> // InputState 構造体を使用するため
 #include <cstdint>
 #include <string>
 #include "../test/mocks/mock_m5stack.h"
