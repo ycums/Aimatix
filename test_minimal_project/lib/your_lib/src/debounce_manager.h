@@ -13,6 +13,8 @@ public:
   static bool canProcessOperation(const std::string& operationType, unsigned long (*getTime)());
   // 画面遷移レベルのデバウンス判定
   static bool canProcessModeChange(unsigned long (*getTime)());
+  // テスト用：状態リセット
+  static void reset();
 
 private:
   static const unsigned long DEFAULT_HARDWARE_DEBOUNCE = 50;

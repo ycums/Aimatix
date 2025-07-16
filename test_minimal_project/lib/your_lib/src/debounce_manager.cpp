@@ -34,9 +34,27 @@ bool DebounceManager::canProcessOperation(const std::string& operationType, unsi
 // 画面遷移レベルのデバウンス判定
 bool DebounceManager::canProcessModeChange(unsigned long (*getTime)()) {
   unsigned long currentTime = getTime();
-  if (currentTime - lastModeChangeTime >= DEFAULT_MODE_CHANGE_DEBOUNCE) {
+  printf("DEBUG: currentTime=%lu, lastModeChangeTime=%lu\n", currentTime, lastModeChangeTime);
+  // 初回呼び出し時（lastModeChangeTimeが0）は常にtrue
+  if (lastModeChangeTime == 0) {
     lastModeChangeTime = currentTime;
+    printf("DEBUG: 初回呼び出し、lastModeChangeTimeを%luに設定\n", lastModeChangeTime);
     return true;
   }
+  if (currentTime - lastModeChangeTime >= DEFAULT_MODE_CHANGE_DEBOUNCE) {
+    lastModeChangeTime = currentTime;
+    printf("DEBUG: デバウンス時間経過、lastModeChangeTimeを%luに更新\n", lastModeChangeTime);
+    return true;
+  }
+  printf("DEBUG: デバウンス時間未経過、falseを返す\n");
   return false;
+}
+
+// テスト用：状態リセット
+void DebounceManager::reset() {
+  printf("DEBUG: reset() 呼び出し前 - lastModeChangeTime=%lu\n", lastModeChangeTime);
+  lastOperationTimes.clear();
+  lastModeChangeTime = 0;
+  lastButtonChangeTimes.clear();
+  printf("DEBUG: reset() 呼び出し後 - lastModeChangeTime=%lu\n", lastModeChangeTime);
 }
