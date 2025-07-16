@@ -342,3 +342,29 @@ Aimatix/
     - 複数のtest_main.cppを同じディレクトリに配置しない
 6. **不要なキャッシュ・ビルド生成物を削除する**
     - `pio run --target clean` でクリーンビルド 
+
+## 8. レポート・フィードバック（2024/06 最新状況）
+
+### 現状の構成
+- lib/aimatix_lib/src/：純粋ロジック（M5Stack非依存、DI設計）
+- test/pure/test_xxx_pure/：各ロジックごとに独立ディレクトリ＋test_main.cpp
+- test/mocks/：nativeテスト用モック
+- 不要なダミーテストや重複ディレクトリは削除し、責務ごとに整理
+
+### 工夫点・LDF対策
+- LDF（Library Dependency Finder）はデフォルト設定（chain+）で十分。lib/aimatix_lib/src/配下のロジックは自動でビルド・インクルードされる
+- build_src_filterやlib_extra_dirs等の余計な設定は極力使わず、標準構成を維持
+- テストごとに独立ディレクトリ＋test_main.cppとし、複数main定義エラーを防止
+- テスト用モックはtest/mocks/に集約し、-Itest/mocksでインクルード
+- テストディレクトリ名は必ずtest_で始める
+
+### include記法のベストプラクティス
+- プロジェクト内ロジックのincludeは "ファイル名.h" 記法（例：#include "button_manager.h"）
+- サードパーティや標準ライブラリは <...> 記法
+- テスト用モックは "mocks/mock_xxx.h" のように相対パスで記述
+- includeパスの衝突や循環依存を避けるため、責務ごとにディレクトリを分離
+
+### まとめ
+- PlatformIO/Unity/LDFの標準構成・命名規則・include記法を守ることで、移植・拡張・CI運用が容易になる
+- 問題発生時は、まずディレクトリ構成・include記法・余計なbuild設定を見直すこと
+- 本ドキュメントは今後も実践知見を随時追記・更新する 
