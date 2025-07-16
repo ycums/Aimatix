@@ -6,6 +6,43 @@
 - 過去のstepwise_ldf_verification_plan/reportの知見を活かし、段階的なペア移植＋一括テストで進める。
 - **PlatformIOのテスト構成ベストプラクティス**に従い、各テストを独立したディレクトリに配置する。
 
+## 現在の進行状況
+
+### ✅ 完了済み項目
+- [x] **test_minimal_project環境の構築**
+- [x] **button_managerペアの段階的移植テスト**
+  - [x] lib/your_lib/src/button_manager.cpp/h のコピー
+  - [x] test/pure/test_button_manager_pure/test_main.cpp のコピー
+  - [x] 依存関係の解決（mock_time.h、M5Stack.h等）
+  - [x] DI化（millis()関数ポインタ注入）
+  - [x] ビルド・テスト成功確認
+- [x] **alarmペアの段階的移植テスト**
+  - [x] lib/your_lib/src/alarm.cpp/h のコピー
+  - [x] test/pure/test_alarm_logic_pure/test_main.cpp のコピー
+  - [x] 依存関係の解決（ISpeaker.h、settings.h、IEEPROM.h等）
+  - [x] テストコードの全面リファクタ（time(NULL)固定化）
+  - [x] ビルド・テスト成功確認
+- [x] **debounce_managerペアの段階的移植テスト**
+  - [x] lib/your_lib/src/debounce_manager.cpp/h のコピー
+  - [x] test/pure/test_debounce_manager_pure/test_main.cpp のコピー
+  - [x] 依存関係の解決（mock_m5stack.h、M5Stack.h等）
+  - [x] テストコードの全面リファクタ（mock_time.h削除）
+  - [x] **テスト項目の整理・最適化**
+    - [x] 非現実的なテストの削除（8個 → 4個）
+    - [x] 現実的なユーザー操作パターンに基づくテスト設計
+    - [x] 連打防止テストの実装
+  - [x] ビルド・テスト成功確認
+
+### 🔄 進行中項目
+- [ ] **input_logicペアの段階的移植テスト**
+- [ ] **settings_logicペアの段階的移植テスト**
+- [ ] **time_logicペアの段階的移植テスト**
+
+### ⏳ 未着手項目
+- [ ] **本体プロジェクトでの一括テスト**
+- [ ] **LDF/PlatformIOのキャッシュクリア・再ビルド**
+- [ ] **レポート・フィードバック**
+
 ## 実施手順
 1. **LDF仕様・依存関係の再確認**
     - 各ロジック（button_manager, alarm, debounce_manager, input, settings, time_logic等）の依存関係・include記法・ディレクトリ構成を棚卸し
