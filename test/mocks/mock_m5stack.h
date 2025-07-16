@@ -2,7 +2,7 @@
 #define MOCK_M5STACK_H
 
 // テスト環境ではM5Stack.hをインクルードしない
-#ifdef TESTING
+#ifdef TEST_MODE
   #include <cstdint>
   #include <ctime>
   #include <cstdio>

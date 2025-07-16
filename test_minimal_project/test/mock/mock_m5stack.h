@@ -1,19 +1,11 @@
 #ifndef MOCK_M5STACK_H
 #define MOCK_M5STACK_H
 
-// テスト環境ではM5Stack.hをインクルードしない
-#ifdef TESTING
-  #include <cstdint>
-  #include <ctime>
-  #include <cstdio>
-  #include <cstring>
-#else
   #include <M5Stack.h>
   #include <cstdint>
   #include <ctime>
   #include <cstdio>
   #include <cstring>
-#endif
 
 // Windows環境でのヘッダー競合を回避
 #ifdef _WIN32

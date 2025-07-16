@@ -1,208 +1,115 @@
 #include <unity.h>
 #include <cstdio>
-#include <cstring>
-#include <map>
-#include <string>
-#include "mocks/mock_m5stack.h"
+#include <ctime>
 #include <debounce_manager.h>
 
-// DebounceManagerの純粋ロジックテスト
-// M5Stack依存を排除し、標準C++のみでテスト
+// lib/your_lib/src/debounce_manager.hのDebounceManagerクラスを直接テスト
 
-// mock_m5stack.hのButton型を使用
-using Button = MockM5Stack::Button;
-
-// モック時間管理
+// テスト用のmockMillis関数
+unsigned long mockMillis = 0;
 unsigned long millis() { return mockMillis; }
 void setMockTime(unsigned long time) { mockMillis = time; }
 
-// 純粋ロジックDebounceManager
-class PureDebounceManager {
-private:
-  static std::map<std::string, unsigned long> lastOperationTimes;
-  static unsigned long lastModeChangeTime;
-  static unsigned long lastButtonChangeTime;
-  
-  // デフォルトのデバウンス時間
-  static const unsigned long DEFAULT_HARDWARE_DEBOUNCE = 50;
-  static const unsigned long DEFAULT_OPERATION_DEBOUNCE = 200;
-  static const unsigned long DEFAULT_MODE_CHANGE_DEBOUNCE = 300;
-  
-public:
-  static void initialize() {
-    lastOperationTimes.clear();
-    lastModeChangeTime = 0;
-    lastButtonChangeTime = 0;
-  }
-  
-  // ハードウェアレベルのデバウンス判定
-  static bool canProcessHardware(Button& button) {
-    unsigned long currentTime = mockMillis;
-    
-    // 前回の処理から一定時間経過しているかチェック
-    if (currentTime - lastButtonChangeTime >= DEFAULT_HARDWARE_DEBOUNCE) {
-      lastButtonChangeTime = currentTime;
-      return true;
-    }
-    
-    return false;
-  }
-  
-  // 操作レベルのデバウンス判定
-  static bool canProcessOperation(const std::string& operationType) {
-    unsigned long currentTime = mockMillis;
-    
-    // 指定された操作タイプの最後の処理時刻を取得
-    auto it = lastOperationTimes.find(operationType);
-    if (it == lastOperationTimes.end()) {
-      // 初回の場合は処理可能
-      lastOperationTimes[operationType] = currentTime;
-      return true;
-    }
-    
-    // 前回の処理から一定時間経過しているかチェック
-    if (currentTime - it->second >= DEFAULT_OPERATION_DEBOUNCE) {
-      it->second = currentTime;
-      return true;
-    }
-    
-    return false;
-  }
-  
-  // 画面遷移レベルのデバウンス判定
-  static bool canProcessModeChange() {
-    unsigned long currentTime = mockMillis;
-    
-    // 前回のモード変更から一定時間経過しているかチェック
-    if (currentTime - lastModeChangeTime >= DEFAULT_MODE_CHANGE_DEBOUNCE) {
-      lastModeChangeTime = currentTime;
-      return true;
-    }
-    
-    return false;
-  }
-  
-  static void reset() {
-    initialize();
-  }
-};
+void setUp(void) {
+    setMockTime(0);
+    DebounceManager::reset();
+}
+void tearDown(void) {}
 
-// 静的メンバ変数の定義
-std::map<std::string, unsigned long> PureDebounceManager::lastOperationTimes;
-unsigned long PureDebounceManager::lastModeChangeTime = 0;
-unsigned long PureDebounceManager::lastButtonChangeTime = 0;
-
-// ハードウェアデバウンステスト
-void test_hardware_debounce() {
-  Button button;
-  PureDebounceManager::initialize();
-  
-  setMockTime(0);
-  
-  // 初回は処理可能
-  TEST_ASSERT_TRUE(PureDebounceManager::canProcessHardware(button));
-  
-  // 50ms以内は処理不可
-  setMockTime(25);
-  TEST_ASSERT_FALSE(PureDebounceManager::canProcessHardware(button));
-  
-  // 50ms経過後は処理可能
-  setMockTime(50);
-  TEST_ASSERT_TRUE(PureDebounceManager::canProcessHardware(button));
-  
-  printf("✓ ハードウェアデバウンステスト: 成功\n");
+void test_canProcessHardware() {
+    setMockTime(0);
+    
+    // 初回は処理可能
+    TEST_ASSERT_TRUE(DebounceManager::canProcessHardware(1, millis));
+    
+    // 50ms以内は処理不可
+    setMockTime(25);
+    TEST_ASSERT_FALSE(DebounceManager::canProcessHardware(1, millis));
+    
+    // 50ms経過後は処理可能
+    setMockTime(50);
+    TEST_ASSERT_TRUE(DebounceManager::canProcessHardware(1, millis));
+    
+    printf("✓ canProcessHardware: 成功\n");
 }
 
-// 操作デバウンステスト
-void test_operation_debounce() {
-  PureDebounceManager::initialize();
-  
-  setMockTime(0);
-  
-  // 初回の操作は処理可能
-  TEST_ASSERT_TRUE(PureDebounceManager::canProcessOperation("test_operation"));
-  
-  // 200ms以内は処理不可
-  setMockTime(100);
-  TEST_ASSERT_FALSE(PureDebounceManager::canProcessOperation("test_operation"));
-  
-  // 200ms経過後は処理可能
-  setMockTime(200);
-  TEST_ASSERT_TRUE(PureDebounceManager::canProcessOperation("test_operation"));
-  
-  printf("✓ 操作デバウンステスト: 成功\n");
+void test_canProcessOperation() {
+    setMockTime(0);
+    
+    // 初回の操作は処理可能
+    TEST_ASSERT_TRUE(DebounceManager::canProcessOperation("test_operation", millis));
+    
+    // 200ms以内は処理不可
+    setMockTime(100);
+    TEST_ASSERT_FALSE(DebounceManager::canProcessOperation("test_operation", millis));
+    
+    // 200ms経過後は処理可能
+    setMockTime(200);
+    TEST_ASSERT_TRUE(DebounceManager::canProcessOperation("test_operation", millis));
+    
+    printf("✓ canProcessOperation: 成功\n");
 }
 
-// 複数操作タイプのデバウンステスト
-void test_multiple_operation_debounce() {
-  PureDebounceManager::initialize();
-  
-  setMockTime(0);
-  
-  // 異なる操作タイプは独立して管理される
-  TEST_ASSERT_TRUE(PureDebounceManager::canProcessOperation("operation1"));
-  TEST_ASSERT_TRUE(PureDebounceManager::canProcessOperation("operation2"));
-  
-  setMockTime(100);
-  
-  // 両方とも200ms以内なので処理不可
-  TEST_ASSERT_FALSE(PureDebounceManager::canProcessOperation("operation1"));
-  TEST_ASSERT_FALSE(PureDebounceManager::canProcessOperation("operation2"));
-  
-  setMockTime(250);
-  
-  // 両方とも200ms経過後なので処理可能
-  TEST_ASSERT_TRUE(PureDebounceManager::canProcessOperation("operation1"));
-  TEST_ASSERT_TRUE(PureDebounceManager::canProcessOperation("operation2"));
-  
-  printf("✓ 複数操作タイプのデバウンステスト: 成功\n");
+void test_canProcessModeChange() {
+    setMockTime(0);
+    
+    // 初回のモード変更は処理可能
+    TEST_ASSERT_TRUE(DebounceManager::canProcessModeChange(millis));
+    
+    // 300ms以内は処理不可
+    setMockTime(150);
+    TEST_ASSERT_FALSE(DebounceManager::canProcessModeChange(millis));
+    
+    // 300ms経過後は処理可能
+    setMockTime(300);
+    TEST_ASSERT_TRUE(DebounceManager::canProcessModeChange(millis));
+    
+    printf("✓ canProcessModeChange: 成功\n");
 }
 
-// モード変更デバウンステスト
-void test_mode_change_debounce() {
-  PureDebounceManager::initialize();
-  
-  setMockTime(0);
-  
-  // 初回のモード変更は処理可能
-  TEST_ASSERT_TRUE(PureDebounceManager::canProcessModeChange());
-  
-  // 300ms以内は処理不可
-  setMockTime(150);
-  TEST_ASSERT_FALSE(PureDebounceManager::canProcessModeChange());
-  
-  // 300ms経過後は処理可能
-  setMockTime(300);
-  TEST_ASSERT_TRUE(PureDebounceManager::canProcessModeChange());
-  
-  printf("✓ モード変更デバウンステスト: 成功\n");
+void test_multiple_operations() {
+    setMockTime(0);
+    
+    // 異なる操作タイプは独立して管理される
+    TEST_ASSERT_TRUE(DebounceManager::canProcessOperation("operation1", millis));
+    TEST_ASSERT_TRUE(DebounceManager::canProcessOperation("operation2", millis));
+    
+    setMockTime(100);
+    
+    // 両方とも200ms以内なので処理不可
+    TEST_ASSERT_FALSE(DebounceManager::canProcessOperation("operation1", millis));
+    TEST_ASSERT_FALSE(DebounceManager::canProcessOperation("operation2", millis));
+    
+    setMockTime(250);
+    
+    // 両方とも200ms経過後なので処理可能
+    TEST_ASSERT_TRUE(DebounceManager::canProcessOperation("operation1", millis));
+    TEST_ASSERT_TRUE(DebounceManager::canProcessOperation("operation2", millis));
+    
+    printf("✓ multiple_operations: 成功\n");
 }
 
-// 階層化デバウンステスト
 void test_hierarchical_debounce() {
-  Button button;
-  PureDebounceManager::initialize();
-  
-  setMockTime(0);
-  
-  // 全てのレベルで処理可能
-  TEST_ASSERT_TRUE(PureDebounceManager::canProcessHardware(button));
-  TEST_ASSERT_TRUE(PureDebounceManager::canProcessOperation("test"));
-  TEST_ASSERT_TRUE(PureDebounceManager::canProcessModeChange());
-  
-  setMockTime(25);
-  
-  // ハードウェアレベルは処理不可（50ms未満）
-  TEST_ASSERT_FALSE(PureDebounceManager::canProcessHardware(button));
-  
-  setMockTime(100);
-  
-  // 操作レベルも処理不可（200ms未満）
-  TEST_ASSERT_FALSE(PureDebounceManager::canProcessOperation("test"));
-  
-  setMockTime(150);
-  
-  // モード変更レベルも処理不可（300ms未満）
+    setMockTime(0);
+    
+    // 全てのレベルで処理可能
+    TEST_ASSERT_TRUE(DebounceManager::canProcessHardware(1, millis));
+    TEST_ASSERT_TRUE(DebounceManager::canProcessOperation("test", millis));
+    TEST_ASSERT_TRUE(DebounceManager::canProcessModeChange(millis));
+    
+    setMockTime(25);
+    
+    // ハードウェアレベルは処理不可（50ms未満）
+    TEST_ASSERT_FALSE(DebounceManager::canProcessHardware(1, millis));
+    
+    setMockTime(100);
+    
+    // 操作レベルも処理不可（200ms未満）
+    TEST_ASSERT_FALSE(DebounceManager::canProcessOperation("test", millis));
+    
+    setMockTime(150);
+    
+    // モード変更レベルも処理不可（300ms未満）
   TEST_ASSERT_FALSE(PureDebounceManager::canProcessModeChange());
   
   printf("✓ 階層化デバウンステスト: 成功\n");
@@ -381,22 +288,22 @@ void tearDown(void) {
 
 // メイン関数
 int main() {
-  UNITY_BEGIN();
+    UNITY_BEGIN();
   
-  printf("=== DebounceManager 純粋ロジックテスト ===\n");
+    printf("=== DebounceManager 純粋ロジックテスト ===\n");
   
   RUN_TEST(test_hardware_debounce);
   RUN_TEST(test_operation_debounce);
   RUN_TEST(test_multiple_operation_debounce);
   RUN_TEST(test_mode_change_debounce);
-  RUN_TEST(test_hierarchical_debounce);
-  RUN_TEST(test_debounce_time_boundaries);
-  RUN_TEST(test_consecutive_processing);
-  RUN_TEST(test_reset_functionality);
-  RUN_TEST(test_long_duration_operation);
-  RUN_TEST(test_composite_debounce_scenario);
+    RUN_TEST(test_hierarchical_debounce);
+    RUN_TEST(test_debounce_time_boundaries);
+    RUN_TEST(test_consecutive_processing);
+    RUN_TEST(test_reset_functionality);
+    RUN_TEST(test_long_duration_operation);
+    RUN_TEST(test_composite_debounce_scenario);
   
-  printf("=== 全テスト完了 ===\n");
+    printf("=== 全テスト完了 ===\n");
   
-  return UNITY_END();
+    return UNITY_END();
 } 

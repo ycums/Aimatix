@@ -39,4 +39,4 @@ bool DebounceManager::canProcessModeChange(unsigned long (*getTime)()) {
     return true;
   }
   return false;
-} 
+}
