@@ -1,6 +1,6 @@
 #include "button_manager.h"
 
-ButtonManager::ButtonManager() : lastUpdateTime(0) {
+ButtonManager::ButtonManager(unsigned long (*getTimeFunc)()) : lastUpdateTime(0), getTime(getTimeFunc) {
   buttonStates.clear();
 }
 ButtonManager::~ButtonManager() {}
@@ -12,7 +12,7 @@ void ButtonManager::initialize() {
 }
 
 void ButtonManager::update() {
-  unsigned long currentTime = millis();
+  unsigned long currentTime = getTime();
   // ここで全ボタンの状態を更新（buttonIdリストをループ）
   for (auto& kv : buttonStates) {
     updateButtonState(kv.first, currentTime);
@@ -43,7 +43,7 @@ bool ButtonManager::isShortPress(int buttonId, unsigned long threshold) {
   if (!state) return false;
   if (!canProcessButton(buttonId)) return false;
   if (state->wasReleased) {
-    unsigned long pressDuration = millis() - state->pressStartTime;
+    unsigned long pressDuration = getTime() - state->pressStartTime;
     return pressDuration < threshold;
   }
   return false;
@@ -80,7 +80,7 @@ ButtonState& ButtonManager::getOrCreateButtonState(int buttonId) {
 }
 
 void ButtonManager::applyHardwareDebounce(ButtonState& state) {
-  unsigned long currentTime = millis();
+  unsigned long currentTime = getTime();
   if (currentTime - state.lastChangeTime < 50) {
     // デバウンス処理
   }

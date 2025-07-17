@@ -19,7 +19,8 @@ struct ButtonState {
 // IButtonManager実装クラス
 class ButtonManager : public IButtonManager {
 public:
-  ButtonManager();
+  // 現在時刻取得関数をDI
+  explicit ButtonManager(unsigned long (*getTimeFunc)());
   ~ButtonManager() override;
 
   // IButtonManagerインターフェース
@@ -37,9 +38,11 @@ public:
 private:
   std::map<int, ButtonState> buttonStates;
   unsigned long lastUpdateTime;
+  unsigned long (*getTime)(); // DIされた現在時刻取得関数
   void updateButtonState(int buttonId, unsigned long currentTime);
   void applyHardwareDebounce(ButtonState& state);
   ButtonState& getOrCreateButtonState(int buttonId);
+  static bool canProcessButton(int buttonId);
 };
 
 #endif // BUTTON_MANAGER_H 

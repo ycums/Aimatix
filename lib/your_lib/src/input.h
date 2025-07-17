@@ -2,6 +2,7 @@
 #define INPUT_H
 
 #include <time.h>
+#include <cstdint>
 #include "../include/IButtonManager.h"
 
 // 入力モード用の構造体
@@ -39,9 +40,12 @@ extern InputState inputState;
 extern RightJustifiedInputState rjInputState;
 extern DigitEditTimeInputState digitEditInput;
 
+// 時間取得関数の型定義
+typedef uint32_t (*TimeFunction)();
+
 // 関数プロトタイプ
 bool confirmInputAndAddAlarm();
 void resetInput();
-void handleDigitEditInput(IButtonManager* buttonManager);
+void handleDigitEditInput(IButtonManager* buttonManager, TimeFunction timeFunc = nullptr);
 
 #endif // INPUT_H

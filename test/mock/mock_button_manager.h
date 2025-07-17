@@ -1,5 +1,5 @@
 #pragma once
-#include "../../lib/aimatix_lib/include/IButtonManager.h"
+#include "../../lib/your_lib/include/IButtonManager.h"
 #include <map>
 
 class MockButtonManager : public IButtonManager {
