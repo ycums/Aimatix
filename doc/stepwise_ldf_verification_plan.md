@@ -1,7 +1,7 @@
 # lib/testペア段階移植によるLDF動作検証プラン
 
 ## 目的
-Aimatix本体のlib/aimatix_lib/src/とtest/pure/配下の各ペア（例：button_manager, alarm, debounce_manager等）を、test_minimal_projectに段階的に移動し、どのタイミング・組み合わせでビルドやテストが壊れるかを検証する。
+Aimatix本体のlib/libaimatix/src/とtest/pure/配下の各ペア（例：button_manager, alarm, debounce_manager等）を、test_minimal_projectに段階的に移動し、どのタイミング・組み合わせでビルドやテストが壊れるかを検証する。
 
 ## 検証手順
 
@@ -11,7 +11,7 @@ Aimatix本体のlib/aimatix_lib/src/とtest/pure/配下の各ペア（例：butt
 
 2. **1ペアずつ移植・検証**
     - 例：
-        1. lib/aimatix_lib/src/button_manager.* と test/pure/test_button_manager_pure/ を test_minimal_project/lib/your_lib/src/ および test_minimal_project/test/ にコピー
+        1. lib/libaimatix/src/button_manager.* と test/pure/test_button_manager_pure/ を test_minimal_project/lib/your_lib/src/ および test_minimal_project/test/ にコピー
         2. **重要**: テストディレクトリ構造をPlatformIOのベストプラクティスに従って配置
         3. include記法・ディレクトリ構成は本体と同じにする
         4. `pio test` でビルド・テスト
@@ -54,7 +54,7 @@ test_minimal_project/test/
 - **モックが見つからない**: `test/mocks/`に配置し、`-Itest/mocks`でインクルード
 
 ## ポイント
-- コピー時はディレクトリ構成（lib/aimatix_lib/src/xxx.h など）を厳密に再現する
+- コピー時はディレクトリ構成（lib/libaimatix/src/xxx.h など）を厳密に再現する
 - **テストディレクトリ構造はPlatformIOのベストプラクティスに従う**
 - テストコードのinclude記法も本体と同じにしておく
 - 1ペアずつ追加し、壊れたらその直前の差分を記録

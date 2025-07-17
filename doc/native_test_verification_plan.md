@@ -1,7 +1,7 @@
 # native環境テスト検証 実施計画書
 
 ## 目的・背景
-- lib/aimatix_lib配下の純粋ロジック分離・DI化が完了した後、native環境（PC上）で全テストがグリーンになることを確認する。
+- lib/libaimatix配下の純粋ロジック分離・DI化が完了した後、native環境（PC上）で全テストがグリーンになることを確認する。
 - LDF（Library Dependency Finder）の挙動による依存解決・includeパス問題を回避し、安定したテスト基盤を構築する。
 - 過去のstepwise_ldf_verification_plan/reportの知見を活かし、段階的なペア移植＋一括テストで進める。
 - **PlatformIOのテスト構成ベストプラクティス**に従い、各テストを独立したディレクトリに配置する。
@@ -39,9 +39,9 @@
 - [x] **time_logicペアの段階的移植テスト**
 
 ### ⏳ 未着手項目
-- [ ] **本体プロジェクトでの一括テスト**
-- [ ] **LDF/PlatformIOのキャッシュクリア・再ビルド**
-- [ ] **レポート・フィードバック**
+- [x] **本体プロジェクトでの一括テスト**
+- [x] **LDF/PlatformIOのキャッシュクリア・再ビルド**
+- [x] **レポート・フィードバック**
 
 ## 実施手順
 1. **LDF仕様・依存関係の再確認**
@@ -49,13 +49,13 @@
     - **PlatformIOテスト構成の確認**: 各テストが独立したディレクトリに配置されているか確認
 
 2. **段階的ペア移植テスト（stepwise方式）**
-    - test_minimal_project等の最小構成プロジェクトにlib/aimatix_lib/src/とtest/pure/のペアを1組ずつコピー
+    - test_minimal_project等の最小構成プロジェクトにlib/libaimatix/src/とtest/pure/のペアを1組ずつコピー
     - **重要**: テストディレクトリ構造をPlatformIOのベストプラクティスに従って配置
     - 例：button_manager.cpp/h＋test_button_manager_pure/test_main.cpp → ビルド・テスト
     - テストが通れば次のペアを追加。壊れたらエラー内容・依存関係・include記法を記録し、修正
 
 3. **本体プロジェクトでの一括テスト**
-    - lib/aimatix_lib配下の全ロジック・mock・テストを本体プロジェクトで一括ビルド・テスト
+    - lib/libaimatix配下の全ロジック・mock・テストを本体プロジェクトで一括ビルド・テスト
     - `pio test` でnative環境の全テストがグリーンになることを確認
     - 失敗時はstepwise検証の知見をもとに修正
 
@@ -99,7 +99,7 @@ test/
 - **PlatformIOのテスト構成ベストプラクティスに従い、各テストを独立したディレクトリに配置**
 
 ## 関連ドキュメント
-- pure_logic_refactoring_plan.md（lib/aimatix_lib層の純粋ロジック分離計画）
+- pure_logic_refactoring_plan.md（lib/libaimatix層の純粋ロジック分離計画）
 - stepwise_ldf_verification_plan.md（段階的LDF検証手順）
 - stepwise_ldf_verification_report.md（LDF検証レポート）
 - platformio_best_practice_plan.md（ビルド・テスト運用指針）
@@ -107,4 +107,4 @@ test/
 
 ---
 
-※本計画書はlib/aimatix_lib層のリファクタ完了後、native環境での全テスト検証を別チャットで段階的に実施するための指針・手順をまとめたものです。 
+※本計画書はlib/libaimatix層のリファクタ完了後、native環境での全テスト検証を別チャットで段階的に実施するための指針・手順をまとめたものです。 

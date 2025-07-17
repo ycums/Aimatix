@@ -1,7 +1,7 @@
 # 純粋ロジック完全分離・モック環境完全分離リファクタリングプラン
 
 ## 目的
-- lib/aimatix_lib/src/配下の全ロジックからM5Stack.h, EEPROM.h等の外部依存を排除し、mockやDI（依存性注入）でテスト可能な設計にする
+- lib/libaimatix/src/配下の全ロジックからM5Stack.h, EEPROM.h等の外部依存を排除し、mockやDI（依存性注入）でテスト可能な設計にする
 - テスト時はmock/スタブのみでnative環境で全ロジックの単体テストが可能な状態を目指す
 
 ## 1. 外部依存の現状棚卸し（2024/06/09時点）
@@ -28,7 +28,7 @@
 - テストコードのDI対応
 
 ## 3. 実施ステップ
-1. 依存抽象化インターフェースの設計・追加（lib/aimatix_lib/include/など）
+1. 依存抽象化インターフェースの設計・追加（lib/libaimatix/include/など）
 2. alarm, button_manager, debounce_manager, settings, input等のロジックをインターフェース経由に書き換え
 3. 既存mockの新インターフェース対応
 4. テストコードのDI化・mock注入化

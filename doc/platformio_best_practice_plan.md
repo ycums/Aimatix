@@ -6,7 +6,7 @@
 Aimatix/
 ├── include/                  # 公開ヘッダ（src/の外部公開用、必要に応じて）
 ├── lib/                      # サードパーティ/再利用ライブラリ
-│   └── aimatix_lib/         # 純粋ロジックライブラリ
+│   └── libaimatix/         # 純粋ロジックライブラリ
 │       └── src/
 │           ├── button_manager.h
 │           ├── button_manager.cpp
@@ -41,7 +41,7 @@ Aimatix/
 
 - **src/**: 実装と内部ヘッダ（M5Stack依存部）
 - **include/**: 外部公開ヘッダ（必要に応じて）
-- **lib/aimatix_lib/src/**: 純粋ロジック（ハードウェア非依存）
+- **lib/libaimatix/src/**: 純粋ロジック（ハードウェア非依存）
 - **test/pure/**: native環境での純粋ロジックテスト（Unityベース）
   - **重要**: 各テストは独立したディレクトリに配置
   - 例: `test_button_manager_pure/test_main.cpp`
@@ -267,7 +267,7 @@ test/
 
 ### 主な是正ポイント
 1. **lib/配下は必ず `lib/パッケージ名/src/ヘッダ・ソース` 構成に統一する**
-    - 例: `lib/aimatix_lib/src/button_manager.h`
+    - 例: `lib/libaimatix/src/button_manager.h`
     - srcサブディレクトリ必須（PlatformIO仕様）
 2. **include記法は `<button_manager.h>` でも "button_manager.h" でもLDFが有効ならどちらでもOK**
     - ただしプロジェクト内で統一推奨
@@ -289,7 +289,7 @@ test/
 ```
 Aimatix/
 ├── lib/
-│   └── aimatix_lib/
+│   └── libaimatix/
 │       └── src/
 │           ├── button_manager.h
 │           ├── button_manager.cpp
@@ -326,11 +326,11 @@ Aimatix/
 
 1. **lib/配下の構成を見直す**
     - すべての自作ライブラリは `lib/パッケージ名/src/` 配下にヘッダ・ソースを移動する
-    - 例: `lib/aimatix_lib/src/button_manager.h` など
-    - 旧: `lib/aimatix_lib/button_manager.h` → 新: `lib/aimatix_lib/src/button_manager.h`
+    - 例: `lib/libaimatix/src/button_manager.h` など
+    - 旧: `lib/libaimatix/button_manager.h` → 新: `lib/libaimatix/src/button_manager.h`
 2. **src/やtest/からの#include記法を統一する**
     - 基本は `#include <button_manager.h>` もしくは `#include "button_manager.h"` で統一
-    - 相対パスやlib/aimatix_lib/src/を含む記法は避ける
+    - 相対パスやlib/libaimatix/src/を含む記法は避ける
 3. **platformio.iniのbuild_src_filter, build_flagsを確認・修正**
     - `build_src_filter` を使っている場合はlib/も明示的に含める、または削除
     - `build_flags` で不要な-I指定があれば削除（LDFが有効なら不要）
@@ -343,28 +343,30 @@ Aimatix/
 6. **不要なキャッシュ・ビルド生成物を削除する**
     - `pio run --target clean` でクリーンビルド 
 
-## 8. レポート・フィードバック（2024/06 最新状況）
+## 8. 最新運用例・実践Tips（2024/06時点）
 
-### 現状の構成
-- lib/aimatix_lib/src/：純粋ロジック（M5Stack非依存、DI設計）
-- test/pure/test_xxx_pure/：各ロジックごとに独立ディレクトリ＋test_main.cpp
-- test/mocks/：nativeテスト用モック
-- 不要なダミーテストや重複ディレクトリは削除し、責務ごとに整理
+### 構成・工夫点
+- 純粋ロジックは lib/libaimatix/src/（本体）・test_minimal_project/lib/your_lib/src/（テスト用）に分離
+- テストは test/pure/ 配下にペアごとにディレクトリを作成し、test_main.cppで管理
+- テスト用のunity_config.hはtest/配下に配置し、platformio.iniで-Itestを指定
+- M5Stack依存やハードウェア依存部分は関数ポインタDI等で分離し、nativeテストでモックやテスト用関数を注入
+- テストごとにディレクトリを分け、責務を明確化
 
-### 工夫点・LDF対策
-- LDF（Library Dependency Finder）はデフォルト設定（chain+）で十分。lib/aimatix_lib/src/配下のロジックは自動でビルド・インクルードされる
-- build_src_filterやlib_extra_dirs等の余計な設定は極力使わず、標準構成を維持
-- テストごとに独立ディレクトリ＋test_main.cppとし、複数main定義エラーを防止
-- テスト用モックはtest/mocks/に集約し、-Itest/mocksでインクルード
-- テストディレクトリ名は必ずtest_で始める
+### LDF対策
+- LDF（Library Dependency Finder）によりlib/libaimatix/src/配下のロジックは自動でビルド・リンクされる
+- テスト用にはplatformio.iniのbuild_flagsで-Ilib/your_lib/srcや-Itestを明示
+- うまくいかない場合はplatformio.iniのbuild_flagsやbuild_src_filterの設定を見直す
 
 ### include記法のベストプラクティス
-- プロジェクト内ロジックのincludeは "ファイル名.h" 記法（例：#include "button_manager.h"）
-- サードパーティや標準ライブラリは <...> 記法
-- テスト用モックは "mocks/mock_xxx.h" のように相対パスで記述
-- includeパスの衝突や循環依存を避けるため、責務ごとにディレクトリを分離
+- プロジェクト内ロジックは <xxx.h> 記法でインクルード（LDFが解決）
+- テスト用ヘッダやモックは "xxx.h" 記法で相対パス指定
+- インクルードパスが複雑な場合はplatformio.iniで明示的にパス追加
 
-### まとめ
-- PlatformIO/Unity/LDFの標準構成・命名規則・include記法を守ることで、移植・拡張・CI運用が容易になる
-- 問題発生時は、まずディレクトリ構成・include記法・余計なbuild設定を見直すこと
-- 本ドキュメントは今後も実践知見を随時追記・更新する 
+### テスト運用
+- pio test -e native で全テスト一括実行、29件すべてグリーンを確認
+- キャッシュクリアは pio run -t clean でOK
+- テスト追加・リファクタ時も常に全テストがグリーンになることを重視
+
+---
+
+（この節は今後の運用・レビュー時に随時アップデート推奨） 

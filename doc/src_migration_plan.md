@@ -1,7 +1,7 @@
 # src/ディレクトリ移行計画書
 
 ## 目的・背景
-- lib/aimatix_lib配下の純粋ロジック分離・DI化が完了した後、src/配下をM5Stack依存部のみに整理する。
+- lib/libaimatix配下の純粋ロジック分離・DI化が完了した後、src/配下をM5Stack依存部のみに整理する。
 - 純粋ロジックとハードウェア依存部の明確な分離により、テスト可能性と保守性を向上させる。
 - PlatformIOのベストプラクティスに従ったディレクトリ構成を実現する。
 
@@ -15,7 +15,7 @@
 - state_transition/ - 状態遷移制御
 - types.h - 共通型定義
 
-### lib/aimatix_lib/src/配下に移動済み（純粋ロジック）
+### lib/libaimatix/src/配下に移動済み（純粋ロジック）
 - button_manager.cpp/h - ボタン管理ロジック
 - debounce_manager.cpp/h - デバウンス管理ロジック
 - alarm.cpp/h - アラーム管理ロジック
@@ -26,7 +26,7 @@
 ## 移行手順
 
 1. **依存関係の確認**
-    - src/配下のファイルがlib/aimatix_lib/src/配下の純粋ロジックを正しく参照しているか確認
+    - src/配下のファイルがlib/libaimatix/src/配下の純粋ロジックを正しく参照しているか確認
     - include記法の統一（LDFを活用した記法に統一）
 
 2. **インターフェース実装の確認**
@@ -93,4 +93,4 @@ test/
 
 ---
 
-※本計画書はlib/aimatix_lib層のリファクタ完了後、src/配下の整理を実施するための指針・手順をまとめたものです。 
+※本計画書はlib/libaimatix層のリファクタ完了後、src/配下の整理を実施するための指針・手順をまとめたものです。 
