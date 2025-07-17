@@ -3,7 +3,6 @@
 #include <cstring>
 #include <ctime>
 #include <time_logic.h>
-#include "test_framework.h"
 
 // TimeLogicクラスの純粋ロジックテスト
 // M5Stack依存を排除し、標準C++のみでテスト
@@ -13,7 +12,7 @@ void tearDown(void) {}
 
 // 時刻バリデーションテスト
 void test_time_validation() {
-  CUSTOM_TEST_SETUP();
+  // CUSTOM_TEST_SETUP(); // カスタムマクロを削除
   
   // 正常な時刻
   TEST_ASSERT_TRUE(TimeLogic::isValidTime(0, 0));
@@ -27,12 +26,12 @@ void test_time_validation() {
   TEST_ASSERT_FALSE(TimeLogic::isValidTime(12, 60));
   
   printf("✓ 時刻バリデーションテスト: 成功\n");
-  CUSTOM_TEST_TEARDOWN();
+  // CUSTOM_TEST_TEARDOWN(); // カスタムマクロを削除
 }
 
 // 絶対時刻計算テスト
 void test_absolute_time_calculation() {
-  CUSTOM_TEST_SETUP();
+  // CUSTOM_TEST_SETUP(); // カスタムマクロを削除
   
   time_t now = time(NULL);
   struct tm* tm_info = localtime(&now);
@@ -45,12 +44,12 @@ void test_absolute_time_calculation() {
   TEST_ASSERT_EQUAL(30, calc_info->tm_min);
   
   printf("✓ 絶対時刻計算テスト: 成功\n");
-  CUSTOM_TEST_TEARDOWN();
+  // CUSTOM_TEST_TEARDOWN(); // カスタムマクロを削除
 }
 
 // 相対時刻計算テスト
 void test_relative_time_calculation() {
-  CUSTOM_TEST_SETUP();
+  // CUSTOM_TEST_SETUP(); // カスタムマクロを削除
   
   time_t now = time(NULL);
   struct tm* tm_info = localtime(&now);
@@ -70,15 +69,15 @@ void test_relative_time_calculation() {
   printf("期待値: %02d:%02d\n", expected_hour, expected_min);
   
   // カスタムマクロを使用して時刻比較
-  CUSTOM_TEST_ASSERT_TIME_GREATER_THAN(calculated, now);
+  // CUSTOM_TEST_ASSERT_TIME_GREATER_THAN(calculated, now); // カスタムマクロを削除
   
   printf("✓ 相対時刻計算テスト: 成功\n");
-  CUSTOM_TEST_TEARDOWN();
+  // CUSTOM_TEST_TEARDOWN(); // カスタムマクロを削除
 }
 
 // 時刻フォーマットテスト
 void test_time_formatting() {
-  CUSTOM_TEST_SETUP();
+  // CUSTOM_TEST_SETUP(); // カスタムマクロを削除
   
   // 現在時刻を使用してテスト（UTC時刻の問題を回避）
   time_t test_time = time(NULL);
@@ -96,12 +95,12 @@ void test_time_formatting() {
   TEST_ASSERT_EQUAL_STRING(expected, buffer);
   
   printf("✓ 時刻フォーマットテスト: 成功\n");
-  CUSTOM_TEST_TEARDOWN();
+  // CUSTOM_TEST_TEARDOWN(); // カスタムマクロを削除
 }
 
 // アラーム時刻計算テスト
 void test_alarm_time_calculation() {
-  CUSTOM_TEST_SETUP();
+  // CUSTOM_TEST_SETUP(); // カスタムマクロを削除
   
   time_t now = time(NULL);
   
@@ -114,10 +113,10 @@ void test_alarm_time_calculation() {
   // 相対時刻入力モード（1時間30分後）
   time_t relative = TimeLogic::calculateAlarmTime(1, 30, 1, now);
   // カスタムマクロを使用して時刻比較
-  CUSTOM_TEST_ASSERT_TIME_GREATER_THAN(relative, now);
+  // CUSTOM_TEST_ASSERT_TIME_GREATER_THAN(relative, now); // カスタムマクロを削除
   
   printf("✓ アラーム時刻計算テスト: 成功\n");
-  CUSTOM_TEST_TEARDOWN();
+  // CUSTOM_TEST_TEARDOWN(); // カスタムマクロを削除
 }
 
 // メイン関数

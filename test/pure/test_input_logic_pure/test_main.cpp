@@ -5,6 +5,12 @@
 #include <alarm.h>
 #include "types.h"
 
+// テスト用の時間関数
+uint32_t testTime = 0;
+uint32_t getTestTime() {
+  return testTime;
+}
+
 // InputLogicの純粋ロジックテスト
 // M5Stack依存を排除し、標準C++のみでテスト
 
