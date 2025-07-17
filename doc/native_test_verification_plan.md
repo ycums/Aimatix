@@ -34,7 +34,7 @@
   - [x] ビルド・テスト成功確認
 
 ### 🔄 進行中項目
-- [ ] **input_logicペアの段階的移植テスト**
+- [x] **input_logicペアの段階的移植テスト**
 - [ ] **settings_logicペアの段階的移植テスト**
 - [ ] **time_logicペアの段階的移植テスト**
 
@@ -95,7 +95,7 @@ test/
 ## 注意点
 - LDFの仕様・挙動はPlatformIOのバージョンや設定で変わる場合があるため、都度公式ドキュメントも参照
 - include記法（<> or ""）やディレクトリ構成は本体とテストで統一
-- テストが壊れた場合は、stepwise_ldf_verification_report.mdのように原因・修正内容を必ず記録
+- テストが壊れた場合は、stepwise_ldf_verification_report.mdのよ原因・修正内容を必ず記録
 - **PlatformIOのテスト構成ベストプラクティスに従い、各テストを独立したディレクトリに配置**
 
 ## 関連ドキュメント

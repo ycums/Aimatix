@@ -12,7 +12,7 @@
 struct Settings {
   bool sound_enabled;
   uint8_t lcd_brightness;
-  char checksum;  // 設定が有効かどうかを確認するためのチェックサム
+  uint8_t checksum;  // 設定が有効かどうかを確認するためのチェックサム
 };
 
 // Global variables (declared in settings.cpp)
