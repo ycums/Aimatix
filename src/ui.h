@@ -9,7 +9,6 @@
 #include <input.h> // InputState 構造体を使用するため
 #include <cstdint>
 #include <string>
-#include "../test/mocks/mock_m5stack.h"
 
 // カラーパレット定義
 #define AMBER_COLOR 0xFB20  // アンバー色 (RGB565: R=31, G=22, B=0) - 確定

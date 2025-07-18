@@ -13,6 +13,7 @@
 #include <button_manager.h>
 #include "wifi_manager.h"
 #include "time_sync.h"
+#include "m5stack_adapters.h"
 
 // 新しい状態遷移システムのインクルード
 #include "state_transition/button_event.h"
@@ -40,6 +41,10 @@ extern std::vector<time_t> alarmTimes; // Declared in alarm.h
 int scheduleSelectedIndex = 0;
 time_t lastReleaseTime = 0;
 
+// グローバル変数（他のファイルで定義されているもの）
+extern WiFiManager* wifiManager;
+extern TimeSync* timeSync;
+
 // Function declarations defined in main.cpp
 void handleButtons();
 void removePastAlarms();
@@ -66,8 +71,8 @@ void loop() {
   // システム更新
   updateSystem();
   
-  // ButtonManagerの状態更新（IButtonインターフェース対応）
-  ButtonManager::updateButtonStates(); // ButtonManagerの状態更新を追加
+  // ボタン管理アダプターの状態更新
+  buttonManagerAdapter.update();
   
   handleButtons(); // ボタン処理を追加
 
@@ -129,7 +134,7 @@ void loop() {
     time_t nextAlarm = getNextAlarmTime();
     if (nextAlarm > 0 && time(NULL) >= nextAlarm) {
       currentMode = ALARM_ACTIVE;
-      playAlarm();
+      playAlarm(&speakerAdapter, settings.sound_enabled);
     }
   }
   
@@ -158,7 +163,7 @@ void initializeSystem() {
   Serial.println("UI initialized");
   
   // 設定読み込み
-  loadSettings();
+  loadSettings(&eepromAdapter);
   Serial.println("Settings loaded");
   
   // LCD明度設定
@@ -167,8 +172,7 @@ void initializeSystem() {
   M5.Lcd.setTextColor(AMBER_COLOR, TFT_BLACK);
   Serial.println("Display configured");
   
-  // ButtonManager初期化
-  ButtonManager::initialize();
+  // ボタン管理アダプター初期化（M5.update()はupdate()で行われる）
   Serial.println("ButtonManager initialized");
   
   // WiFi管理初期化
@@ -256,13 +260,13 @@ void executeTransitionAction(const TransitionResult& result) {
       // アラーム削除処理は既存の処理で行われる
       break;
     case ACTION_UPDATE_SETTINGS:
-      saveSettings();
+      saveSettings(&eepromAdapter);
       break;
     case ACTION_PLAY_ALARM:
-      playAlarm();
+      playAlarm(&speakerAdapter, settings.sound_enabled);
       break;
     case ACTION_STOP_ALARM:
-      stopAlarm();
+      stopAlarm(&speakerAdapter, settings.sound_enabled);
       break;
     case ACTION_SHOW_WARNING:
       showWarningMessage(result.errorMessage);
@@ -326,6 +330,6 @@ void handleButtons() {
   
   // 設定メニューの処理は新しい状態遷移システムで管理
   
-  // ButtonManagerの状態更新
-  ButtonManager::updateButtonStates();
+  // ボタン管理アダプターの状態更新
+  buttonManagerAdapter.update();
 }

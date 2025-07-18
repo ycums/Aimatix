@@ -115,13 +115,12 @@ bool WiFiManager::connectWithSmartConfig() {
     delay(100);
     M5.update();
     
-    // ボタンCでSmartConfigをキャンセル
-    if (M5.BtnC.wasPressed()) {
-      Serial.println("SmartConfig cancelled by user");
-      WiFiProv.stopProvisioning();
-      WiFi.mode(WIFI_STA);
-      return false;
-    }
+          // ボタンCでSmartConfigをキャンセル
+      if (M5.BtnC.wasPressed()) {
+        Serial.println("SmartConfig cancelled by user");
+        WiFi.mode(WIFI_STA);
+        return false;
+      }
   }
   
   // 接続成功時の処理

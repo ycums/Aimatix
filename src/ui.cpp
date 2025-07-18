@@ -7,7 +7,6 @@
 #include <cstring>
 #include <cstdio>
 #include <string>
-#include "../test/mocks/mock_m5stack.h"
 
 // Global variables used in UI functions (declare as extern in main.cpp or pass as parameters)
 // extern Settings settings; // Assuming settings are needed for drawing
