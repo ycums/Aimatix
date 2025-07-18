@@ -346,7 +346,7 @@ Aimatix/
 ## 8. 最新運用例・実践Tips（2024/06時点）
 
 ### 構成・工夫点
-- 純粋ロジックは lib/libaimatix/src/（本体）・test_minimal_project/lib/your_lib/src/（テスト用）に分離
+- 純粋ロジックは lib/libaimatix/src/（本体）・test_minimal_project/lib/libaimatix/src/（テスト用）に分離
 - テストは test/pure/ 配下にペアごとにディレクトリを作成し、test_main.cppで管理
 - テスト用のunity_config.hはtest/配下に配置し、platformio.iniで-Itestを指定
 - M5Stack依存やハードウェア依存部分は関数ポインタDI等で分離し、nativeテストでモックやテスト用関数を注入
@@ -354,7 +354,7 @@ Aimatix/
 
 ### LDF対策
 - LDF（Library Dependency Finder）によりlib/libaimatix/src/配下のロジックは自動でビルド・リンクされる
-- テスト用にはplatformio.iniのbuild_flagsで-Ilib/your_lib/srcや-Itestを明示
+- テスト用にはplatformio.iniのbuild_flagsで-Ilib/libaimatix/srcや-Itestを明示
 - うまくいかない場合はplatformio.iniのbuild_flagsやbuild_src_filterの設定を見直す
 
 ### include記法のベストプラクティス

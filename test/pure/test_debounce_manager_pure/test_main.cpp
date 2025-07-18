@@ -3,7 +3,7 @@
 #include <ctime>
 #include <debounce_manager.h>
 
-// lib/your_lib/src/debounce_manager.hのDebounceManagerクラスを直接テスト
+// lib/libaimatix/src/debounce_manager.hのDebounceManagerクラスを直接テスト
 
 // テスト用のmockMillis関数
 unsigned long mockMillis = 0;

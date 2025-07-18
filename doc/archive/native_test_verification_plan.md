@@ -11,19 +11,19 @@
 ### ✅ 完了済み項目
 - [x] **test_minimal_project環境の構築**
 - [x] **button_managerペアの段階的移植テスト**
-  - [x] lib/your_lib/src/button_manager.cpp/h のコピー
+  - [x] lib/libaimatix/src/button_manager.cpp/h のコピー
   - [x] test/pure/test_button_manager_pure/test_main.cpp のコピー
   - [x] 依存関係の解決（mock_time.h、M5Stack.h等）
   - [x] DI化（millis()関数ポインタ注入）
   - [x] ビルド・テスト成功確認
 - [x] **alarmペアの段階的移植テスト**
-  - [x] lib/your_lib/src/alarm.cpp/h のコピー
+  - [x] lib/libaimatix/src/alarm.cpp/h のコピー
   - [x] test/pure/test_alarm_logic_pure/test_main.cpp のコピー
   - [x] 依存関係の解決（ISpeaker.h、settings.h、IEEPROM.h等）
   - [x] テストコードの全面リファクタ（time(NULL)固定化）
   - [x] ビルド・テスト成功確認
 - [x] **debounce_managerペアの段階的移植テスト**
-  - [x] lib/your_lib/src/debounce_manager.cpp/h のコピー
+  - [x] lib/libaimatix/src/debounce_manager.cpp/h のコピー
   - [x] test/pure/test_debounce_manager_pure/test_main.cpp のコピー
   - [x] 依存関係の解決（mock_m5stack.h、M5Stack.h等）
   - [x] テストコードの全面リファクタ（mock_time.h削除）

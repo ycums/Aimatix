@@ -11,7 +11,7 @@ Aimatix本体のlib/libaimatix/src/とtest/pure/配下の各ペア（例：butto
 
 2. **1ペアずつ移植・検証**
     - 例：
-        1. lib/libaimatix/src/button_manager.* と test/pure/test_button_manager_pure/ を test_minimal_project/lib/your_lib/src/ および test_minimal_project/test/ にコピー
+        1. lib/libaimatix/src/button_manager.* と test/pure/test_button_manager_pure/ を test_minimal_project/lib/libaimatix/src/ および test_minimal_project/test/ にコピー
         2. **重要**: テストディレクトリ構造をPlatformIOのベストプラクティスに従って配置
         3. include記法・ディレクトリ構成は本体と同じにする
         4. `pio test` でビルド・テスト

@@ -4,7 +4,7 @@ This directory is intended for project specific (private) libraries.
 PlatformIO will compile them to static libraries and link into the executable file.
 
 The source code of each library should be placed in a separate directory
-("lib/your_library_name/[Code]").
+("lib/libaimatixrary_name/[Code]").
 
 For example, see the structure of the following example libraries `Foo` and `Bar`:
 

@@ -1,7 +1,7 @@
 # LDF動作検証レポート: inputペア移植時
 
 ## 構成
-- test_minimal_project/lib/your_lib/src/
+- test_minimal_project/lib/libaimatix/src/
   - input.cpp, input.h
 - test_minimal_project/test/test_input_logic_pure/
   - test_main.cpp
@@ -19,13 +19,13 @@
 - test_main.cpp → alarm.h
 
 ## 考察・原因
-- alarm.hがtest_minimal_project/lib/your_lib/src/に存在しない（依存ペア未投入） 
+- alarm.hがtest_minimal_project/lib/libaimatix/src/に存在しない（依存ペア未投入） 
 
 
 # LDF動作検証レポート: settingsペア移植時
 
 ## 構成
-- test_minimal_project/lib/your_lib/src/
+- test_minimal_project/lib/libaimatix/src/
   - settings.cpp, settings.h
 - test_minimal_project/test/test_settings_logic_pure/
   - test_main.cpp
@@ -43,13 +43,13 @@
 - test_main.cpp → EEPROM.h
 
 ## 考察・原因
-- EEPROM.hがtest_minimal_project/lib/your_lib/src/に存在しない 
+- EEPROM.hがtest_minimal_project/lib/libaimatix/src/に存在しない 
 
 
 # LDF動作検証レポート: time_logicペア移植時
 
 ## 構成
-- test_minimal_project/lib/your_lib/src/
+- test_minimal_project/lib/libaimatix/src/
   - time_logic.cpp, time_logic.h
 - test_minimal_project/test/test_time_logic_simple/
   - test_main.cpp
