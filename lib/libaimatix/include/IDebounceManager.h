@@ -16,9 +16,6 @@ public:
     
     // 画面遷移レベルのデバウンス判定
     virtual bool canProcessModeChange(unsigned long (*getTime)()) = 0;
-    
-    // テスト用：状態リセット
-    virtual void reset() = 0;
 };
 
 #endif // IDEBOUNCE_MANAGER_H 

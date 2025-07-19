@@ -51,12 +51,3 @@ bool DebounceManager::canProcessModeChange(unsigned long (*getTime)()) {
   printf("DEBUG: デバウンス時間未経過、falseを返す\n");
   return false;
 }
-
-// テスト用：状態リセット
-void DebounceManager::reset() {
-  printf("DEBUG: reset() 呼び出し前 - lastModeChangeTime=%lu\n", lastModeChangeTime);
-  lastOperationTimes.clear();
-  lastModeChangeTime = 0;
-  lastButtonChangeTimes.clear();
-  printf("DEBUG: reset() 呼び出し後 - lastModeChangeTime=%lu\n", lastModeChangeTime);
-}

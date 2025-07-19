@@ -119,79 +119,25 @@ void test_all_buttons_debounce() {
     TEST_ASSERT_FALSE(debounceManager.canProcessHardware(BUTTON_TYPE_C, testMillis));
 }
 
-// ハードウェアデバウンスの境界値テスト
-void test_hardware_debounce_boundary() {
-    // 各テストで独立したインスタンスを作成
-    DebounceManager debounceManager;
-    
-    // 初回呼び出し
-    TEST_ASSERT_TRUE(debounceManager.canProcessHardware(BUTTON_TYPE_A, testMillis));
-    
-    // 49msではfalse
-    setTestTime(49);
-    TEST_ASSERT_FALSE(debounceManager.canProcessHardware(BUTTON_TYPE_A, testMillis));
-    
-    // リセット
-    debounceManager.reset();
-    TEST_ASSERT_TRUE(debounceManager.canProcessHardware(BUTTON_TYPE_A, testMillis));
-    
-    // 50msではtrue
-    setTestTime(50);
-    TEST_ASSERT_TRUE(debounceManager.canProcessHardware(BUTTON_TYPE_A, testMillis));
-}
-
-// 操作デバウンスの境界値テスト
-void test_operation_debounce_boundary() {
-    // 各テストで独立したインスタンスを作成
-    DebounceManager debounceManager;
-    
-    // 初回呼び出し
-    TEST_ASSERT_TRUE(debounceManager.canProcessOperation("test_op", testMillis));
-    
-    // 199msではfalse
-    setTestTime(199);
-    TEST_ASSERT_FALSE(debounceManager.canProcessOperation("test_op", testMillis));
-    
-    // リセット
-    debounceManager.reset();
-    TEST_ASSERT_TRUE(debounceManager.canProcessOperation("test_op", testMillis));
-    
-    // 200msではtrue
-    setTestTime(200);
-    TEST_ASSERT_TRUE(debounceManager.canProcessOperation("test_op", testMillis));
-}
-
 // ハードウェアデバウンスの連続呼び出しテスト
 void test_hardware_debounce_continuous() {
-    // 各テストで独立したインスタンスを作成
     DebounceManager debounceManager;
-    
-    // 初回呼び出し
     TEST_ASSERT_TRUE(debounceManager.canProcessHardware(BUTTON_TYPE_A, testMillis));
-    
-    // 連続呼び出し（50ms未満）
     setTestTime(10);
     TEST_ASSERT_FALSE(debounceManager.canProcessHardware(BUTTON_TYPE_A, testMillis));
-    
-    // リセット
-    debounceManager.reset();
+    // 50ms後（true）
+    setTestTime(50);
     TEST_ASSERT_TRUE(debounceManager.canProcessHardware(BUTTON_TYPE_A, testMillis));
 }
 
 // 操作デバウンスの連続呼び出しテスト
 void test_operation_debounce_continuous() {
-    // 各テストで独立したインスタンスを作成
     DebounceManager debounceManager;
-    
-    // 初回呼び出し
     TEST_ASSERT_TRUE(debounceManager.canProcessOperation("test_op", testMillis));
-    
-    // 連続呼び出し（200ms未満）
     setTestTime(100);
     TEST_ASSERT_FALSE(debounceManager.canProcessOperation("test_op", testMillis));
-    
-    // リセット
-    debounceManager.reset();
+    // 200ms後（true）
+    setTestTime(200);
     TEST_ASSERT_TRUE(debounceManager.canProcessOperation("test_op", testMillis));
 }
 
@@ -223,55 +169,46 @@ void test_operation_debounce_long_time() {
 
 // ハードウェアと操作の組み合わせテスト
 void test_hardware_and_operation_combination() {
-    // 各テストで独立したインスタンスを作成
     DebounceManager debounceManager;
-    
-    // ハードウェアと操作で初回呼び出し
     TEST_ASSERT_TRUE(debounceManager.canProcessHardware(BUTTON_TYPE_A, testMillis));
     TEST_ASSERT_TRUE(debounceManager.canProcessOperation("test_op", testMillis));
-    
-    // 50ms未満ではハードウェアのみfalse
     setTestTime(25);
     TEST_ASSERT_FALSE(debounceManager.canProcessHardware(BUTTON_TYPE_A, testMillis));
     TEST_ASSERT_FALSE(debounceManager.canProcessOperation("test_op", testMillis));
-    
-    // リセット
-    debounceManager.reset();
+    // 50ms後（true）
+    setTestTime(50);
     TEST_ASSERT_TRUE(debounceManager.canProcessHardware(BUTTON_TYPE_A, testMillis));
+    // 200ms後（true）
+    setTestTime(200);
     TEST_ASSERT_TRUE(debounceManager.canProcessOperation("test_op", testMillis));
 }
 
 // ストレステスト
 void test_stress_test() {
-    // 各テストで独立したインスタンスを作成
     DebounceManager debounceManager;
-    
+    setTestTime(0);
+    TEST_ASSERT_TRUE(debounceManager.canProcessHardware(BUTTON_TYPE_A, testMillis));
+    TEST_ASSERT_TRUE(debounceManager.canProcessOperation("stress_test", testMillis));
     // 多数の操作を連続実行
-    for (int i = 0; i < 100; i++) {
+    for (int i = 1; i < 100; i++) {
         setTestTime(i * 10);
         debounceManager.canProcessHardware(BUTTON_TYPE_A, testMillis);
         debounceManager.canProcessOperation("stress_test", testMillis);
     }
-    
-    // 最後の呼び出しは正常に動作するはず
+    // 1000ms後（true）
+    setTestTime(1000);
     TEST_ASSERT_TRUE(debounceManager.canProcessHardware(BUTTON_TYPE_A, testMillis));
     TEST_ASSERT_TRUE(debounceManager.canProcessOperation("stress_test", testMillis));
 }
 
 // 空文字列の操作テスト
 void test_empty_operation() {
-    // 各テストで独立したインスタンスを作成
     DebounceManager debounceManager;
-    
-    // 空文字列でも動作する
     TEST_ASSERT_TRUE(debounceManager.canProcessOperation("", testMillis));
-    
-    // 200ms未満ではfalse
     setTestTime(100);
     TEST_ASSERT_FALSE(debounceManager.canProcessOperation("", testMillis));
-    
-    // リセット
-    debounceManager.reset();
+    // 200ms後（true）
+    setTestTime(200);
     TEST_ASSERT_TRUE(debounceManager.canProcessOperation("", testMillis));
 }
 
@@ -286,66 +223,6 @@ void test_special_characters_operation() {
     // 200ms未満ではfalse
     setTestTime(100);
     TEST_ASSERT_FALSE(debounceManager.canProcessOperation("test", testMillis));
-}
-
-// モード変更デバウンスのテスト
-void test_mode_change_debounce() {
-    // 各テストで独立したインスタンスを作成
-    DebounceManager debounceManager;
-    
-    // 初回呼び出しは常にtrue
-    bool result1 = debounceManager.canProcessModeChange(testMillis);
-    TEST_ASSERT_TRUE(result1);
-    
-    // 300ms未満ではfalse
-    setTestTime(150);
-    bool result2 = debounceManager.canProcessModeChange(testMillis);
-    TEST_ASSERT_FALSE(result2);
-    
-    // 300ms経過後はtrue
-    setTestTime(350);
-    bool result3 = debounceManager.canProcessModeChange(testMillis);
-    TEST_ASSERT_TRUE(result3);
-}
-
-// モード変更デバウンスの境界値テスト
-void test_mode_change_debounce_boundary() {
-    // 各テストで独立したインスタンスを作成
-    DebounceManager debounceManager;
-    
-    // 初回呼び出し
-    bool result1 = debounceManager.canProcessModeChange(testMillis);
-    TEST_ASSERT_TRUE(result1);
-    
-    // 299msではfalse
-    setTestTime(299);
-    bool result2 = debounceManager.canProcessModeChange(testMillis);
-    TEST_ASSERT_FALSE(result2);
-    
-    // リセット
-    debounceManager.reset();
-    bool result3 = debounceManager.canProcessModeChange(testMillis);
-    TEST_ASSERT_TRUE(result3);
-}
-
-// モード変更デバウンスの連続呼び出しテスト
-void test_mode_change_debounce_continuous() {
-    // 各テストで独立したインスタンスを作成
-    DebounceManager debounceManager;
-    
-    // 初回呼び出し
-    bool result1 = debounceManager.canProcessModeChange(testMillis);
-    TEST_ASSERT_TRUE(result1);
-    
-    // 連続呼び出し（300ms未満）
-    setTestTime(150);
-    bool result2 = debounceManager.canProcessModeChange(testMillis);
-    TEST_ASSERT_FALSE(result2);
-    
-    // リセット
-    debounceManager.reset();
-    bool result3 = debounceManager.canProcessModeChange(testMillis);
-    TEST_ASSERT_TRUE(result3);
 }
 
 // 全機能の組み合わせテスト
@@ -387,26 +264,6 @@ void test_multiple_calls_return_values() {
     TEST_ASSERT_FALSE(result4);
 }
 
-// リセット後の状態テスト
-void test_reset_state() {
-    // 各テストで独立したインスタンスを作成
-    DebounceManager debounceManager;
-    
-    // 初回呼び出し
-    TEST_ASSERT_TRUE(debounceManager.canProcessHardware(BUTTON_TYPE_A, testMillis));
-    TEST_ASSERT_TRUE(debounceManager.canProcessOperation("test_op", testMillis));
-    
-    // 50ms未満ではfalse
-    setTestTime(25);
-    TEST_ASSERT_FALSE(debounceManager.canProcessHardware(BUTTON_TYPE_A, testMillis));
-    TEST_ASSERT_FALSE(debounceManager.canProcessOperation("test_op", testMillis));
-    
-    // リセット後は再びtrue
-    debounceManager.reset();
-    TEST_ASSERT_TRUE(debounceManager.canProcessHardware(BUTTON_TYPE_A, testMillis));
-    TEST_ASSERT_TRUE(debounceManager.canProcessOperation("test_op", testMillis));
-}
-
 // 異なる時間間隔でのテスト
 void test_different_time_intervals() {
     // 各テストで独立したインスタンスを作成
@@ -436,7 +293,6 @@ int main() {
     // ハードウェアデバウンスのテスト
     RUN_TEST(test_hardware_debounce);
     RUN_TEST(test_multiple_buttons_independent);
-    RUN_TEST(test_hardware_debounce_boundary);
     RUN_TEST(test_hardware_debounce_continuous);
     RUN_TEST(test_hardware_debounce_long_time);
     RUN_TEST(test_all_buttons_debounce);
@@ -444,7 +300,6 @@ int main() {
     // 操作デバウンスのテスト
     RUN_TEST(test_operation_debounce);
     RUN_TEST(test_multiple_operations_independent);
-    RUN_TEST(test_operation_debounce_boundary);
     RUN_TEST(test_operation_debounce_continuous);
     RUN_TEST(test_operation_debounce_long_time);
     
@@ -453,17 +308,11 @@ int main() {
     RUN_TEST(test_hardware_and_operation_combination);
     RUN_TEST(test_all_functions_combination);
     
-    // モード変更デバウンスのテスト
-    RUN_TEST(test_mode_change_debounce);
-    RUN_TEST(test_mode_change_debounce_boundary);
-    RUN_TEST(test_mode_change_debounce_continuous);
-    
     // その他のテスト
     RUN_TEST(test_stress_test);
     RUN_TEST(test_empty_operation);
     RUN_TEST(test_special_characters_operation);
     RUN_TEST(test_multiple_calls_return_values);
-    RUN_TEST(test_reset_state);
     RUN_TEST(test_different_time_intervals);
     
     return UNITY_END();

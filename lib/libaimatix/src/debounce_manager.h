@@ -16,7 +16,6 @@ public:
     bool canProcessHardware(ButtonType buttonId, unsigned long (*getTime)()) override;
     bool canProcessOperation(const std::string& operationType, unsigned long (*getTime)()) override;
     bool canProcessModeChange(unsigned long (*getTime)()) override;
-    void reset() override;
 
 private:
     static const unsigned long DEFAULT_HARDWARE_DEBOUNCE = 50;
