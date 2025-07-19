@@ -3,10 +3,10 @@
 
 #include <M5Stack.h>
 #include <EEPROM.h>
-#include <lib/libaimatix/include/IEEPROM.h>
-#include <lib/libaimatix/include/ISpeaker.h>
-#include <lib/libaimatix/include/IButtonManager.h>
-#include <lib/libaimatix/include/IDebounceManager.h>
+#include "IEEPROM.h"
+#include "ISpeaker.h"
+#include "IButtonManager.h"
+#include "IDebounceManager.h"
 
 // M5Stack EEPROMアダプター
 class M5StackEEPROMAdapter : public IEEPROM {
@@ -43,21 +43,21 @@ public:
 // M5Stack ボタン管理アダプター
 class M5StackButtonManagerAdapter : public IButtonManager {
 public:
-    bool isPressed(int buttonId) override {
+    bool isPressed(ButtonType buttonId) override {
         switch (buttonId) {
-            case 0: return M5.BtnA.isPressed();
-            case 1: return M5.BtnB.isPressed();
-            case 2: return M5.BtnC.isPressed();
+            case BUTTON_TYPE_A: return M5.BtnA.isPressed();
+            case BUTTON_TYPE_B: return M5.BtnB.isPressed();
+            case BUTTON_TYPE_C: return M5.BtnC.isPressed();
             default: return false;
         }
     }
     
-    bool isLongPressed(int buttonId) override {
+    bool isLongPressed(ButtonType buttonId) override {
         const unsigned long LONG_PRESS_TIME = 1000;
         switch (buttonId) {
-            case 0: return M5.BtnA.pressedFor(LONG_PRESS_TIME);
-            case 1: return M5.BtnB.pressedFor(LONG_PRESS_TIME);
-            case 2: return M5.BtnC.pressedFor(LONG_PRESS_TIME);
+            case BUTTON_TYPE_A: return M5.BtnA.pressedFor(LONG_PRESS_TIME);
+            case BUTTON_TYPE_B: return M5.BtnB.pressedFor(LONG_PRESS_TIME);
+            case BUTTON_TYPE_C: return M5.BtnC.pressedFor(LONG_PRESS_TIME);
             default: return false;
         }
     }
@@ -71,24 +71,16 @@ public:
 class M5StackDebounceManagerAdapter : public IDebounceManager {
 private:
     IDebounceManager* debounceManager;
-    
 public:
     M5StackDebounceManagerAdapter(IDebounceManager* manager) : debounceManager(manager) {}
-    
     bool canProcessHardware(ButtonType buttonId, unsigned long (*getTime)()) override {
         return debounceManager->canProcessHardware(buttonId, getTime);
     }
-    
     bool canProcessOperation(const std::string& operationType, unsigned long (*getTime)()) override {
         return debounceManager->canProcessOperation(operationType, getTime);
     }
-    
     bool canProcessModeChange(unsigned long (*getTime)()) override {
         return debounceManager->canProcessModeChange(getTime);
-    }
-    
-    void reset() override {
-        debounceManager->reset();
     }
 };
 
