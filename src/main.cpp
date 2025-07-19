@@ -69,13 +69,13 @@ void loop() {
   removePastAlarms();
   M5.update();  // ボタン状態を更新
   
-  // システム更新
-  updateSystem();
+  // // システム更新
+  // updateSystem();
   
-  // ボタン管理アダプターの状態更新
-  buttonManagerAdapter.update();
+  // // ボタン管理アダプターの状態更新
+  // buttonManagerAdapter.update();
   
-  handleButtons(); // ボタン処理を追加
+  // handleButtons(); // ボタン処理を追加
 
   // 画面更新は100ms間隔で行う
   static unsigned long lastScreenUpdate = 0;
@@ -170,7 +170,7 @@ void initializeSystem() {
   Serial.println("Settings loaded");
   
   // LCD明度設定
-  M5.Lcd.setBrightness(settings.lcd_brightness);
+  // M5.Lcd.setBrightness(settings.lcd_brightness);
   M5.Lcd.fillScreen(TFT_BLACK);
   M5.Lcd.setTextColor(AMBER_COLOR, TFT_BLACK);
   Serial.println("Display configured");
@@ -179,23 +179,21 @@ void initializeSystem() {
   Serial.println("ButtonManager initialized");
   
   // WiFi管理初期化
-  wifiManager = WiFiManager::getInstance();
-  if (wifiManager->initialize()) {
-    Serial.println("WiFiManager initialized");
-    wifiManager->begin();
-  } else {
-    Serial.println("WiFiManager initialization failed");
-  }
-  
+  // wifiManager = WiFiManager::getInstance();
+  // if (wifiManager->initialize()) {
+  //   Serial.println("WiFiManager initialized");
+  //   wifiManager->begin();
+  // } else {
+  //   Serial.println("WiFiManager initialization failed");
+  // }
   // 時刻同期初期化
-  timeSync = TimeSync::getInstance();
-  if (timeSync->initialize()) {
-    Serial.println("TimeSync initialized");
-    timeSync->begin();
-  } else {
-    Serial.println("TimeSync initialization failed");
-  }
-  
+  // timeSync = TimeSync::getInstance();
+  // if (timeSync->initialize()) {
+  //   Serial.println("TimeSync initialized");
+  //   timeSync->begin();
+  // } else {
+  //   Serial.println("TimeSync initialization failed");
+  // }
   // アラームリストに初期値を追加（開発用）
   addDebugAlarms();
   Serial.println("Debug alarms added");
