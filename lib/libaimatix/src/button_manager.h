@@ -24,25 +24,25 @@ public:
   ~ButtonManager() override;
 
   // IButtonManagerインターフェース
-  bool isPressed(int buttonId) override;
-  bool isLongPressed(int buttonId) override;
+  bool isPressed(ButtonType buttonId) override;
+  bool isLongPressed(ButtonType buttonId) override;
   void update() override;
 
   // 追加API
-  bool isShortPress(int buttonId, unsigned long threshold = 1000);
-  bool isReleased(int buttonId);
+  bool isShortPress(ButtonType buttonId, unsigned long threshold = 1000);
+  bool isReleased(ButtonType buttonId);
   void resetButtonStates();
-  ButtonState* getButtonState(int buttonId);
+  ButtonState* getButtonState(ButtonType buttonId);
   void initialize();
 
 private:
-  std::map<int, ButtonState> buttonStates;
+  std::map<ButtonType, ButtonState> buttonStates;
   unsigned long lastUpdateTime;
   unsigned long (*getTime)(); // DIされた現在時刻取得関数
-  void updateButtonState(int buttonId, unsigned long currentTime);
+  void updateButtonState(ButtonType buttonId, unsigned long currentTime);
   void applyHardwareDebounce(ButtonState& state);
-  ButtonState& getOrCreateButtonState(int buttonId);
-  static bool canProcessButton(int buttonId);
+  ButtonState& getOrCreateButtonState(ButtonType buttonId);
+  static bool canProcessButton(ButtonType buttonId);
 };
 
 #endif // BUTTON_MANAGER_H 

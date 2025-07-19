@@ -20,7 +20,7 @@ void ButtonManager::update() {
   lastUpdateTime = currentTime;
 }
 
-void ButtonManager::updateButtonState(int buttonId, unsigned long currentTime) {
+void ButtonManager::updateButtonState(ButtonType buttonId, unsigned long currentTime) {
   ButtonState& state = getOrCreateButtonState(buttonId);
   // 実際のハード依存部は本番実装/モックで差し替え
   // ここでは仮に外部から状態注入される前提
@@ -28,17 +28,17 @@ void ButtonManager::updateButtonState(int buttonId, unsigned long currentTime) {
   // 状態変化検出・更新ロジックは従来通り
 }
 
-bool ButtonManager::isPressed(int buttonId) {
+bool ButtonManager::isPressed(ButtonType buttonId) {
   ButtonState* state = getButtonState(buttonId);
   return state ? state->isPressed : false;
 }
 
-bool ButtonManager::isLongPressed(int buttonId) {
+bool ButtonManager::isLongPressed(ButtonType buttonId) {
   ButtonState* state = getButtonState(buttonId);
   return state ? state->longPressHandled : false;
 }
 
-bool ButtonManager::isShortPress(int buttonId, unsigned long threshold) {
+bool ButtonManager::isShortPress(ButtonType buttonId, unsigned long threshold) {
   ButtonState* state = getButtonState(buttonId);
   if (!state) return false;
   if (!canProcessButton(buttonId)) return false;
@@ -49,7 +49,7 @@ bool ButtonManager::isShortPress(int buttonId, unsigned long threshold) {
   return false;
 }
 
-bool ButtonManager::isReleased(int buttonId) {
+bool ButtonManager::isReleased(ButtonType buttonId) {
   ButtonState* state = getButtonState(buttonId);
   if (!state) return false;
   if (!canProcessButton(buttonId)) return false;
@@ -61,7 +61,7 @@ void ButtonManager::resetButtonStates() {
   lastUpdateTime = 0;
 }
 
-ButtonState* ButtonManager::getButtonState(int buttonId) {
+ButtonState* ButtonManager::getButtonState(ButtonType buttonId) {
   auto it = buttonStates.find(buttonId);
   if (it != buttonStates.end()) {
     return &(it->second);
@@ -69,7 +69,7 @@ ButtonState* ButtonManager::getButtonState(int buttonId) {
   return nullptr;
 }
 
-ButtonState& ButtonManager::getOrCreateButtonState(int buttonId) {
+ButtonState& ButtonManager::getOrCreateButtonState(ButtonType buttonId) {
   auto it = buttonStates.find(buttonId);
   if (it == buttonStates.end()) {
     ButtonState newState = {false, false, false, 0, 0, 0, false};
@@ -86,7 +86,7 @@ void ButtonManager::applyHardwareDebounce(ButtonState& state) {
   }
 }
 
-bool ButtonManager::canProcessButton(int buttonId) {
+bool ButtonManager::canProcessButton(ButtonType buttonId) {
   // DebounceManagerと連携する場合はここで呼び出し
   return true;
 } 

@@ -7,14 +7,14 @@ public:
     MockButtonManager();
     ~MockButtonManager() override;
     // IButtonManager実装
-    bool isPressed(int buttonId) override;
-    bool isLongPressed(int buttonId) override;
+    bool isPressed(ButtonType buttonId) override;
+    bool isLongPressed(ButtonType buttonId) override;
     void update() override;
     // テスト用API
-    void setPressed(int buttonId, bool pressed);
-    void setLongPressed(int buttonId, bool longPressed);
+    void setPressed(ButtonType buttonId, bool pressed);
+    void setLongPressed(ButtonType buttonId, bool longPressed);
     void reset();
 private:
-    std::map<int, bool> pressedStates;
-    std::map<int, bool> longPressedStates;
+    std::map<ButtonType, bool> pressedStates;
+    std::map<ButtonType, bool> longPressedStates;
 }; 

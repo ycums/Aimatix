@@ -19,15 +19,15 @@ void tearDown(void) {}
 // 基本的なデバウンス機能テスト
 void test_canProcessHardware() {
     // 初回は処理可能
-    TEST_ASSERT_TRUE(DebounceManager::canProcessHardware(1, millis));
+    TEST_ASSERT_TRUE(DebounceManager::canProcessHardware(BUTTON_TYPE_A, millis));
     
     // 50ms以内は処理不可
     setMockTime(25);
-    TEST_ASSERT_FALSE(DebounceManager::canProcessHardware(1, millis));
+    TEST_ASSERT_FALSE(DebounceManager::canProcessHardware(BUTTON_TYPE_A, millis));
     
     // 50ms経過後は処理可能
     setMockTime(50);
-    TEST_ASSERT_TRUE(DebounceManager::canProcessHardware(1, millis));
+    TEST_ASSERT_TRUE(DebounceManager::canProcessHardware(BUTTON_TYPE_A, millis));
     
     printf("✓ canProcessHardware: 成功\n");
 }
@@ -50,15 +50,15 @@ void test_canProcessOperation() {
 // 連打防止テスト（現実的なシナリオ）
 void test_rapid_button_press_prevention() {
     // 初回呼び出し
-    TEST_ASSERT_TRUE(DebounceManager::canProcessHardware(1, millis));
+    TEST_ASSERT_TRUE(DebounceManager::canProcessHardware(BUTTON_TYPE_A, millis));
     
     // 連打シナリオ（25ms後に再度押下）
     setMockTime(25);
-    TEST_ASSERT_FALSE(DebounceManager::canProcessHardware(1, millis));
+    TEST_ASSERT_FALSE(DebounceManager::canProcessHardware(BUTTON_TYPE_A, millis));
     
     // 適切な間隔での操作
     setMockTime(60);
-    TEST_ASSERT_TRUE(DebounceManager::canProcessHardware(1, millis));
+    TEST_ASSERT_TRUE(DebounceManager::canProcessHardware(BUTTON_TYPE_A, millis));
     
     printf("✓ 連打防止テスト: 成功\n");
 }

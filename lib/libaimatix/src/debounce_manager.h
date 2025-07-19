@@ -3,12 +3,13 @@
 
 #include <map>
 #include <string>
+#include "../include/IButtonManager.h"
 
 // DebounceManagerクラス（静的クラス）
 class DebounceManager {
 public:
   // ハードウェアレベルのデバウンス判定
-  static bool canProcessHardware(int buttonId, unsigned long (*getTime)());
+  static bool canProcessHardware(ButtonType buttonId, unsigned long (*getTime)());
   // 操作レベルのデバウンス判定
   static bool canProcessOperation(const std::string& operationType, unsigned long (*getTime)());
   // 画面遷移レベルのデバウンス判定
@@ -23,7 +24,7 @@ private:
 
   static std::map<std::string, unsigned long> lastOperationTimes;
   static unsigned long lastModeChangeTime;
-  static std::map<int, unsigned long> lastButtonChangeTimes;
+  static std::map<ButtonType, unsigned long> lastButtonChangeTimes;
 };
 
 #endif // DEBOUNCE_MANAGER_H 

@@ -3,10 +3,10 @@
 // 静的メンバ変数の定義
 std::map<std::string, unsigned long> DebounceManager::lastOperationTimes;
 unsigned long DebounceManager::lastModeChangeTime = 0;
-std::map<int, unsigned long> DebounceManager::lastButtonChangeTimes;
+std::map<ButtonType, unsigned long> DebounceManager::lastButtonChangeTimes;
 
 // ハードウェアレベルのデバウンス判定
-bool DebounceManager::canProcessHardware(int buttonId, unsigned long (*getTime)()) {
+bool DebounceManager::canProcessHardware(ButtonType buttonId, unsigned long (*getTime)()) {
   unsigned long currentTime = getTime();
   auto it = lastButtonChangeTimes.find(buttonId);
   if (it == lastButtonChangeTimes.end() || currentTime - it->second >= DEFAULT_HARDWARE_DEBOUNCE) {

@@ -44,21 +44,21 @@ class M5StackButtonManagerAdapter : public IButtonManager {
 public:
     M5StackButtonManagerAdapter() : lastUpdateTime(0) {}
     
-    bool isPressed(int buttonId) override {
+    bool isPressed(ButtonType buttonId) override {
         switch (buttonId) {
-            case 0: return M5.BtnA.isPressed();
-            case 1: return M5.BtnB.isPressed();
-            case 2: return M5.BtnC.isPressed();
+            case BUTTON_TYPE_A: return M5.BtnA.isPressed();
+            case BUTTON_TYPE_B: return M5.BtnB.isPressed();
+            case BUTTON_TYPE_C: return M5.BtnC.isPressed();
             default: return false;
         }
     }
     
-    bool isLongPressed(int buttonId) override {
+    bool isLongPressed(ButtonType buttonId) override {
         const unsigned long LONG_PRESS_TIME = 1000;
         switch (buttonId) {
-            case 0: return M5.BtnA.pressedFor(LONG_PRESS_TIME);
-            case 1: return M5.BtnB.pressedFor(LONG_PRESS_TIME);
-            case 2: return M5.BtnC.pressedFor(LONG_PRESS_TIME);
+            case BUTTON_TYPE_A: return M5.BtnA.pressedFor(LONG_PRESS_TIME);
+            case BUTTON_TYPE_B: return M5.BtnB.pressedFor(LONG_PRESS_TIME);
+            case BUTTON_TYPE_C: return M5.BtnC.pressedFor(LONG_PRESS_TIME);
             default: return false;
         }
     }

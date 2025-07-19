@@ -15,12 +15,12 @@ void tearDown(void) {}
 
 void test_mock_button_manager_basic() {
     MockButtonManager mockBtn;
-    mockBtn.setPressed(0, true);
-    TEST_ASSERT_TRUE(mockBtn.isPressed(0));
-    mockBtn.setLongPressed(0, true);
-    TEST_ASSERT_TRUE(mockBtn.isLongPressed(0));
+    mockBtn.setPressed(BUTTON_TYPE_A, true);
+    TEST_ASSERT_TRUE(mockBtn.isPressed(BUTTON_TYPE_A));
+    mockBtn.setLongPressed(BUTTON_TYPE_A, true);
+    TEST_ASSERT_TRUE(mockBtn.isLongPressed(BUTTON_TYPE_A));
     mockBtn.reset();
-    TEST_ASSERT_FALSE(mockBtn.isPressed(0));
+    TEST_ASSERT_FALSE(mockBtn.isPressed(BUTTON_TYPE_A));
 }
 
 int main() {

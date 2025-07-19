@@ -2,13 +2,7 @@
 #define BUTTON_EVENT_H
 
 #include <Arduino.h>
-
-// ボタンタイプの定義
-enum ButtonType {
-  BUTTON_TYPE_A,
-  BUTTON_TYPE_B, 
-  BUTTON_TYPE_C
-};
+#include "../../lib/libaimatix/include/IButtonManager.h"
 
 // ボタンアクションの定義
 enum ButtonAction {

@@ -80,13 +80,13 @@ void handleDigitEditInput(IButtonManager* buttonManager, TimeFunction timeFunc) 
   uint32_t currentTime = timeFunc ? timeFunc() : 0;
 
   // Aボタン処理
-  if (buttonManager->isPressed(0)) { // 0:BtnA
+  if (buttonManager->isPressed(BUTTON_TYPE_A)) {
     if (!aLongPressFired) {
       aPressStart = currentTime;
       aLongPressFired = false;
     }
   }
-  if (buttonManager->isLongPressed(0) && !aLongPressFired) {
+  if (buttonManager->isLongPressed(BUTTON_TYPE_A) && !aLongPressFired) {
     int add = 5;
     switch (digitEditInput.cursor) {
       case 0:
@@ -109,7 +109,7 @@ void handleDigitEditInput(IButtonManager* buttonManager, TimeFunction timeFunc) 
     }
     aLongPressFired = true;
   }
-  if (!buttonManager->isPressed(0) && !aLongPressFired) {
+  if (!buttonManager->isPressed(BUTTON_TYPE_A) && !aLongPressFired) {
     if (currentTime - aPressStart < 500) {
       int add = 1;
       switch (digitEditInput.cursor) {
@@ -135,13 +135,13 @@ void handleDigitEditInput(IButtonManager* buttonManager, TimeFunction timeFunc) 
   }
 
   // Bボタン処理
-  if (buttonManager->isPressed(1)) { // 1:BtnB
+  if (buttonManager->isPressed(BUTTON_TYPE_B)) {
     if (!bLongPressFired) {
       bPressStart = currentTime;
       bLongPressFired = false;
     }
   }
-  if (buttonManager->isLongPressed(1) && !bLongPressFired) {
+  if (buttonManager->isLongPressed(BUTTON_TYPE_B) && !bLongPressFired) {
     digitEditInput.hourTens = DigitEditTimeInputState::INIT_HOUR_TENS;
     digitEditInput.hourOnes = DigitEditTimeInputState::INIT_HOUR_ONES;
     digitEditInput.minTens = DigitEditTimeInputState::INIT_MIN_TENS;
@@ -149,24 +149,24 @@ void handleDigitEditInput(IButtonManager* buttonManager, TimeFunction timeFunc) 
     digitEditInput.cursor = 0;
     bLongPressFired = true;
   }
-  if (!buttonManager->isPressed(1) && !bLongPressFired) {
+  if (!buttonManager->isPressed(BUTTON_TYPE_B) && !bLongPressFired) {
     if (currentTime - bPressStart < 1000) {
       digitEditInput.cursor = (digitEditInput.cursor + 1) % 4;
     }
   }
 
   // Cボタン処理
-  if (buttonManager->isPressed(2)) { // 2:BtnC
+  if (buttonManager->isPressed(BUTTON_TYPE_C)) {
     if (!cLongPressFired) {
       cPressStart = currentTime;
       cLongPressFired = false;
     }
   }
-  if (buttonManager->isLongPressed(2) && !cLongPressFired) {
+  if (buttonManager->isLongPressed(BUTTON_TYPE_C) && !cLongPressFired) {
     currentMode = MAIN_DISPLAY;
     cLongPressFired = true;
   }
-  if (!buttonManager->isPressed(2) && !cLongPressFired) {
+  if (!buttonManager->isPressed(BUTTON_TYPE_C) && !cLongPressFired) {
     if (currentTime - cPressStart < 1000) {
       // セット（確定）処理等をここに記述
       // 必要に応じてアラーム追加や画面遷移処理を呼び出す
