@@ -14,6 +14,7 @@
 #include "wifi_manager.h"
 #include "time_sync.h"
 #include "m5stack_adapters.h"
+#include <time_logic.h>
 
 // 新しい状態遷移システムのインクルード
 #include "state_transition/button_event.h"
@@ -132,7 +133,9 @@ void loop() {
   // アラーム時刻のチェックと鳴動処理
   if (currentMode != ALARM_ACTIVE) {
     time_t nextAlarm = getNextAlarmTime();
-    if (nextAlarm > 0 && time(NULL) >= nextAlarm) {
+    // ここで現在時刻取得をTimeLogic経由に変更
+    time_t now = TimeLogic::getCurrentTime(); // 新規追加API想定（なければtime(NULL)のラッパーをTimeLogicに実装）
+    if (nextAlarm > 0 && now >= nextAlarm) {
       currentMode = ALARM_ACTIVE;
       playAlarm(&speakerAdapter, settings.sound_enabled);
     }

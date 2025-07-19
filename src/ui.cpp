@@ -7,6 +7,11 @@
 #include <cstring>
 #include <cstdio>
 #include <string>
+#include <input.h>
+#include <settings.h>
+#include <debounce_manager.h>
+#include <button_manager.h>
+#include <time_logic.h>
 
 // Global variables used in UI functions (declare as extern in main.cpp or pass as parameters)
 // extern Settings settings; // Assuming settings are needed for drawing
@@ -99,9 +104,8 @@ void drawGridLines() {
 
 // 時刻文字列の取得
 std::string getTimeString(time_t t) {
-  struct tm *timeinfo = localtime(&t);
   char buffer[9];
-  strftime(buffer, sizeof(buffer), "%H:%M", timeinfo);
+  TimeLogic::formatTimeString(t, buffer, sizeof(buffer));
   return std::string(buffer);
 }
 
@@ -195,16 +199,14 @@ void drawMainDisplay() {
   sprite.fillSprite(TFT_BLACK);
   drawTitleBar("MAIN");
   drawButtonHintsGrid("ABS", "REL+", "MGMT");
+  time_t now = TimeLogic::getCurrentTime();
   
-  time_t now = time(NULL);
-  
-  // --- 現在時刻（グリッドセル(0,1)-(15,2)、Font4、垂直中央寄せ） ---
+  // --- 現在時刻表示 ---
   sprite.setTextDatum(MC_DATUM);
   sprite.setTextFont(4);
   sprite.setTextColor(AMBER_COLOR, TFT_BLACK);
-  struct tm* tminfo = localtime(&now);
   char hmStr[6];
-  sprintf(hmStr, "%02d:%02d", tminfo->tm_hour, tminfo->tm_min);
+  TimeLogic::formatTimeString(now, hmStr, sizeof(hmStr));
   sprite.drawString(hmStr, SCREEN_WIDTH/2, GRID_Y(1) + GRID_HEIGHT);
   
   // --- 次のアラームまでの残り時間（グリッドセル(0,3)-(15,5)、Font7、垂直中央寄せ） ---
@@ -507,7 +509,7 @@ void drawAlarmActive() {
     sprite.setTextDatum(MC_DATUM);
     sprite.setTextFont(7);
     
-    time_t now = time(NULL);
+    time_t now = TimeLogic::getCurrentTime();
     time_t alarmTime = getNextAlarmTime();
     if (alarmTime > 0) {
       time_t overtime = now - alarmTime;

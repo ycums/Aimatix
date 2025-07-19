@@ -22,6 +22,7 @@ public:
     // 時刻フォーマット
     static void formatTime(time_t time, int& hour, int& minute);
     static void formatTimeString(time_t time, char* buffer, size_t buffer_size);
+    static time_t getCurrentTime() { return time(NULL); }
 };
 
 // アラーム管理ロジック（ハードウェア依存なし）
