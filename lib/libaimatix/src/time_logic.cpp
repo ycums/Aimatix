@@ -130,7 +130,10 @@ void AlarmLogic::removePastAlarms(std::vector<time_t>& alarms, time_t current_ti
 }
 
 time_t AlarmLogic::getNextAlarmTime(const std::vector<time_t>& alarms, time_t current_time) {
-    for (time_t t : alarms) {
+    if (alarms.empty()) return 0;
+    std::vector<time_t> sorted = alarms;
+    std::sort(sorted.begin(), sorted.end());
+    for (time_t t : sorted) {
         if (t > current_time) {
             return t;
         }

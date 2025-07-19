@@ -209,18 +209,8 @@ void drawMainDisplay() {
   TimeLogic::formatTimeString(now, hmStr, sizeof(hmStr));
   sprite.drawString(hmStr, SCREEN_WIDTH/2, GRID_Y(1) + GRID_HEIGHT);
   
-  // --- 次のアラームまでの残り時間（グリッドセル(0,3)-(15,5)、Font7、垂直中央寄せ） ---
-  time_t nextAlarm = 0;
-  std::vector<time_t> futureAlarms;
-  if (!alarmTimes.empty()) {
-    std::sort(alarmTimes.begin(), alarmTimes.end());
-    for (time_t t : alarmTimes) {
-      if (t > now) {
-        if (!nextAlarm) nextAlarm = t;
-        futureAlarms.push_back(t);
-      }
-    }
-  }
+  // --- 次のアラームまでの残り時間 ---
+  time_t nextAlarm = AlarmLogic::getNextAlarmTime(alarmTimes, now);
   
   sprite.setTextDatum(MC_DATUM);
   sprite.setTextFont(7);
@@ -261,7 +251,7 @@ void drawMainDisplay() {
   sprite.setTextColor(AMBER_COLOR, TFT_BLACK);
   
   int count = 0;
-  for (time_t t : futureAlarms) {
+  for (time_t t : alarmTimes) {
     if (count >= 5) break;
     int x = GRID_X(1) + count * (14 * GRID_WIDTH / 5); // X=1から開始、5等分して配置
     sprite.drawString(getTimeString(t).c_str(), x, GRID_Y(8) + GRID_HEIGHT/2);
