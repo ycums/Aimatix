@@ -45,9 +45,6 @@ time_t lastReleaseTime = 0;
 extern WiFiManager* wifiManager;
 extern TimeSync* timeSync;
 
-// ButtonManagerインスタンス生成（DI: millis関数）
-ButtonManager buttonManager(millis);
-
 // Function declarations defined in main.cpp
 void handleButtons();
 void removePastAlarms();
@@ -69,9 +66,8 @@ void setup() {
 
 void loop() {
   removePastAlarms();
-  M5.update();  // 物理層の状態更新
-  // ButtonManagerの状態更新
-  buttonManager.update();
+  M5.update();  // ボタン状態を更新
+  
   // システム更新
   updateSystem();
   
@@ -222,24 +218,32 @@ void updateSystem() {
 
 // handleSettingsMenu関数は削除（新しい状態遷移システムで管理）
 
-// ボタンイベントをButtonManager経由で生成
-ButtonEvent createButtonEventFromButtonManager() {
-  const unsigned long LONG_PRESS_TIME = 1000;
-  if (buttonManager.isPressed(BUTTON_TYPE_A)) {
+// ボタンイベントをM5Stackボタン状態から作成する関数
+ButtonEvent createButtonEventFromM5Stack() {
+  const unsigned long LONG_PRESS_TIME = 1000;  // 1秒間の長押し
+  
+  // Aボタンの処理
+  if (M5.BtnA.wasPressed()) {
     return ButtonEvent(BUTTON_TYPE_A, SHORT_PRESS);
-  } else if (buttonManager.isLongPressed(BUTTON_TYPE_A)) {
+  } else if (M5.BtnA.pressedFor(LONG_PRESS_TIME)) {
     return ButtonEvent(BUTTON_TYPE_A, LONG_PRESS);
   }
-  if (buttonManager.isPressed(BUTTON_TYPE_B)) {
+  
+  // Bボタンの処理
+  if (M5.BtnB.wasPressed()) {
     return ButtonEvent(BUTTON_TYPE_B, SHORT_PRESS);
-  } else if (buttonManager.isLongPressed(BUTTON_TYPE_B)) {
+  } else if (M5.BtnB.pressedFor(LONG_PRESS_TIME)) {
     return ButtonEvent(BUTTON_TYPE_B, LONG_PRESS);
   }
-  if (buttonManager.isPressed(BUTTON_TYPE_C)) {
+  
+  // Cボタンの処理
+  if (M5.BtnC.wasPressed()) {
     return ButtonEvent(BUTTON_TYPE_C, SHORT_PRESS);
-  } else if (buttonManager.isLongPressed(BUTTON_TYPE_C)) {
+  } else if (M5.BtnC.pressedFor(LONG_PRESS_TIME)) {
     return ButtonEvent(BUTTON_TYPE_C, LONG_PRESS);
   }
+  
+  // ボタンが押されていない場合は無効なイベントを返す
   return ButtonEvent();
 }
 
@@ -284,8 +288,8 @@ void handleButtons() {
     return;
   }
   
-  // ButtonManager経由でボタンイベント生成
-  ButtonEvent event = createButtonEventFromButtonManager();
+  // 新しい状態遷移システムを使用
+  ButtonEvent event = createButtonEventFromM5Stack();
   
   // 無効なイベントの場合は処理をスキップ
   if (!isValidButtonEvent(event)) {

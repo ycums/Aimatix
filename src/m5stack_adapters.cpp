@@ -6,7 +6,7 @@ M5StackSpeakerAdapter speakerAdapter;
 M5StackButtonManagerAdapter buttonManagerAdapter;
 
 // DebounceManagerの実体インスタンス（Business Logic Layer）
-#include "debounce_manager.h"
+#include <lib/libaimatix/src/debounce_manager.h>
 static DebounceManager debounceManagerInstance;
 
 // M5StackDebounceManagerAdapterのグローバルインスタンス
