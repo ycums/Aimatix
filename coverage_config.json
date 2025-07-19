@@ -1,0 +1,57 @@
+{
+  "coverage_measurement": {
+    "enabled": true,
+    "environments": {
+      "native": {
+        "enabled": true,
+        "test_filter": "pure",
+        "output_dir": "coverage_reports/native"
+      },
+      "unit-test-esp32": {
+        "enabled": true,
+        "test_filter": "integration",
+        "output_dir": "coverage_reports/esp32"
+      }
+    }
+  },
+  "quality_gate": {
+    "enabled": true,
+    "threshold": 80.0,
+    "strict_mode": false
+  },
+  "exclusions": {
+    "directories": [
+      "test/",
+      "lib/Arduino.*",
+      "lib/M5Stack.*",
+      "lib/WiFi.*",
+      "lib/NTPClient.*",
+      "coverage_reports/"
+    ],
+    "files": [
+      "*.h",
+      "test_*.cpp",
+      "mock_*.cpp",
+      "mock_*.h"
+    ]
+  },
+  "notifications": {
+    "enabled": true,
+    "channels": {
+      "console": {
+        "enabled": true,
+        "level": "info"
+      },
+      "file": {
+        "enabled": true,
+        "path": "coverage_notifications.log",
+        "level": "warning"
+      }
+    }
+  },
+  "history": {
+    "enabled": true,
+    "max_entries": 10,
+    "file_path": "coverage_history.json"
+  }
+} 

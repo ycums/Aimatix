@@ -3,3 +3,8 @@
 *.exe
 *.gcda
 *.gcno
+*.log
+coverage_reports/*
+*.gcov.json.gz
+coverage_report.functions.html
+coverage_report.html
