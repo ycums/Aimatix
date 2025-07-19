@@ -9,6 +9,7 @@ DIパターンに対応した新しいカバレッジ計測システム
     python scripts/test_coverage.py --release    # リリース前の完全計測
     python scripts/test_coverage.py --baseline   # ベースライン計測
     python scripts/test_coverage.py --check-env  # 環境確認
+    python scripts/test_coverage.py --clean      # 古いレポートファイル削除
 """
 
 import subprocess
@@ -46,11 +47,16 @@ class CoverageMeasurementSystem:
             config_path: 設定ファイルパス
         """
         self.config = self.load_config(config_path)
+        self.monitor = CoverageMonitor(self.config)
+        self.report_generator = CoverageReportGenerator(self.config)
+        
+        # カバレッジデータ
         self.pure_coverage = None
         self.m5stack_coverage = None
         self.integration_coverage = None
-        self.report_generator = CoverageReportGenerator()
-        self.monitor = CoverageMonitor(self.config)
+        
+        # 履歴ファイルパス
+        self.history_file = self.config.get('history', {}).get('file_path', 'coverage_history.json')
     
     def load_config(self, config_path: str) -> dict:
         """
@@ -130,122 +136,138 @@ class CoverageMeasurementSystem:
                 "enabled": True,
                 "max_entries": 10,
                 "file_path": "coverage_history.json"
+            },
+            "cleanup": {
+                "enabled": True,
+                "keep_days": 7,
+                "max_files": 50
             }
         }
     
     def run_quick_coverage_measurement(self) -> dict:
         """
-        クイックモード（開発中）のカバレッジ計測
+        クイックカバレッジ計測（開発中）
         Returns:
-            カバレッジデータ
+            カバレッジ計測結果
         """
+        self.monitor.send_notification("クイックカバレッジ計測開始", "info")
+        
         try:
-            self.monitor.send_notification("クイックカバレッジ計測開始", "info")
+            # 純粋ロジックカバレッジ計測
+            pure_coverage = self.measure_pure_logic_coverage()
+            self.pure_coverage = pure_coverage  # インスタンス変数に設定
             
-            # 純粋ロジックのみ計測
-            self.pure_coverage = self.measure_pure_logic_coverage()
+            # 統合カバレッジ計算
+            integration_coverage = self.calculate_integrated_coverage()
             
-            # 統合カバレッジ計算（純粋ロジックのみ）
-            self.integration_coverage = self.calculate_integrated_coverage()
+            # 品質ゲート判定
+            quality_gate = self.check_quality_gate()
             
-            # 基本的なレポート生成
+            # レポート生成
             self.generate_reports()
             
-            # 品質ゲート判定（緩い基準）
-            quality_result = self.check_quality_gate()
+            # 自動クリーンアップ（設定が有効な場合）
+            if self.config.get('cleanup', {}).get('enabled', True):
+                self.clean_old_reports()
+            
+            result = {
+                'mode': 'quick',
+                'pure_coverage': pure_coverage,
+                'integration_coverage': integration_coverage,
+                'quality_gate': quality_gate,
+                'timestamp': datetime.now().isoformat()
+            }
+            
+            # 履歴記録
+            self.log_coverage_history(result)
             
             self.monitor.send_notification("クイックカバレッジ計測完了", "info")
+            return result
             
-            return {
-                'pure_coverage': self.pure_coverage,
-                'm5stack_coverage': None,
-                'integration_coverage': self.integration_coverage,
-                'quality_gate': quality_result
-            }
         except Exception as e:
             self.monitor.send_notification(f"クイックカバレッジ計測エラー: {e}", "error")
             raise
     
     def run_full_coverage_measurement(self) -> dict:
         """
-        フルモード（機能完成時）のカバレッジ計測
+        フルカバレッジ計測（機能完成時）
         Returns:
-            統合カバレッジデータ
+            カバレッジ計測結果
         """
+        self.monitor.send_notification("フルカバレッジ計測開始", "info")
+        
         try:
-            self.monitor.send_notification("フルカバレッジ計測開始", "info")
+            # 純粋ロジックカバレッジ計測
+            pure_coverage = self.measure_pure_logic_coverage()
+            self.pure_coverage = pure_coverage  # インスタンス変数に設定
             
-            # 1. 純粋ロジックカバレッジ計測
-            if self.config.get('coverage_measurement', {}).get('environments', {}).get('native', {}).get('enabled', True):
-                self.pure_coverage = self.measure_pure_logic_coverage()
+            # M5Stack依存実装カバレッジ計測
+            m5stack_coverage = None
+            try:
+                m5stack_coverage = self.measure_m5stack_coverage()
+                self.m5stack_coverage = m5stack_coverage  # インスタンス変数に設定
+            except Exception as e:
+                self.monitor.send_notification(f"M5Stack依存実装カバレッジ計測失敗: {e}", "warning")
             
-            # 2. M5Stack依存実装カバレッジ計測
-            if self.config.get('coverage_measurement', {}).get('environments', {}).get('unit-test-esp32', {}).get('enabled', True):
-                self.m5stack_coverage = self.measure_m5stack_coverage()
+            # 統合カバレッジ計算
+            integration_coverage = self.calculate_integrated_coverage()
             
-            # 3. 統合カバレッジ計算
-            self.integration_coverage = self.calculate_integrated_coverage()
+            # 品質ゲート判定
+            quality_gate = self.check_quality_gate()
             
-            # 4. レポート生成
+            # 詳細レポート生成
             self.generate_reports()
             
-            # 5. 品質ゲート判定
-            quality_result = self.check_quality_gate()
+            # 自動クリーンアップ（設定が有効な場合）
+            if self.config.get('cleanup', {}).get('enabled', True):
+                self.clean_old_reports()
             
-            # 6. 履歴記録
-            if self.config.get('history', {}).get('enabled', True):
-                self.monitor.log_coverage_history({
-                    'pure_coverage': self.pure_coverage,
-                    'm5stack_coverage': self.m5stack_coverage,
-                    'integration_coverage': self.integration_coverage,
-                    'quality_gate': quality_result
-                })
+            result = {
+                'mode': 'full',
+                'pure_coverage': pure_coverage,
+                'm5stack_coverage': m5stack_coverage,
+                'integration_coverage': integration_coverage,
+                'quality_gate': quality_gate,
+                'timestamp': datetime.now().isoformat()
+            }
+            
+            # 履歴記録
+            self.log_coverage_history(result)
             
             self.monitor.send_notification("フルカバレッジ計測完了", "info")
+            return result
             
-            return {
-                'pure_coverage': self.pure_coverage,
-                'm5stack_coverage': self.m5stack_coverage,
-                'integration_coverage': self.integration_coverage,
-                'quality_gate': quality_result
-            }
-        except CoverageMeasurementError as e:
-            self.monitor.send_notification(f"カバレッジ計測エラー: {e}", "error")
-            raise
         except Exception as e:
-            self.monitor.send_notification(f"予期しないエラー: {e}", "error")
-            raise CoverageMeasurementError(f"予期しないエラー: {e}")
+            self.monitor.send_notification(f"フルカバレッジ計測エラー: {e}", "error")
+            raise
     
     def run_release_coverage_measurement(self) -> dict:
         """
-        リリースモード（リリース前）のカバレッジ計測
+        リリースカバレッジ計測（リリース前）
         Returns:
-            統合カバレッジデータ
+            カバレッジ計測結果
         """
+        self.monitor.send_notification("リリースカバレッジ計測開始", "info")
+        
         try:
-            self.monitor.send_notification("リリースカバレッジ計測開始", "info")
-            
-            # 厳格モードで品質ゲート設定
-            original_strict_mode = self.config.get('quality_gate', {}).get('strict_mode', False)
+            # 厳格モードを有効化
             self.config['quality_gate']['strict_mode'] = True
             
-            # フルカバレッジ計測実行
+            # フルカバレッジ計測を実行
             result = self.run_full_coverage_measurement()
+            result['mode'] = 'release'
             
-            # 厳格な品質ゲート判定
-            quality_result = self.check_quality_gate()
-            result['quality_gate'] = quality_result
+            # 厳格モードでの品質ゲート再判定
+            quality_gate = self.check_quality_gate()
+            result['quality_gate'] = quality_gate
             
-            # 履歴データの記録
-            if self.config.get('history', {}).get('enabled', True):
-                self.monitor.log_coverage_history(result)
-            
-            # 設定を元に戻す
-            self.config['quality_gate']['strict_mode'] = original_strict_mode
+            # 自動クリーンアップ（設定が有効な場合）
+            if self.config.get('cleanup', {}).get('enabled', True):
+                self.clean_old_reports()
             
             self.monitor.send_notification("リリースカバレッジ計測完了", "info")
-            
             return result
+            
         except Exception as e:
             self.monitor.send_notification(f"リリースカバレッジ計測エラー: {e}", "error")
             raise
@@ -611,7 +633,7 @@ class CoverageMeasurementSystem:
         if not self.m5stack_coverage:
             self.monitor.send_notification("M5Stack依存実装カバレッジデータなし、純粋ロジックのみで統合計算", "warning")
             
-            return {
+            integrated_coverage = {
                 'environment': 'integrated',
                 'coverage_percentage': self.pure_coverage['coverage_percentage'],
                 'line_coverage': self.pure_coverage['line_coverage'],
@@ -619,49 +641,54 @@ class CoverageMeasurementSystem:
                 'function_coverage': self.pure_coverage['function_coverage'],
                 'files': self.pure_coverage['files']
             }
+        else:
+            # 重複除外ロジック
+            integrated_files = self.merge_coverage_files(
+                self.pure_coverage['files'],
+                self.m5stack_coverage['files']
+            )
+            
+            # 統合カバレッジ計算
+            total_lines = 0
+            covered_lines = 0
+            total_branches = 0
+            covered_branches = 0
+            total_functions = 0
+            covered_functions = 0
+            
+            for file_data in integrated_files.values():
+                total_lines += file_data['total_lines']
+                covered_lines += file_data['covered_lines']
+                total_branches += file_data['total_branches']
+                covered_branches += file_data['covered_branches']
+                total_functions += file_data['total_functions']
+                covered_functions += file_data['covered_functions']
+            
+            integrated_coverage = {
+                'environment': 'integrated',
+                'coverage_percentage': (covered_lines / total_lines * 100) if total_lines > 0 else 0,
+                'line_coverage': {
+                    'total': total_lines,
+                    'covered': covered_lines,
+                    'percentage': (covered_lines / total_lines * 100) if total_lines > 0 else 0
+                },
+                'branch_coverage': {
+                    'total': total_branches,
+                    'covered': covered_branches,
+                    'percentage': (covered_branches / total_branches * 100) if total_branches > 0 else 0
+                },
+                'function_coverage': {
+                    'total': total_functions,
+                    'covered': covered_functions,
+                    'percentage': (covered_functions / total_functions * 100) if total_functions > 0 else 0
+                },
+                'files': integrated_files
+            }
         
-        # 重複除外ロジック
-        integrated_files = self.merge_coverage_files(
-            self.pure_coverage['files'],
-            self.m5stack_coverage['files']
-        )
+        # インスタンス変数に設定
+        self.integration_coverage = integrated_coverage
         
-        # 統合カバレッジ計算
-        total_lines = 0
-        covered_lines = 0
-        total_branches = 0
-        covered_branches = 0
-        total_functions = 0
-        covered_functions = 0
-        
-        for file_data in integrated_files.values():
-            total_lines += file_data['total_lines']
-            covered_lines += file_data['covered_lines']
-            total_branches += file_data['total_branches']
-            covered_branches += file_data['covered_branches']
-            total_functions += file_data['total_functions']
-            covered_functions += file_data['covered_functions']
-        
-        return {
-            'environment': 'integrated',
-            'coverage_percentage': (covered_lines / total_lines * 100) if total_lines > 0 else 0,
-            'line_coverage': {
-                'total': total_lines,
-                'covered': covered_lines,
-                'percentage': (covered_lines / total_lines * 100) if total_lines > 0 else 0
-            },
-            'branch_coverage': {
-                'total': total_branches,
-                'covered': covered_branches,
-                'percentage': (covered_branches / total_branches * 100) if total_branches > 0 else 0
-            },
-            'function_coverage': {
-                'total': total_functions,
-                'covered': covered_functions,
-                'percentage': (covered_functions / total_functions * 100) if total_functions > 0 else 0
-            },
-            'files': integrated_files
-        }
+        return integrated_coverage
     
     def merge_coverage_files(self, pure_files: List[dict], m5stack_files: List[dict]) -> Dict[str, dict]:
         """
@@ -760,8 +787,232 @@ class CoverageMeasurementSystem:
         except Exception as e:
             self.monitor.send_notification(f"レポート生成エラー: {e}", "warning")
 
+    def get_report_stats(self) -> dict:
+        """
+        レポートディレクトリの統計情報を取得
+        Returns:
+            統計情報
+        """
+        try:
+            output_dir = self.config.get('reports', {}).get('output_dir', 'coverage_reports')
+            if not os.path.exists(output_dir):
+                return {
+                    'total_files': 0,
+                    'total_size_mb': 0,
+                    'html_files': 0,
+                    'xml_files': 0,
+                    'json_files': 0,
+                    'oldest_file_days': 0,
+                    'newest_file_days': 0
+                }
+            
+            files = []
+            total_size = 0
+            html_count = 0
+            xml_count = 0
+            json_count = 0
+            
+            now = datetime.now()
+            
+            for filename in os.listdir(output_dir):
+                file_path = os.path.join(output_dir, filename)
+                if os.path.isfile(file_path):
+                    stat = os.stat(file_path)
+                    created_time = datetime.fromtimestamp(stat.st_ctime)
+                    age_days = (now - created_time).days
+                    
+                    files.append({
+                        'filename': filename,
+                        'size': stat.st_size,
+                        'age_days': age_days
+                    })
+                    
+                    total_size += stat.st_size
+                    
+                    if filename.endswith('.html'):
+                        html_count += 1
+                    elif filename.endswith('.xml'):
+                        xml_count += 1
+                    elif filename.endswith('.json'):
+                        json_count += 1
+            
+            if files:
+                oldest_days = max(f['age_days'] for f in files)
+                newest_days = min(f['age_days'] for f in files)
+            else:
+                oldest_days = 0
+                newest_days = 0
+            
+            return {
+                'total_files': len(files),
+                'total_size_mb': total_size / (1024 * 1024),
+                'html_files': html_count,
+                'xml_files': xml_count,
+                'json_files': json_count,
+                'oldest_file_days': oldest_days,
+                'newest_file_days': newest_days
+            }
+            
+        except Exception as e:
+            self.monitor.send_notification(f"統計情報取得エラー: {e}", "warning")
+            return {}
+    
+    def load_history(self) -> List[dict]:
+        """
+        履歴読み込み
+        Returns:
+            履歴データ
+        """
+        try:
+            if os.path.exists(self.history_file):
+                with open(self.history_file, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+            return []
+        except Exception as e:
+            print(f"履歴読み込み失敗: {e}")
+            return []
+    
+    def save_history(self, history: List[dict]):
+        """
+        履歴保存
+        Args:
+            history: 履歴データ
+        """
+        try:
+            with open(self.history_file, 'w', encoding='utf-8') as f:
+                json.dump(history, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            print(f"履歴保存失敗: {e}")
+    
+    def clean_old_reports(self, keep_days: int = None, max_files: int = None):
+        """
+        古いレポートファイルを削除
+        Args:
+            keep_days: 保持する日数（Noneの場合は設定ファイルから取得）
+            max_files: 最大保持ファイル数（Noneの場合は設定ファイルから取得）
+        """
+        try:
+            output_dir = self.config.get('reports', {}).get('output_dir', 'coverage_reports')
+            if not os.path.exists(output_dir):
+                self.monitor.send_notification(f"レポートディレクトリが存在しません: {output_dir}", "info")
+                return
+            
+            # 設定から値を取得（CLI引数が優先）
+            if keep_days is None:
+                keep_days = self.config.get('cleanup', {}).get('keep_days', 7)
+            if max_files is None:
+                max_files = self.config.get('cleanup', {}).get('max_files', 50)
+            
+            self.monitor.send_notification(f"クリーンアップ設定: keep_days={keep_days}, max_files={max_files}", "info")
+            
+            # 現在時刻
+            now = datetime.now()
+            
+            # レポートファイルを取得
+            report_files = []
+            for filename in os.listdir(output_dir):
+                file_path = os.path.join(output_dir, filename)
+                if os.path.isfile(file_path):
+                    # ファイルの作成時刻を取得
+                    stat = os.stat(file_path)
+                    created_time = datetime.fromtimestamp(stat.st_ctime)
+                    age_days = (now - created_time).days
+                    
+                    report_files.append({
+                        'path': file_path,
+                        'filename': filename,
+                        'created_time': created_time,
+                        'age_days': age_days,
+                        'size': stat.st_size
+                    })
+            
+            # 作成時刻でソート（古い順）
+            report_files.sort(key=lambda x: x['created_time'])
+            
+            deleted_count = 0
+            deleted_size = 0
+            
+            # 日数ベースの削除
+            for file_info in report_files:
+                # keep_days=0の場合は全てのファイルを削除対象にする
+                should_delete = False
+                if keep_days == 0:
+                    should_delete = True
+                else:
+                    should_delete = file_info['age_days'] > keep_days
+                
+                if should_delete:
+                    try:
+                        os.remove(file_info['path'])
+                        deleted_count += 1
+                        deleted_size += file_info['size']
+                        self.monitor.send_notification(f"古いファイルを削除: {file_info['filename']} ({file_info['age_days']}日前)", "info")
+                    except Exception as e:
+                        self.monitor.send_notification(f"ファイル削除エラー: {file_info['filename']} - {e}", "warning")
+            
+            # ファイル数ベースの削除（日数削除後）
+            remaining_files = [f for f in report_files if os.path.exists(f['path'])]
+            if max_files > 0 and len(remaining_files) > max_files:
+                files_to_delete = remaining_files[:-max_files]  # 古いファイルから削除
+                for file_info in files_to_delete:
+                    try:
+                        os.remove(file_info['path'])
+                        deleted_count += 1
+                        deleted_size += file_info['size']
+                        self.monitor.send_notification(f"ファイル数制限で削除: {file_info['filename']}", "info")
+                    except Exception as e:
+                        self.monitor.send_notification(f"ファイル削除エラー: {file_info['filename']} - {e}", "warning")
+            
+            # 結果を表示
+            if deleted_count > 0:
+                size_mb = deleted_size / (1024 * 1024)
+                self.monitor.send_notification(f"クリーンアップ完了: {deleted_count}ファイル削除, {size_mb:.1f}MB解放", "info")
+            else:
+                self.monitor.send_notification("削除対象のファイルはありませんでした", "info")
+                
+        except Exception as e:
+            self.monitor.send_notification(f"クリーンアップエラー: {e}", "error")
+    
+    def log_coverage_history(self, coverage_data: dict):
+        """
+        カバレッジ履歴記録
+        Args:
+            coverage_data: カバレッジデータ
+        """
+        try:
+            history = self.load_history()
+            
+            entry = {
+                'timestamp': datetime.now().isoformat(),
+                'coverage': coverage_data['integration_coverage']['coverage_percentage'],
+                'pure_coverage': coverage_data['pure_coverage']['coverage_percentage'] if coverage_data.get('pure_coverage') else 0.0,
+                'm5stack_coverage': coverage_data['m5stack_coverage']['coverage_percentage'] if coverage_data.get('m5stack_coverage') else 0.0,
+                'quality_gate': coverage_data['quality_gate']['passed']
+            }
+            
+            history.append(entry)
+            
+            # 最新N件のみ保持
+            max_entries = self.config.get('history', {}).get('max_entries', 100)
+            if len(history) > max_entries:
+                history = history[-max_entries:]
+            
+            self.save_history(history)
+            self.monitor.send_notification("カバレッジ履歴を記録しました", "info")
+        except Exception as e:
+            self.monitor.send_notification(f"履歴記録エラー: {e}", "warning")
+
 class CoverageReportGenerator:
     """カバレッジレポート生成クラス"""
+    
+    def __init__(self, config: dict):
+        """
+        初期化
+        Args:
+            config: 設定データ
+        """
+        self.config = config
+        self.output_dir = self.config.get('reports', {}).get('output_dir', 'coverage_reports')
     
     def generate_html_report(self, coverage_data: dict, output_dir: str = "coverage_reports") -> str:
         """
@@ -938,13 +1189,14 @@ class CoverageMonitor:
             history.append(entry)
             
             # 最新N件のみ保持
-            max_entries = self.config.get('history', {}).get('max_entries', 10)
+            max_entries = self.config.get('history', {}).get('max_entries', 100)
             if len(history) > max_entries:
                 history = history[-max_entries:]
             
             self.save_history(history)
+            self.monitor.send_notification("カバレッジ履歴を記録しました", "info")
         except Exception as e:
-            print(f"履歴記録失敗: {e}")
+            self.monitor.send_notification(f"履歴記録エラー: {e}", "warning")
     
     def load_history(self) -> List[dict]:
         """
@@ -989,6 +1241,10 @@ def main():
     parser.add_argument("--quality-gate-only", action="store_true", help="品質ゲートチェックのみ")
     parser.add_argument("--output-dir", default="coverage_reports", help="出力ディレクトリ")
     parser.add_argument("--debug", action="store_true", help="デバッグモード")
+    parser.add_argument("--clean", action="store_true", help="古いレポートファイル削除")
+    parser.add_argument("--stats", action="store_true", help="レポートディレクトリの統計情報表示")
+    parser.add_argument("--keep-days", type=int, help="保持する日数（--cleanと併用）")
+    parser.add_argument("--max-files", type=int, help="最大保持ファイル数（--cleanと併用）")
     
     args = parser.parse_args()
     
@@ -1033,6 +1289,25 @@ def main():
                 sys.exit(1)
             result = system.check_quality_gate()
             print(f"品質ゲート結果: {result['message']}")
+            return
+        elif args.clean:
+            print("古いレポートファイルの削除を開始します...")
+            keep_days = args.keep_days if args.keep_days is not None else None
+            max_files = args.max_files if args.max_files is not None else None
+            system.clean_old_reports(keep_days=keep_days, max_files=max_files)
+            print("古いレポートファイルの削除が完了しました。")
+            return
+        elif args.stats:
+            print("レポートディレクトリの統計情報を表示します...")
+            stats = system.get_report_stats()
+            print(f"合計ファイル数: {stats['total_files']}")
+            print(f"合計サイズ: {stats['total_size_mb']:.2f}MB")
+            print(f"HTMLファイル数: {stats['html_files']}")
+            print(f"XMLファイル数: {stats['xml_files']}")
+            print(f"JSONファイル数: {stats['json_files']}")
+            print(f"最古ファイル: {stats['oldest_file_days']}日前")
+            print(f"最新ファイル: {stats['newest_file_days']}日前")
+            print("統計情報表示が完了しました。")
             return
         else:
             # デフォルトはクイックモード
