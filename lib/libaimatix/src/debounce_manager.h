@@ -3,28 +3,29 @@
 
 #include <map>
 #include <string>
-#include "../include/IButtonManager.h"
+#include "../include/IDebounceManager.h"
 
-// DebounceManagerクラス（静的クラス）
-class DebounceManager {
+// DebounceManagerクラス（IDebounceManagerインターフェース実装）
+class DebounceManager : public IDebounceManager {
 public:
-  // ハードウェアレベルのデバウンス判定
-  static bool canProcessHardware(ButtonType buttonId, unsigned long (*getTime)());
-  // 操作レベルのデバウンス判定
-  static bool canProcessOperation(const std::string& operationType, unsigned long (*getTime)());
-  // 画面遷移レベルのデバウンス判定
-  static bool canProcessModeChange(unsigned long (*getTime)());
-  // テスト用：状態リセット
-  static void reset();
+    DebounceManager();
+    DebounceManager(const DebounceManager&) = delete;
+    DebounceManager& operator=(const DebounceManager&) = delete;
+    
+    // IDebounceManagerインターフェースの実装
+    bool canProcessHardware(ButtonType buttonId, unsigned long (*getTime)()) override;
+    bool canProcessOperation(const std::string& operationType, unsigned long (*getTime)()) override;
+    bool canProcessModeChange(unsigned long (*getTime)()) override;
+    void reset() override;
 
 private:
-  static const unsigned long DEFAULT_HARDWARE_DEBOUNCE = 50;
-  static const unsigned long DEFAULT_OPERATION_DEBOUNCE = 200;
-  static const unsigned long DEFAULT_MODE_CHANGE_DEBOUNCE = 300;
+    static const unsigned long DEFAULT_HARDWARE_DEBOUNCE = 50;
+    static const unsigned long DEFAULT_OPERATION_DEBOUNCE = 200;
+    static const unsigned long DEFAULT_MODE_CHANGE_DEBOUNCE = 300;
 
-  static std::map<std::string, unsigned long> lastOperationTimes;
-  static unsigned long lastModeChangeTime;
-  static std::map<ButtonType, unsigned long> lastButtonChangeTimes;
+    std::map<std::string, unsigned long> lastOperationTimes;
+    unsigned long lastModeChangeTime;
+    std::map<ButtonType, unsigned long> lastButtonChangeTimes;
 };
 
 #endif // DEBOUNCE_MANAGER_H 

@@ -2,9 +2,13 @@
 #include <cstdio>
 #include <cstring>
 #include <settings.h>
+#include "../mock/mock_eeprom.h"
 
 // SettingsLogicの純粋ロジックテスト
 // M5Stack依存を排除し、標準C++のみでテスト
+
+void setUp(void) {}
+void tearDown(void) {}
 
 // 設定構造体の初期化テスト
 void test_settings_initialization() {
@@ -156,25 +160,328 @@ void test_composite_settings() {
   printf("✓ 複合設定テスト: 成功\n");
 }
 
-void setUp(void) {}
-void tearDown(void) {}
+// 新しく追加するテストケース（実際に存在する関数のみ）
 
-// メイン関数
+void test_settings_structure_operations() {
+  Settings settings;
+  
+  // 構造体の基本操作
+  settings.sound_enabled = true;
+  settings.lcd_brightness = 150;
+  settings.checksum = 0;
+  
+  TEST_ASSERT_TRUE(settings.sound_enabled);
+  TEST_ASSERT_EQUAL(150, settings.lcd_brightness);
+  TEST_ASSERT_EQUAL(0, settings.checksum);
+  
+  // 値の変更
+  settings.sound_enabled = false;
+  settings.lcd_brightness = 75;
+  
+  TEST_ASSERT_FALSE(settings.sound_enabled);
+  TEST_ASSERT_EQUAL(75, settings.lcd_brightness);
+  
+  printf("✓ settings_structure_operations: 成功\n");
+}
+
+void test_settings_checksum_logic() {
+  Settings settings;
+  
+  // チェックサム計算ロジックの詳細テスト
+  settings.sound_enabled = true;
+  settings.lcd_brightness = 100;
+  settings.checksum = (settings.sound_enabled + settings.lcd_brightness) % 256;
+  
+  TEST_ASSERT_EQUAL(101, settings.checksum);
+  
+  // オーバーフローケース
+  settings.lcd_brightness = 255;
+  settings.checksum = (settings.sound_enabled + settings.lcd_brightness) % 256;
+  
+  TEST_ASSERT_EQUAL(0, settings.checksum); // (1 + 255) % 256 = 0
+  
+  printf("✓ settings_checksum_logic: 成功\n");
+}
+
+void test_settings_validation_logic() {
+  Settings settings;
+  
+  // 有効な設定
+  settings.sound_enabled = true;
+  settings.lcd_brightness = 100;
+  settings.checksum = (settings.sound_enabled + settings.lcd_brightness) % 256;
+  
+  bool isValid = (settings.checksum == (settings.sound_enabled + settings.lcd_brightness) % 256);
+  TEST_ASSERT_TRUE(isValid);
+  
+  // 無効な設定（チェックサムが不正）
+  settings.checksum = 0;
+  isValid = (settings.checksum == (settings.sound_enabled + settings.lcd_brightness) % 256);
+  TEST_ASSERT_FALSE(isValid);
+  
+  printf("✓ settings_validation_logic: 成功\n");
+}
+
+void test_settings_constants() {
+  // 定数のテスト
+  TEST_ASSERT_EQUAL(512, EEPROM_SIZE);
+  TEST_ASSERT_EQUAL(0, SETTINGS_ADDR);
+  
+  printf("✓ settings_constants: 成功\n");
+}
+
+void test_settings_memory_layout() {
+  Settings settings = {true, 100, 0};
+  
+  // メモリレイアウトのテスト
+  TEST_ASSERT_EQUAL(sizeof(bool), sizeof(settings.sound_enabled));
+  TEST_ASSERT_EQUAL(sizeof(uint8_t), sizeof(settings.lcd_brightness));
+  TEST_ASSERT_EQUAL(sizeof(uint8_t), sizeof(settings.checksum));
+  
+  // 構造体サイズの確認
+  TEST_ASSERT_EQUAL(sizeof(bool) + sizeof(uint8_t) + sizeof(uint8_t), sizeof(settings));
+  
+  printf("✓ settings_memory_layout: 成功\n");
+}
+
+void test_settings_edge_cases() {
+  Settings settings;
+  
+  // 境界値でのテスト
+  settings.sound_enabled = true;
+  settings.lcd_brightness = 0;
+  settings.checksum = (settings.sound_enabled + settings.lcd_brightness) % 256;
+  
+  TEST_ASSERT_EQUAL(1, settings.checksum); // true(1) + 0 = 1
+  
+  settings.sound_enabled = false;
+  settings.lcd_brightness = 255;
+  settings.checksum = (settings.sound_enabled + settings.lcd_brightness) % 256;
+  
+  TEST_ASSERT_EQUAL(255, settings.checksum); // false(0) + 255 = 255
+  
+  printf("✓ settings_edge_cases: 成功\n");
+}
+
+void test_settings_performance() {
+  Settings settings;
+  
+  // パフォーマンステスト（多数の操作）
+  for (int i = 0; i < 1000; i++) {
+    settings.sound_enabled = (i % 2) == 0;
+    settings.lcd_brightness = i % 256;
+    settings.checksum = (settings.sound_enabled + settings.lcd_brightness) % 256;
+    
+    bool isValid = (settings.checksum == (settings.sound_enabled + settings.lcd_brightness) % 256);
+    TEST_ASSERT_TRUE(isValid);
+  }
+  
+  printf("✓ settings_performance: 成功\n");
+}
+
+void test_settings_copy_operations() {
+  Settings original = {true, 100, 0};
+  original.checksum = (original.sound_enabled + original.lcd_brightness) % 256;
+  
+  // コピー操作
+  Settings copy = original;
+  
+  // 値の比較
+  TEST_ASSERT_EQUAL(original.sound_enabled, copy.sound_enabled);
+  TEST_ASSERT_EQUAL(original.lcd_brightness, copy.lcd_brightness);
+  TEST_ASSERT_EQUAL(original.checksum, copy.checksum);
+  
+  // 独立した変更
+  copy.sound_enabled = false;
+  copy.checksum = (copy.sound_enabled + copy.lcd_brightness) % 256;
+  
+  TEST_ASSERT_NOT_EQUAL(original.sound_enabled, copy.sound_enabled);
+  TEST_ASSERT_NOT_EQUAL(original.checksum, copy.checksum);
+  
+  printf("✓ settings_copy_operations: 成功\n");
+}
+
+// 実際のSettingsLogic関数をテストするケース
+
+void test_loadSettings_function() {
+  MockEEPROM mockEeprom;
+  Settings settings;
+  
+  // モックEEPROMに有効なデータを設定
+  Settings validSettings = {true, 100, 101}; // チェックサム: 1 + 100 = 101
+  mockEeprom.write(SETTINGS_ADDR, validSettings.sound_enabled);
+  mockEeprom.write(SETTINGS_ADDR + 1, validSettings.lcd_brightness);
+  mockEeprom.write(SETTINGS_ADDR + 2, validSettings.checksum);
+  
+  // loadSettings関数をテスト
+  loadSettings(&mockEeprom, settings);
+  
+  // 正しく読み込まれたことを確認
+  TEST_ASSERT_EQUAL(validSettings.sound_enabled, settings.sound_enabled);
+  TEST_ASSERT_EQUAL(validSettings.lcd_brightness, settings.lcd_brightness);
+  TEST_ASSERT_EQUAL(validSettings.checksum, settings.checksum);
+  
+  printf("✓ loadSettings_function: 成功\n");
+}
+
+void test_saveSettings_function() {
+  MockEEPROM mockEeprom;
+  Settings settings = {false, 50, 0};
+  
+  // チェックサムを計算
+  settings.checksum = (settings.sound_enabled + settings.lcd_brightness) % 256;
+  
+  // saveSettings関数をテスト
+  saveSettings(&mockEeprom, settings);
+  
+  // EEPROMに正しく保存されたことを確認
+  TEST_ASSERT_EQUAL(settings.sound_enabled, mockEeprom.read(SETTINGS_ADDR));
+  TEST_ASSERT_EQUAL(settings.lcd_brightness, mockEeprom.read(SETTINGS_ADDR + 1));
+  TEST_ASSERT_EQUAL(settings.checksum, mockEeprom.read(SETTINGS_ADDR + 2));
+  
+  printf("✓ saveSettings_function: 成功\n");
+}
+
+void test_resetSettings_function() {
+  MockEEPROM mockEeprom;
+  Settings settings = {true, 200, 100}; // 初期値は何でも良い
+  
+  // resetSettings関数をテスト
+  resetSettings(&mockEeprom, settings);
+  
+  // デフォルト値にリセットされたことを確認
+  TEST_ASSERT_TRUE(settings.sound_enabled);
+  TEST_ASSERT_EQUAL(100, settings.lcd_brightness);
+  TEST_ASSERT_EQUAL(101, settings.checksum); // 1 + 100 = 101
+  
+  // EEPROMにも保存されたことを確認
+  TEST_ASSERT_EQUAL(settings.sound_enabled, mockEeprom.read(SETTINGS_ADDR));
+  TEST_ASSERT_EQUAL(settings.lcd_brightness, mockEeprom.read(SETTINGS_ADDR + 1));
+  TEST_ASSERT_EQUAL(settings.checksum, mockEeprom.read(SETTINGS_ADDR + 2));
+  
+  printf("✓ resetSettings_function: 成功\n");
+}
+
+void test_validateSettings_function() {
+  Settings settings;
+  
+  // 有効な設定
+  settings.sound_enabled = true;
+  settings.lcd_brightness = 100;
+  settings.checksum = (settings.sound_enabled + settings.lcd_brightness) % 256;
+  
+  bool isValid = validateSettings(settings);
+  TEST_ASSERT_TRUE(isValid);
+  
+  // 無効な設定（チェックサムが不正）
+  settings.checksum = 0;
+  isValid = validateSettings(settings);
+  TEST_ASSERT_FALSE(isValid);
+  
+  printf("✓ validateSettings_function: 成功\n");
+}
+
+void test_settings_integration() {
+  MockEEPROM mockEeprom;
+  Settings settings;
+  
+  // 統合テスト：保存→読み込み→検証の流れ
+  Settings originalSettings = {false, 75, 0};
+  originalSettings.checksum = (originalSettings.sound_enabled + originalSettings.lcd_brightness) % 256;
+  
+  // 1. 保存
+  saveSettings(&mockEeprom, originalSettings);
+  
+  // 2. 読み込み
+  loadSettings(&mockEeprom, settings);
+  
+  // 3. 検証
+  bool isValid = validateSettings(settings);
+  TEST_ASSERT_TRUE(isValid);
+  
+  // 4. 値の一致確認
+  TEST_ASSERT_EQUAL(originalSettings.sound_enabled, settings.sound_enabled);
+  TEST_ASSERT_EQUAL(originalSettings.lcd_brightness, settings.lcd_brightness);
+  TEST_ASSERT_EQUAL(originalSettings.checksum, settings.checksum);
+  
+  printf("✓ settings_integration: 成功\n");
+}
+
+void test_settings_error_handling() {
+  MockEEPROM mockEeprom;
+  Settings settings;
+  
+  // 無効なデータがEEPROMにある場合のテスト
+  mockEeprom.write(SETTINGS_ADDR, true);
+  mockEeprom.write(SETTINGS_ADDR + 1, 100);
+  mockEeprom.write(SETTINGS_ADDR + 2, 0); // 不正なチェックサム
+  
+  loadSettings(&mockEeprom, settings);
+  
+  // 無効なデータの場合、loadSettingsはデフォルト値に設定するため、最終的には有効な設定になる
+  bool isValid = validateSettings(settings);
+  TEST_ASSERT_TRUE(isValid);
+  
+  // デフォルト値が設定されていることを確認
+  TEST_ASSERT_TRUE(settings.sound_enabled);
+  TEST_ASSERT_EQUAL(100, settings.lcd_brightness);
+  TEST_ASSERT_EQUAL(101, settings.checksum); // 1 + 100 = 101
+  
+  printf("✓ settings_error_handling: 成功\n");
+}
+
+void test_settings_boundary_conditions() {
+  MockEEPROM mockEeprom;
+  Settings settings;
+  
+  // 境界値でのテスト
+  Settings boundarySettings = {false, 255, 0};
+  boundarySettings.checksum = (boundarySettings.sound_enabled + boundarySettings.lcd_brightness) % 256;
+  
+  saveSettings(&mockEeprom, boundarySettings);
+  loadSettings(&mockEeprom, settings);
+  
+  TEST_ASSERT_EQUAL(boundarySettings.sound_enabled, settings.sound_enabled);
+  TEST_ASSERT_EQUAL(boundarySettings.lcd_brightness, settings.lcd_brightness);
+  TEST_ASSERT_EQUAL(boundarySettings.checksum, settings.checksum);
+  
+  bool isValid = validateSettings(settings);
+  TEST_ASSERT_TRUE(isValid);
+  
+  printf("✓ settings_boundary_conditions: 成功\n");
+}
+
 int main() {
-  UNITY_BEGIN();
-  
-  printf("=== SettingsLogic 純粋ロジックテスト ===\n");
-  
-  RUN_TEST(test_settings_initialization);
-  RUN_TEST(test_checksum_calculation);
-  RUN_TEST(test_checksum_validation);
-  RUN_TEST(test_settings_boundary_values);
-  RUN_TEST(test_settings_consistency);
-  RUN_TEST(test_default_settings);
-  RUN_TEST(test_settings_modification);
-  RUN_TEST(test_composite_settings);
-  
-  printf("=== 全テスト完了 ===\n");
-  
-  return UNITY_END();
+    UNITY_BEGIN();
+    
+    // 基本的な設定構造体テスト
+    RUN_TEST(test_settings_initialization);
+    RUN_TEST(test_checksum_calculation);
+    RUN_TEST(test_checksum_validation);
+    RUN_TEST(test_settings_boundary_values);
+    RUN_TEST(test_settings_consistency);
+    RUN_TEST(test_default_settings);
+    RUN_TEST(test_settings_modification);
+    RUN_TEST(test_composite_settings);
+    
+    // 新しく追加するテストケース
+    RUN_TEST(test_settings_structure_operations);
+    RUN_TEST(test_settings_checksum_logic);
+    RUN_TEST(test_settings_validation_logic);
+    RUN_TEST(test_settings_constants);
+    RUN_TEST(test_settings_memory_layout);
+    RUN_TEST(test_settings_edge_cases);
+    RUN_TEST(test_settings_performance);
+    RUN_TEST(test_settings_copy_operations);
+    
+    // 実際のSettingsLogic関数テスト
+    RUN_TEST(test_loadSettings_function);
+    RUN_TEST(test_saveSettings_function);
+    RUN_TEST(test_resetSettings_function);
+    RUN_TEST(test_validateSettings_function);
+    RUN_TEST(test_settings_integration);
+    RUN_TEST(test_settings_error_handling);
+    RUN_TEST(test_settings_boundary_conditions);
+    
+    return UNITY_END();
 } 

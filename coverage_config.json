@@ -51,7 +51,7 @@
   },
   "history": {
     "enabled": true,
-    "max_entries": 10,
+    "max_entries": 50,
     "file_path": "coverage_history.json"
   }
 } 

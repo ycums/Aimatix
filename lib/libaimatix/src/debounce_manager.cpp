@@ -1,9 +1,11 @@
 #include "debounce_manager.h"
+#include <cstdio>
 
-// 静的メンバ変数の定義
-std::map<std::string, unsigned long> DebounceManager::lastOperationTimes;
-unsigned long DebounceManager::lastModeChangeTime = 0;
-std::map<ButtonType, unsigned long> DebounceManager::lastButtonChangeTimes;
+DebounceManager::DebounceManager()
+    : lastModeChangeTime(0) {
+    lastOperationTimes.clear();
+    lastButtonChangeTimes.clear();
+}
 
 // ハードウェアレベルのデバウンス判定
 bool DebounceManager::canProcessHardware(ButtonType buttonId, unsigned long (*getTime)()) {
