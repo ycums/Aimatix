@@ -14,11 +14,14 @@ void loadSettings(IEEPROM* eeprom, Settings& settings) {
   settings.checksum = eeprom->read(SETTINGS_ADDR + 2);
   // チェックサム検証
   uint8_t calculatedChecksum = (settings.sound_enabled + settings.lcd_brightness) % 256;
-  if (settings.checksum != calculatedChecksum) {
-    // チェックサム不一致時はデフォルト値
-    settings.sound_enabled = true;
-    settings.lcd_brightness = 100;
-    settings.checksum = (settings.sound_enabled + settings.lcd_brightness) % 256;
+  bool valid = (settings.checksum == calculatedChecksum)
+               && (settings.lcd_brightness >= 1 && settings.lcd_brightness <= 255)
+               && (settings.sound_enabled == 0 || settings.sound_enabled == 1);
+  if (!valid) {
+      // 不正値時はデフォルト値
+      settings.sound_enabled = true;
+      settings.lcd_brightness = 100;
+      settings.checksum = (settings.sound_enabled + settings.lcd_brightness) % 256;
   }
 }
 

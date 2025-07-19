@@ -1,5 +1,7 @@
 #include <M5Stack.h>
 #include "ui.h"
+#include <settings.h>
+#include "m5stack_adapters.h"
 
 // drawMainDisplay用ダミー変数
 #include <time.h>
@@ -9,11 +11,16 @@ void setup() {
   M5.begin();
   M5.Power.begin();
   Serial.begin(115200);
-  // LCD明度255固定
-  M5.Lcd.setBrightness(255);
+  // 設定値ロード
+  loadSettings(&eepromAdapter);
+  // デバッグ: 明度値を出力
+  Serial.print("lcd_brightness: ");
+  Serial.println(settings.lcd_brightness);
+  // LCD明度を設定値で反映
+  M5.Lcd.setBrightness(settings.lcd_brightness);
   // UI初期化
   initUI();
-  Serial.println("Phase2-1: Baseline UI only, brightness 255");
+  Serial.println("Phase2-2: settingsロード・明度反映");
 }
 
 void loop() {
