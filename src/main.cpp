@@ -31,8 +31,9 @@ void setup() {
   M5.Lcd.setBrightness(settings.lcd_brightness);
   // UI初期化
   initUI();
-  Serial.println("Phase2-3: ボタン遷移・画面遷移最小構成");
   buttonManager.initialize();
+
+  Serial.println("Initialised.");
 }
 
 void loop() {
@@ -42,28 +43,16 @@ void loop() {
   buttonManager.setButtonState(BUTTON_TYPE_A, M5.BtnA.isPressed());
   buttonManager.setButtonState(BUTTON_TYPE_B, M5.BtnB.isPressed());
   buttonManager.setButtonState(BUTTON_TYPE_C, M5.BtnC.isPressed());
-  // A/B/Cボタンでモード切り替え
-  if (buttonManager.isShortPress(BUTTON_TYPE_A)) {
-    if (currentMode == MAIN_DISPLAY) {
-      currentMode = ABS_TIME_INPUT;
-      Serial.println("Mode: ABS_TIME_INPUT");
-    } else {
-      // 既存のテスト用アラーム追加処理は一時的に無効化
-    }
+ 
+  // 短押しテスト出力
+  if (buttonManager.isShortPressed(BUTTON_TYPE_A)) {
+    Serial.println("[TEST] Aボタン短押し検出");
   }
-  if (buttonManager.isShortPress(BUTTON_TYPE_B)) {
-    if (currentMode == MAIN_DISPLAY) {
-      currentMode = SETTINGS_MENU;
-      Serial.println("Mode: SETTINGS_MENU");
-    }
-    // 入力モード時はInputLogic側で処理
+  if (buttonManager.isShortPressed(BUTTON_TYPE_B)) {
+    Serial.println("[TEST] Bボタン短押し検出");
   }
-  if (buttonManager.isShortPress(BUTTON_TYPE_C)) {
-    if (currentMode == MAIN_DISPLAY) {
-      currentMode = INFO_DISPLAY;
-      Serial.println("Mode: INFO_DISPLAY");
-    }
-    // 入力モード時はInputLogic側で処理
+  if (buttonManager.isShortPressed(BUTTON_TYPE_C)) {
+    Serial.println("[TEST] Cボタン短押し検出");
   }
   // 長押しテスト出力
   if (buttonManager.isLongPressed(BUTTON_TYPE_A)) {
@@ -75,10 +64,7 @@ void loop() {
   if (buttonManager.isLongPressed(BUTTON_TYPE_C)) {
     Serial.println("[TEST] Cボタン長押し検出");
   }
-  // 入力モード時はInputLogicのボタン処理を呼ぶ
-  if (currentMode == ABS_TIME_INPUT || currentMode == REL_PLUS_TIME_INPUT) {
-    handleDigitEditInput(&buttonManager, (TimeFunction)millis);
-  }
+ 
   // 画面更新のみ（100ms間隔）
   static unsigned long lastScreenUpdate = 0;
   if (millis() - lastScreenUpdate >= 100) {
