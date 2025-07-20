@@ -69,12 +69,12 @@ bool isWarningMessageDisplayed(const char* message);
 void clearWarningMessage();
 
 // Screen drawing functions
-void drawMainDisplay();
+void drawMainDisplay(const Settings& settings);
 void drawNTPSync();
 void drawInputMode(const DigitEditTimeInputState& state);
 void drawAlarmManagement(); // アラーム管理画面を追加
 void drawAlarmActive();
-void drawSettingsMenu();
+void drawSettingsMenu(const Settings& settings);
 void drawInfoDisplay();
 void drawWarningColorTest();
 

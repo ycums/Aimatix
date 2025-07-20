@@ -22,16 +22,18 @@ ButtonManager buttonManager(millis);
 
 DigitEditTimeInputState digitEditInput; // main.cppで状態を保持
 
+Settings appSettings;
+
 void setup() {
   M5.begin();
   M5.Power.begin();
   Serial.begin(115200);
   // 設定値ロード
-  loadSettings(&eepromAdapter);
+  loadSettings(&eepromAdapter, appSettings);
   Serial.print("lcd_brightness: ");
-  Serial.println(settings.lcd_brightness);
+  Serial.println(appSettings.lcd_brightness);
   // LCD明度を設定値で反映
-  M5.Lcd.setBrightness(settings.lcd_brightness);
+  M5.Lcd.setBrightness(appSettings.lcd_brightness);
   // UI初期化
   initUI();
   buttonManager.initialize();
@@ -81,10 +83,10 @@ void loop() {
     lastScreenUpdate = millis();
     switch (currentMode) {
       case MAIN_DISPLAY:
-        drawMainDisplay();
+        drawMainDisplay(appSettings);
         break;
       case SETTINGS_MENU:
-        drawSettingsMenu();
+        drawSettingsMenu(appSettings);
         break;
       case INFO_DISPLAY:
         drawInfoDisplay();
@@ -94,7 +96,7 @@ void loop() {
         drawInputMode(digitEditInput); // 状態を渡して描画
         break;
       default:
-        drawMainDisplay();
+        drawMainDisplay(appSettings);
         break;
     }
     sprite.pushSprite(0, 0);

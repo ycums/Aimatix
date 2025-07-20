@@ -300,24 +300,27 @@ void drawInputMode(const DigitEditTimeInputState& state) {
 
 
 
-void drawSettingsMenu() {
+void drawSettingsMenu(const Settings& settings) {
   sprite.fillSprite(TFT_BLACK);
   drawTitleBar("SETTINGS");
   drawButtonHintsGrid("PREV", "NEXT", "SELECT/BACK");
-  
-  // types.hで定義された項目を使用
+
+  // 設定値を表示するメニュー項目
+  char soundStr[32];
+  snprintf(soundStr, sizeof(soundStr), "SOUND: %s", settings.sound_enabled ? "ON" : "OFF");
+  char brightnessStr[32];
+  snprintf(brightnessStr, sizeof(brightnessStr), "LCD BRIGHTNESS: %d", settings.lcd_brightness);
+
   const char* items[] = {
-    "SOUND: ",
-    "LCD BRIGHTNESS",
+    soundStr,
+    brightnessStr,
     "WARNING COLOR TEST",
     "ALL CLEAR",
     "INFO"
   };
   settingsMenu.itemCount = sizeof(items) / sizeof(items[0]);
-  
-  // 共通メニュー描画関数を使用（グリッドセル(1,0)-(6,2)、1pxマージン）
+
   drawMenuItems(items, settingsMenu.itemCount, settingsMenu.selectedItem, 0, 2, 1);
-  
   sprite.pushSprite(0, 0);
 }
 
