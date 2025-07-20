@@ -199,6 +199,11 @@ Serial.printf("Min free heap: %d\n", ESP.getMinFreeHeap());
 - **英語**: パスカルケース
 - **例**: `ButtonManager`, `InputState`
 
+#### 6.1.5 ファイル名
+- **形式**: スネークケース
+- **説明**: クラス名はスネークケースに変換してファイル名とします。
+- **例**: `ButtonManager` クラス -> `button_manager.h`, `button_manager.cpp`
+
 ### 6.2 コメント規約
 
 #### 6.2.1 日本語コメント
