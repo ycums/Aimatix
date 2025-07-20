@@ -22,7 +22,7 @@
 ## Phase2: 設計・プロトタイピング
 
 ### 2-1: ロジック・アダプタ設計
-- [ ] 2-1-1: 純粋ロジック（TimeLogic, AlarmLogic, InputLogic, SettingsLogic等）のインターフェース設計
+- [x] 2-1-1: 純粋ロジック（TimeLogic, AlarmLogic, InputLogic, SettingsLogic等）のインターフェース設計
 - [ ] 2-1-2: ハードウェアアダプタ（M5StackEEPROMAdapter等）の設計
 - [ ] 2-1-3: UIレイヤの画面遷移・状態管理設計
 
