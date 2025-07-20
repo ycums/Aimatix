@@ -13,9 +13,9 @@
 - [x] 1-1-3: カバレッジ・テスト戦略（`operation/testing_strategy.md`等）を確認
 
 ### 1-2: 設計方針理解
-- [ ] 1-2-1: アーキテクチャ設計（`design/architecture.md`）のレイヤ構造・責務分離を理解
-- [ ] 1-2-2: インターフェース設計（`design/interface_design.md`）のDI/アダプタ方針を理解
-- [ ] 1-2-3: ドキュメント間の整合性を確認
+- [x] 1-2-1: アーキテクチャ設計（`design/architecture.md`）のレイヤ構造・責務分離を理解
+- [x] 1-2-2: インターフェース設計（`design/interface_design.md`）のDI/アダプタ方針を理解
+- [x] 1-2-3: ドキュメント間の整合性を確認
 
 ---
 
