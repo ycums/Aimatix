@@ -45,13 +45,13 @@ void loop() {
   buttonManager.setButtonState(BUTTON_TYPE_C, M5.BtnC.isPressed());
  
   // 短押しテスト出力
-  if (buttonManager.isShortPressed(BUTTON_TYPE_A)) {
+  if (buttonManager.isShortPress(BUTTON_TYPE_A)) {
     Serial.println("[TEST] Aボタン短押し検出");
   }
-  if (buttonManager.isShortPressed(BUTTON_TYPE_B)) {
+  if (buttonManager.isShortPress(BUTTON_TYPE_B)) {
     Serial.println("[TEST] Bボタン短押し検出");
   }
-  if (buttonManager.isShortPressed(BUTTON_TYPE_C)) {
+  if (buttonManager.isShortPress(BUTTON_TYPE_C)) {
     Serial.println("[TEST] Cボタン短押し検出");
   }
   // 長押しテスト出力
