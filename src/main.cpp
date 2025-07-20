@@ -45,27 +45,25 @@ void loop() {
   // A/B/Cボタンでモード切り替え
   if (buttonManager.isShortPress(BUTTON_TYPE_A)) {
     if (currentMode == MAIN_DISPLAY) {
-      // テスト用: 1分後のアラームを追加
-      time_t now = time(NULL);
-      time_t alarmT = now + 60;
-      if (std::find(alarmTimes.begin(), alarmTimes.end(), alarmT) == alarmTimes.end() && alarmTimes.size() < 5) {
-        alarmTimes.push_back(alarmT);
-        sortAlarms();
-        Serial.println("[TEST] 1分後のアラームを追加");
-      } else {
-        Serial.println("[TEST] アラーム追加失敗（重複または上限）");
-      }
+      currentMode = ABS_TIME_INPUT;
+      Serial.println("Mode: ABS_TIME_INPUT");
+    } else {
+      // 既存のテスト用アラーム追加処理は一時的に無効化
     }
-    currentMode = MAIN_DISPLAY;
-    Serial.println("Mode: MAIN_DISPLAY");
   }
   if (buttonManager.isShortPress(BUTTON_TYPE_B)) {
-    currentMode = SETTINGS_MENU;
-    Serial.println("Mode: SETTINGS_MENU");
+    if (currentMode == MAIN_DISPLAY) {
+      currentMode = SETTINGS_MENU;
+      Serial.println("Mode: SETTINGS_MENU");
+    }
+    // 入力モード時はInputLogic側で処理
   }
   if (buttonManager.isShortPress(BUTTON_TYPE_C)) {
-    currentMode = INFO_DISPLAY;
-    Serial.println("Mode: INFO_DISPLAY");
+    if (currentMode == MAIN_DISPLAY) {
+      currentMode = INFO_DISPLAY;
+      Serial.println("Mode: INFO_DISPLAY");
+    }
+    // 入力モード時はInputLogic側で処理
   }
   // 長押しテスト出力
   if (buttonManager.isLongPressed(BUTTON_TYPE_A)) {
@@ -76,6 +74,10 @@ void loop() {
   }
   if (buttonManager.isLongPressed(BUTTON_TYPE_C)) {
     Serial.println("[TEST] Cボタン長押し検出");
+  }
+  // 入力モード時はInputLogicのボタン処理を呼ぶ
+  if (currentMode == ABS_TIME_INPUT || currentMode == REL_PLUS_TIME_INPUT) {
+    handleDigitEditInput(&buttonManager, (TimeFunction)millis);
   }
   // 画面更新のみ（100ms間隔）
   static unsigned long lastScreenUpdate = 0;
@@ -90,6 +92,10 @@ void loop() {
         break;
       case INFO_DISPLAY:
         drawInfoDisplay();
+        break;
+      case ABS_TIME_INPUT:
+      case REL_PLUS_TIME_INPUT:
+        drawInputMode();
         break;
       default:
         drawMainDisplay();
