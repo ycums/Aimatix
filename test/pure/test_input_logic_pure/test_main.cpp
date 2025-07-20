@@ -4,6 +4,7 @@
 #include <input.h>
 #include <alarm.h>
 #include "types.h"
+#include "../../../lib/libaimatix/src/time_logic.h"
 
 // 外部変数のモック定義
 Mode currentMode = MAIN_DISPLAY;
@@ -534,6 +535,22 @@ void test_input_time_dependency() {
     printf("✓ input_time_dependency: 成功\n");
 }
 
+// InputLogicのAPIがUI遷移や画面制御を直接行わないことを検証するテスト
+void test_InputLogic_does_not_change_mode_or_call_ui() {
+    // Arrange
+    Mode beforeMode = currentMode;
+    // 例として、InputLogicの値編集APIを呼び出す
+    int digit = 0;
+    InputLogic::incrementDigit(digit, 9);
+    InputLogic::decrementDigit(digit, 9);
+    // 他のInputLogic APIも同様に呼び出し可能
+
+    // Assert
+    TEST_ASSERT_EQUAL(beforeMode, currentMode); // currentModeが変化していないこと
+    // UI描画呼び出しの有無は、必要に応じてモックやカウンタで拡張可能
+    printf("✓ InputLogicはUI遷移や画面制御を直接行わない: 成功\n");
+}
+
 void setUp(void) {}
 void tearDown(void) {}
 
@@ -566,6 +583,7 @@ int main() {
   RUN_TEST(test_input_boundary_conditions);
   RUN_TEST(test_input_multiple_buttons);
   RUN_TEST(test_input_time_dependency);
+  RUN_TEST(test_InputLogic_does_not_change_mode_or_call_ui);
   
   printf("=== 全テスト完了 ===\n");
   

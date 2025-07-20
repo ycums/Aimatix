@@ -35,7 +35,14 @@
 
 ### 3-1. テストケースの作成・更新（TDD推奨）
 - test/pure/配下で新API・新責務分離方針に沿ったテストケースを作成・更新
-  - 例：InputLogic/SettingsLogicのAPIがUI遷移を直接行わないことを検証
+  - test/pure/test_input_logic_pure/test_main.cpp
+    - InputLogicのAPIがUI遷移や画面制御を行わないことを検証するテストを追加・修正
+  - test/pure/test_settings_logic_pure/test_main.cpp
+    - SettingsLogicのAPIがUI遷移や画面制御を行わないことを検証するテストを追加・修正
+  - 必要に応じてモックやテストダブルを拡充
+    - UI描画呼び出しやモード変更の有無を検証できるようにする
+  - テスト実行
+    - pio test -e nativeで全テストがパスすることを確認
 
 ### 3-2. ロジック層のリファクタ
 - InputLogic/SettingsLogicのAPIからUI遷移・画面制御に関する処理を排除

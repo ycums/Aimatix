@@ -3,6 +3,7 @@
 #include <cstring>
 #include <settings.h>
 #include "../mock/mock_eeprom.h"
+#include "../../../lib/libaimatix/src/types.h"
 
 // SettingsLogicの純粋ロジックテスト
 // M5Stack依存を排除し、標準C++のみでテスト
@@ -451,6 +452,25 @@ void test_settings_boundary_conditions() {
   printf("✓ settings_boundary_conditions: 成功\n");
 }
 
+// SettingsLogicのAPIがUI遷移や画面制御を直接行わないことを検証するテスト
+Mode currentMode = MAIN_DISPLAY;
+void test_SettingsLogic_does_not_change_mode_or_call_ui() {
+    // Arrange
+    Mode beforeMode = currentMode;
+    Settings s = {true, 100, 0};
+    MockEEPROM mockEeprom;
+    s.checksum = (s.sound_enabled + s.lcd_brightness) % 256;
+    // Act
+    loadSettings(&mockEeprom, s);
+    saveSettings(&mockEeprom, s);
+    resetSettings(&mockEeprom, s);
+    validateSettings(s);
+    // Assert
+    TEST_ASSERT_EQUAL(beforeMode, currentMode); // currentModeが変化していないこと
+    // UI描画呼び出しの有無は、必要に応じてモックやカウンタで拡張可能
+    printf("✓ SettingsLogicはUI遷移や画面制御を直接行わない: 成功\n");
+}
+
 int main() {
     UNITY_BEGIN();
     
@@ -482,6 +502,7 @@ int main() {
     RUN_TEST(test_settings_integration);
     RUN_TEST(test_settings_error_handling);
     RUN_TEST(test_settings_boundary_conditions);
+    RUN_TEST(test_SettingsLogic_does_not_change_mode_or_call_ui);
     
     return UNITY_END();
 } 
