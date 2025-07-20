@@ -3,6 +3,7 @@
 #include <settings.h>
 #include "m5stack_adapters.h"
 #include "types.h"
+#include <alarm.h>
 
 // drawMainDisplay用ダミー変数
 #include <time.h>
@@ -32,6 +33,18 @@ void loop() {
   M5.update();
   // A/B/Cボタンでモード切り替え
   if (M5.BtnA.wasPressed()) {
+    if (currentMode == MAIN_DISPLAY) {
+      // テスト用: 1分後のアラームを追加
+      time_t now = time(NULL);
+      time_t alarmT = now + 60;
+      if (std::find(alarmTimes.begin(), alarmTimes.end(), alarmT) == alarmTimes.end() && alarmTimes.size() < 5) {
+        alarmTimes.push_back(alarmT);
+        sortAlarms();
+        Serial.println("[TEST] 1分後のアラームを追加");
+      } else {
+        Serial.println("[TEST] アラーム追加失敗（重複または上限）");
+      }
+    }
     currentMode = MAIN_DISPLAY;
     Serial.println("Mode: MAIN_DISPLAY");
   }

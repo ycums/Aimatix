@@ -170,6 +170,12 @@ void handleDigitEditInput(IButtonManager* buttonManager, TimeFunction timeFunc) 
     if (currentTime - cPressStart < 1000) {
       // セット（確定）処理等をここに記述
       // 必要に応じてアラーム追加や画面遷移処理を呼び出す
+      if (confirmInputAndAddAlarm()) {
+        currentMode = MAIN_DISPLAY;
+        // 必要に応じて入力リセットやメッセージ表示も可
+      } else {
+        // 追加失敗時の警告表示等（任意）
+      }
     }
   }
 }
