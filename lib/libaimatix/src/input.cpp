@@ -67,8 +67,10 @@ void resetInput() {
 }
 
 // 桁ごと編集方式の時刻入力用ボタン処理
-void handleDigitEditInput(IButtonManager* buttonManager, TimeFunction timeFunc) {
-  if (!buttonManager) return;
+// 画面遷移や確定イベントは戻り値で通知する
+// handleDigitEditInput: 状態オブジェクトを引数で受け取り、更新した状態を返す
+InputEventResult handleDigitEditInput(IButtonManager* buttonManager, TimeFunction timeFunc, DigitEditTimeInputState& state) {
+  if (!buttonManager) return InputEventResult::None;
   static uint32_t aPressStart = 0;
   static bool aLongPressFired = false;
   static uint32_t bPressStart = 0;
@@ -76,8 +78,8 @@ void handleDigitEditInput(IButtonManager* buttonManager, TimeFunction timeFunc) 
   static uint32_t cPressStart = 0;
   static bool cLongPressFired = false;
   
-  // 時間取得関数のデフォルト実装（テスト用）
   uint32_t currentTime = timeFunc ? timeFunc() : 0;
+  InputEventResult result = InputEventResult::None;
 
   // Aボタン処理
   if (buttonManager->isPressed(BUTTON_TYPE_A)) {
@@ -88,23 +90,23 @@ void handleDigitEditInput(IButtonManager* buttonManager, TimeFunction timeFunc) 
   }
   if (buttonManager->isLongPressed(BUTTON_TYPE_A) && !aLongPressFired) {
     int add = 5;
-    switch (digitEditInput.cursor) {
+    switch (state.cursor) {
       case 0:
-        digitEditInput.hourTens = (digitEditInput.hourTens + add) % 3;
-        if (digitEditInput.hourTens == 2 && digitEditInput.hourOnes > 3) {
-          digitEditInput.hourOnes = 3;
+        state.hourTens = (state.hourTens + add) % 3;
+        if (state.hourTens == 2 && state.hourOnes > 3) {
+          state.hourOnes = 3;
         }
         break;
       case 1: {
-        int maxHourOnes = (digitEditInput.hourTens == 2) ? 4 : 10;
-        digitEditInput.hourOnes = (digitEditInput.hourOnes + add) % maxHourOnes;
+        int maxHourOnes = (state.hourTens == 2) ? 4 : 10;
+        state.hourOnes = (state.hourOnes + add) % maxHourOnes;
         break;
       }
       case 2:
-        digitEditInput.minTens = (digitEditInput.minTens + add) % 6;
+        state.minTens = (state.minTens + add) % 6;
         break;
       case 3:
-        digitEditInput.minOnes = (digitEditInput.minOnes + add) % 10;
+        state.minOnes = (state.minOnes + add) % 10;
         break;
     }
     aLongPressFired = true;
@@ -112,23 +114,23 @@ void handleDigitEditInput(IButtonManager* buttonManager, TimeFunction timeFunc) 
   if (!buttonManager->isPressed(BUTTON_TYPE_A) && !aLongPressFired) {
     if (currentTime - aPressStart < 500) {
       int add = 1;
-      switch (digitEditInput.cursor) {
+      switch (state.cursor) {
         case 0:
-          digitEditInput.hourTens = (digitEditInput.hourTens + add) % 3;
-          if (digitEditInput.hourTens == 2 && digitEditInput.hourOnes > 3) {
-            digitEditInput.hourOnes = 3;
+          state.hourTens = (state.hourTens + add) % 3;
+          if (state.hourTens == 2 && state.hourOnes > 3) {
+            state.hourOnes = 3;
           }
           break;
         case 1: {
-          int maxHourOnes = (digitEditInput.hourTens == 2) ? 4 : 10;
-          digitEditInput.hourOnes = (digitEditInput.hourOnes + add) % maxHourOnes;
+          int maxHourOnes = (state.hourTens == 2) ? 4 : 10;
+          state.hourOnes = (state.hourOnes + add) % maxHourOnes;
           break;
         }
         case 2:
-          digitEditInput.minTens = (digitEditInput.minTens + add) % 6;
+          state.minTens = (state.minTens + add) % 6;
           break;
         case 3:
-          digitEditInput.minOnes = (digitEditInput.minOnes + add) % 10;
+          state.minOnes = (state.minOnes + add) % 10;
           break;
       }
     }
@@ -142,16 +144,16 @@ void handleDigitEditInput(IButtonManager* buttonManager, TimeFunction timeFunc) 
     }
   }
   if (buttonManager->isLongPressed(BUTTON_TYPE_B) && !bLongPressFired) {
-    digitEditInput.hourTens = DigitEditTimeInputState::INIT_HOUR_TENS;
-    digitEditInput.hourOnes = DigitEditTimeInputState::INIT_HOUR_ONES;
-    digitEditInput.minTens = DigitEditTimeInputState::INIT_MIN_TENS;
-    digitEditInput.minOnes = DigitEditTimeInputState::INIT_MIN_ONES;
-    digitEditInput.cursor = 0;
+    state.hourTens = DigitEditTimeInputState::INIT_HOUR_TENS;
+    state.hourOnes = DigitEditTimeInputState::INIT_HOUR_ONES;
+    state.minTens = DigitEditTimeInputState::INIT_MIN_TENS;
+    state.minOnes = DigitEditTimeInputState::INIT_MIN_ONES;
+    state.cursor = 0;
     bLongPressFired = true;
   }
   if (!buttonManager->isPressed(BUTTON_TYPE_B) && !bLongPressFired) {
     if (currentTime - bPressStart < 1000) {
-      digitEditInput.cursor = (digitEditInput.cursor + 1) % 4;
+      state.cursor = (state.cursor + 1) % 4;
     }
   }
 
@@ -163,7 +165,7 @@ void handleDigitEditInput(IButtonManager* buttonManager, TimeFunction timeFunc) 
     }
   }
   if (buttonManager->isLongPressed(BUTTON_TYPE_C) && !cLongPressFired) {
-    currentMode = MAIN_DISPLAY;
+    result = InputEventResult::Cancelled;
     cLongPressFired = true;
   }
   if (!buttonManager->isPressed(BUTTON_TYPE_C) && !cLongPressFired) {
@@ -171,12 +173,12 @@ void handleDigitEditInput(IButtonManager* buttonManager, TimeFunction timeFunc) 
       // セット（確定）処理等をここに記述
       // 必要に応じてアラーム追加や画面遷移処理を呼び出す
       if (confirmInputAndAddAlarm()) {
-        currentMode = MAIN_DISPLAY;
-        // 必要に応じて入力リセットやメッセージ表示も可
+        result = InputEventResult::Confirmed;
       } else {
         // 追加失敗時の警告表示等（任意）
       }
     }
   }
+  return result;
 }
 

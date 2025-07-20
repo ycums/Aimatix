@@ -422,17 +422,10 @@ void test_resetInput_function() {
 
 void test_handleDigitEditInput_function() {
     MockButtonManager mockButtonManager;
-    
-    // ボタンAを押した状態をシミュレート
-    mockButtonManager.setButtonState(BUTTON_TYPE_A, true);
-    
-    // handleDigitEditInput関数をテスト
-    handleDigitEditInput(&mockButtonManager, getTestTime);
-    
-    // ボタン状態が確認されたことを確認
+    DigitEditTimeInputState dummyState;
+    handleDigitEditInput(&mockButtonManager, getTestTime, dummyState);
     TEST_ASSERT_TRUE(mockButtonManager.is_pressed_called || 
                      mockButtonManager.is_long_pressed_called);
-    
     printf("✓ handleDigitEditInput_function: 成功\n");
 }
 
@@ -449,6 +442,7 @@ void test_confirmInputAndAddAlarm_function() {
 
 void test_input_functions_integration() {
     MockButtonManager mockButtonManager;
+    DigitEditTimeInputState dummyState;
     
     // 完全な入力サイクルのテスト
     // 1. 入力リセット
@@ -456,7 +450,7 @@ void test_input_functions_integration() {
     
     // 2. ボタン入力処理
     mockButtonManager.setButtonState(BUTTON_TYPE_A, true);
-    handleDigitEditInput(&mockButtonManager, getTestTime);
+    handleDigitEditInput(&mockButtonManager, getTestTime, dummyState);
     
     // 3. 入力確認とアラーム追加
     confirmInputAndAddAlarm();
@@ -469,6 +463,7 @@ void test_input_functions_integration() {
 
 void test_input_error_handling() {
     MockButtonManager mockButtonManager;
+    DigitEditTimeInputState dummyState;
     
     // 無効なボタン状態でのテスト
     mockButtonManager.setButtonState(BUTTON_TYPE_A, false);
@@ -476,7 +471,7 @@ void test_input_error_handling() {
     mockButtonManager.setButtonState(BUTTON_TYPE_C, false);
     
     // ボタンが押されていない状態での入力処理
-    handleDigitEditInput(&mockButtonManager, getTestTime);
+    handleDigitEditInput(&mockButtonManager, getTestTime, dummyState);
     
     // エラーが発生しないことを確認
     TEST_ASSERT_TRUE(true);
@@ -486,14 +481,15 @@ void test_input_error_handling() {
 
 void test_input_boundary_conditions() {
     MockButtonManager mockButtonManager;
+    DigitEditTimeInputState dummyState;
     
     // 境界値でのテスト
     // 時間の境界値
     testTime = 0;
-    handleDigitEditInput(&mockButtonManager, getTestTime);
+    handleDigitEditInput(&mockButtonManager, getTestTime, dummyState);
     
     testTime = 0xFFFFFFFF; // 最大値
-    handleDigitEditInput(&mockButtonManager, getTestTime);
+    handleDigitEditInput(&mockButtonManager, getTestTime, dummyState);
     
     // エラーが発生しないことを確認
     TEST_ASSERT_TRUE(true);
@@ -503,13 +499,14 @@ void test_input_boundary_conditions() {
 
 void test_input_multiple_buttons() {
     MockButtonManager mockButtonManager;
+    DigitEditTimeInputState dummyState;
     
     // 複数のボタンを同時に押した状態のテスト
     mockButtonManager.setButtonState(BUTTON_TYPE_A, true);
     mockButtonManager.setButtonState(BUTTON_TYPE_B, true);
     mockButtonManager.setButtonState(BUTTON_TYPE_C, true);
     
-    handleDigitEditInput(&mockButtonManager, getTestTime);
+    handleDigitEditInput(&mockButtonManager, getTestTime, dummyState);
     
     // ボタン状態が確認されたことを確認
     TEST_ASSERT_TRUE(mockButtonManager.is_pressed_called || 
@@ -520,13 +517,14 @@ void test_input_multiple_buttons() {
 
 void test_input_time_dependency() {
     MockButtonManager mockButtonManager;
+    DigitEditTimeInputState dummyState;
     
     // 時間依存のテスト
     for (uint32_t time = 0; time < 1000; time += 100) {
         testTime = time;
         mockButtonManager.setButtonState(BUTTON_TYPE_A, (time % 2 == 0));
         
-        handleDigitEditInput(&mockButtonManager, getTestTime);
+        handleDigitEditInput(&mockButtonManager, getTestTime, dummyState);
         
         // エラーが発生しないことを確認
         TEST_ASSERT_TRUE(true);

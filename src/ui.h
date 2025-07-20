@@ -71,7 +71,7 @@ void clearWarningMessage();
 // Screen drawing functions
 void drawMainDisplay();
 void drawNTPSync();
-void drawInputMode();
+void drawInputMode(const DigitEditTimeInputState& state);
 void drawAlarmManagement(); // アラーム管理画面を追加
 void drawAlarmActive();
 void drawSettingsMenu();

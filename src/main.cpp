@@ -6,6 +6,7 @@
 #include <alarm.h>
 #include "../lib/libaimatix/include/IButtonManager.h"
 #include "../lib/libaimatix/src/button_manager.h"
+#include <libaimatix/src/input.h>
 
 // drawMainDisplay用ダミー変数
 #include <time.h>
@@ -18,6 +19,8 @@ SettingsMenu settingsMenu;
 
 // ButtonManagerインスタンス生成（millisをDI）
 ButtonManager buttonManager(millis);
+
+DigitEditTimeInputState digitEditInput; // main.cppで状態を保持
 
 void setup() {
   M5.begin();
@@ -65,6 +68,13 @@ void loop() {
     Serial.println("[TEST] Cボタン長押し検出");
   }
  
+  // 入力モード時はInputLogicのボタン処理を呼ぶ
+  if (currentMode == ABS_TIME_INPUT || currentMode == REL_PLUS_TIME_INPUT) {
+    InputEventResult inputResult = handleDigitEditInput(&buttonManager, (TimeFunction)millis, digitEditInput);
+    if (inputResult == InputEventResult::Confirmed || inputResult == InputEventResult::Cancelled) {
+      currentMode = MAIN_DISPLAY;
+    }
+  }
   // 画面更新のみ（100ms間隔）
   static unsigned long lastScreenUpdate = 0;
   if (millis() - lastScreenUpdate >= 100) {
@@ -81,7 +91,7 @@ void loop() {
         break;
       case ABS_TIME_INPUT:
       case REL_PLUS_TIME_INPUT:
-        drawInputMode();
+        drawInputMode(digitEditInput); // 状態を渡して描画
         break;
       default:
         drawMainDisplay();

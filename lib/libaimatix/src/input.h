@@ -35,6 +35,13 @@ struct DigitEditTimeInputState {
   static constexpr int INIT_MIN_ONES = 0;
 };
 
+// 画面遷移や確定イベントを示す結果型
+enum class InputEventResult {
+    None,
+    Confirmed,
+    Cancelled
+};
+
 // グローバル変数
 extern InputState inputState;
 extern RightJustifiedInputState rjInputState;
@@ -46,6 +53,6 @@ typedef uint32_t (*TimeFunction)();
 // 関数プロトタイプ
 bool confirmInputAndAddAlarm();
 void resetInput();
-void handleDigitEditInput(IButtonManager* buttonManager, TimeFunction timeFunc = nullptr);
+InputEventResult handleDigitEditInput(IButtonManager* buttonManager, TimeFunction timeFunc, DigitEditTimeInputState& state);
 
 #endif // INPUT_H

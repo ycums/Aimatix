@@ -271,54 +271,25 @@ void drawNTPSync() {
   sprite.drawString("Syncing Time...", 160, 120);
 }
 
-void drawInputMode() {
+void drawInputMode(const DigitEditTimeInputState& state) {
   sprite.fillSprite(TFT_BLACK);
-  
-  // モード名を明示
-  extern Mode currentMode;
-  const char* modeTitle = "SET TIME";
-  if (currentMode == ABS_TIME_INPUT) modeTitle = "SET ABS TIME";
-  else if (currentMode == REL_PLUS_TIME_INPUT) modeTitle = "ADD REL TIME";
-  drawTitleBar(modeTitle);
-  drawButtonHintsGrid("+1/+5", "NEXT/RESET", "SET");
+  drawTitleBar("INPUT MODE");
+  drawButtonHintsGrid("+1/+5", "NEXT/CLEAR", "SET/CANCEL");
 
-  // --- 時刻入力表示（グリッドセル(0,3)-(15,5)、Font7、水平中央寄せ） ---
-  char buf[6];
-  snprintf(buf, sizeof(buf), "%d%d:%d%d",
-    digitEditInput.hourTens,
-    digitEditInput.hourOnes,
-    digitEditInput.minTens,
-    digitEditInput.minOnes);
-  
-  sprite.setTextDatum(MC_DATUM);
   sprite.setTextFont(7);
-  
-  // 時刻表示の中央位置を計算
-  int centerX = SCREEN_WIDTH / 2;
-  int centerY = GRID_Y(3) + GRID_HEIGHT * 1.5; // グリッドセル(0,3)-(15,5)の中央
-  
-  // 時刻表示の開始位置を計算（5文字分の幅を考慮）
-  int totalWidth = 5 * 40; // 5文字 × 40px（概算）
-  int startX = centerX - totalWidth / 2 + 20; // MC_DATUM用に20px調整
-  
-  int x = startX;
-  for (int i = 0; i < 5; ++i) {
-    if (i == 2) {
-      sprite.setTextColor(AMBER_COLOR, TFT_BLACK);
-      sprite.drawString(":", x, centerY);
-      x += 40;
-      continue;
-    }
-    int digitIdx = (i < 2) ? i : i - 1;
-    if (digitEditInput.cursor == digitIdx) {
-      sprite.setTextColor(TFT_BLACK, AMBER_COLOR); // ネガポジ反転
-      sprite.drawString(std::string(1, buf[i]).c_str(), x, centerY);
-      sprite.setTextColor(AMBER_COLOR, TFT_BLACK);
-    } else {
-      sprite.drawString(std::string(1, buf[i]).c_str(), x, centerY);
-    }
-    x += 40;
-  }
+  sprite.setTextColor(AMBER_COLOR, TFT_BLACK);
+  sprite.setTextDatum(MC_DATUM);
+
+  // 入力中の時刻を表示
+  char timeStr[6];
+  snprintf(timeStr, sizeof(timeStr), "%d%d:%d%d",
+           state.hourTens, state.hourOnes, state.minTens, state.minOnes);
+  sprite.drawString(timeStr, SCREEN_WIDTH/2, GRID_Y(3));
+
+  // カーソル位置を強調表示（例：下線や反転など、ここでは下線を描画）
+  int cursorX = SCREEN_WIDTH/2 - 48 + state.cursor * 24;
+  int cursorY = GRID_Y(3) + 40;
+  sprite.drawLine(cursorX, cursorY, cursorX + 20, cursorY, AMBER_COLOR);
 
   sprite.pushSprite(0, 0);
 }
