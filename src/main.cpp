@@ -8,6 +8,8 @@
 #include "../lib/libaimatix/src/button_manager.h"
 #include <libaimatix/src/input.h>
 #include <libaimatix/src/ui_logic.h>
+#include <libaimatix/src/command.h>
+#include <vector>
 
 // drawMainDisplay用ダミー変数
 #include <time.h>
@@ -26,6 +28,43 @@ DigitEditTimeInputState digitEditInput; // main.cppで状態を保持
 Settings appSettings;
 
 int scheduleSelectedIndex = 0;
+
+std::vector<Command> commandQueue;
+
+// Effect Handlerクラス例
+namespace UiEffectHandler {
+    void setBrightness(int value) {
+        M5.Lcd.setBrightness(value);
+    }
+    void showWarning(const char* msg) {
+        showWarningMessage(msg);
+    }
+}
+namespace SettingsEffectHandler {
+    void save(const Settings& s) {
+        saveSettings(&eepromAdapter, s);
+    }
+}
+
+void processCommands() {
+    for (const auto& cmd : commandQueue) {
+        switch (cmd.type) {
+            case CommandType::SetBrightness:
+                UiEffectHandler::setBrightness(cmd.intValue);
+                break;
+            case CommandType::SaveSettings:
+                SettingsEffectHandler::save(appSettings);
+                break;
+            case CommandType::ShowWarning:
+                UiEffectHandler::showWarning(cmd.message);
+                break;
+            case CommandType::UpdateUI:
+                // 必要に応じて再描画
+                break;
+        }
+    }
+    commandQueue.clear();
+}
 
 void setup() {
   M5.begin();
@@ -87,20 +126,21 @@ void loop() {
       switch (settingsMenu.selectedItem) {
         case 0: // SOUND
           appSettings.sound_enabled = !appSettings.sound_enabled;
-          saveSettings(&eepromAdapter, appSettings);
+          commandQueue.push_back({CommandType::SaveSettings});
           break;
         case 1: // LCD BRIGHTNESS
           appSettings.lcd_brightness = (appSettings.lcd_brightness + 50) % 256;
           if (appSettings.lcd_brightness == 0) appSettings.lcd_brightness = 1;
-          saveSettings(&eepromAdapter, appSettings);
-          M5.Lcd.setBrightness(appSettings.lcd_brightness);
+          commandQueue.push_back({CommandType::SetBrightness, appSettings.lcd_brightness});
+          commandQueue.push_back({CommandType::SaveSettings});
           break;
         case 2: // WARNING COLOR TEST
           currentMode = WARNING_COLOR_TEST;
           break;
         case 3: // ALL CLEAR
           resetSettings(&eepromAdapter, appSettings);
-          M5.Lcd.setBrightness(appSettings.lcd_brightness);
+          commandQueue.push_back({CommandType::SetBrightness, appSettings.lcd_brightness});
+          commandQueue.push_back({CommandType::SaveSettings});
           break;
         case 4: // INFO
           currentMode = INFO_DISPLAY;
@@ -139,5 +179,6 @@ void loop() {
     }
     sprite.pushSprite(0, 0);
   }
+  processCommands();
   delay(10);
 }

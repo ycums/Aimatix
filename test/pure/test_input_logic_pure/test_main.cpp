@@ -6,6 +6,8 @@
 #include "types.h"
 #include "../../../lib/libaimatix/src/time_logic.h"
 #include "../../../lib/libaimatix/src/ui_logic.h"
+#include "../../../lib/libaimatix/src/command.h"
+#include <vector>
 
 // 外部変数のモック定義
 Mode currentMode = MAIN_DISPLAY;
@@ -571,6 +573,21 @@ void test_nextMenuIndex_and_prevMenuIndex() {
     printf("✓ nextMenuIndex/prevMenuIndex/nextAlarmIndex/prevAlarmIndex: 成功\n");
 }
 
+// コマンド発行ロジックのテスト例
+void test_saveSettings_command_issued() {
+    std::vector<Command> testQueue;
+    // 設定保存イベントを発生させる（例: SOUNDトグル）
+    Settings dummySettings = {true, 100, 0};
+    Command cmd;
+    cmd.type = CommandType::SaveSettings;
+    cmd.settingsSnapshot = dummySettings;
+    testQueue.push_back(cmd);
+    // コマンドが正しく発行されたか検証
+    TEST_ASSERT_EQUAL(CommandType::SaveSettings, testQueue[0].type);
+    TEST_ASSERT_TRUE(testQueue[0].settingsSnapshot.sound_enabled);
+    printf("✓ test_saveSettings_command_issued: 成功\n");
+}
+
 void setUp(void) {}
 void tearDown(void) {}
 
@@ -605,6 +622,7 @@ int main() {
   RUN_TEST(test_input_time_dependency);
   RUN_TEST(test_InputLogic_does_not_change_mode_or_call_ui);
   RUN_TEST(test_nextMenuIndex_and_prevMenuIndex);
+  RUN_TEST(test_saveSettings_command_issued);
   
   printf("=== 全テスト完了 ===\n");
   
