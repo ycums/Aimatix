@@ -106,4 +106,34 @@ public:
 
 ---
 
+# インターフェース設計指針（責務分離）
+
+- ロジック層（InputLogic, SettingsLogic等）は純粋ロジックのみ担当し、UI遷移や画面制御は一切行わない。
+- UI層が「入力確定/保存」イベントを受けて画面遷移・UI反映を制御する。
+
+## nextMode API設計例
+```cpp
+Mode nextMode(Mode current, ButtonType btn, ButtonAction act);
+```
+- 画面遷移ロジックはこの純粋関数で一元管理し、main.cppでcurrentModeを更新する。
+
+## SettingsLogic API設計例
+```cpp
+void loadSettings(IEEPROM* eeprom, Settings& settings);
+void saveSettings(IEEPROM* eeprom, const Settings& settings);
+void resetSettings(IEEPROM* eeprom, Settings& settings);
+bool validateSettings(const Settings& settings);
+```
+- 設定のロード・保存・リセット・バリデーションのみを担当し、UI遷移や画面制御は一切行わない。
+
+## UIイベントハンドラ設計例
+```cpp
+if (buttonManager.isShortPress(BUTTON_TYPE_B)) {
+  currentMode = nextMode(currentMode, BUTTON_TYPE_B, SHORT_PRESS);
+}
+if (currentMode == SETTINGS_MENU) {
+  // 設定保存・反映処理
+}
+```
+
 （本設計書はStep1成果物。以降、実装・mock作成・テスト修正へ進む） 

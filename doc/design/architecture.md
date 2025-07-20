@@ -353,6 +353,40 @@ struct Command {
 - 既存のレイヤー分離・依存抽象化・DI設計はそのまま活かせる
 - 本方式は現状設計の“発展形”であり、より大規模・複雑なシステムにも適用可能
 
+## UI層とロジック層の責務分離設計
+
+- ロジック層（InputLogic, SettingsLogic等）は値の検証・変換・保存などの純粋ロジックのみ担当し、UI遷移や画面制御は一切行わない。
+- UI層（main.cpp, ui.cpp等）が「入力確定/保存」イベントを受けて、画面遷移やUI反映を制御する。
+- 画面遷移はnextMode(Mode current, ButtonType btn, ButtonAction act)の純粋関数で一元管理し、main.cppでcurrentModeを更新する。
+- 設定保存・反映・リセット等もmain.cppで集中管理し、SettingsLogicはEEPROM等の副作用もインターフェース経由でのみ行う。
+
+## nextModeによる画面遷移設計
+
+- 物理ボタンイベント発生時にnextModeを呼び出し、currentModeを更新する。
+- 例:
+```cpp
+if (buttonManager.isShortPress(BUTTON_TYPE_B)) {
+  currentMode = nextMode(currentMode, BUTTON_TYPE_B, SHORT_PRESS);
+}
+```
+- currentModeの値に応じてUI描画関数を分岐し、画面を更新する。
+
+## SettingsLogic等のAPI設計方針
+- 設定のロード・保存・リセット・バリデーションのみを担当し、UI遷移や画面制御は一切行わない。
+- EEPROM等の副作用は必ずインターフェース（IEEPROM等）経由で行う。
+
+## UIイベントハンドラ設計例
+- main.cppのloop()内で物理ボタンイベントを検出し、nextModeで画面遷移、SettingsLogicで設定保存/反映、UI描画関数で画面更新を行う。
+- 例:
+```cpp
+if (buttonManager.isShortPress(BUTTON_TYPE_B)) {
+  currentMode = nextMode(currentMode, BUTTON_TYPE_B, SHORT_PRESS);
+}
+if (currentMode == SETTINGS_MENU) {
+  // 設定保存・反映処理
+}
+```
+
 ---
 
 **作成日**: 2025年1月  

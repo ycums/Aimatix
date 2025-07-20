@@ -2,10 +2,11 @@
 #include "ui.h"
 #include <settings.h>
 #include "m5stack_adapters.h"
-#include "types.h"
+#include <IButtonManager.h>
+#include <ui_state_transition.h>
+#include <button_manager.h>
+#include <types.h>
 #include <alarm.h>
-#include "../lib/libaimatix/include/IButtonManager.h"
-#include "../lib/libaimatix/src/button_manager.h"
 #include <input.h>
 #include <ui_logic.h>
 #include <command.h>
@@ -83,6 +84,21 @@ void setup() {
   Serial.println("Initialised.");
 }
 
+// ボタンイベント定義をループ外に移動
+struct ButtonEvent {
+  ButtonType type;
+  ButtonAction action;
+  const char* testMsg;
+};
+const ButtonEvent eventOrder[] = {
+  {BUTTON_TYPE_A, SHORT_PRESS, "[TEST] Aボタン短押し検出"},
+  {BUTTON_TYPE_B, SHORT_PRESS, "[TEST] Bボタン短押し検出"},
+  {BUTTON_TYPE_C, SHORT_PRESS, "[TEST] Cボタン短押し検出"},
+  {BUTTON_TYPE_A, LONG_PRESS,  "[TEST] Aボタン長押し検出"},
+  {BUTTON_TYPE_B, LONG_PRESS,  "[TEST] Bボタン長押し検出"},
+  {BUTTON_TYPE_C, LONG_PRESS,  "[TEST] Cボタン長押し検出"},
+};
+
 void loop() {
   M5.update();
   buttonManager.update();
@@ -91,25 +107,18 @@ void loop() {
   buttonManager.setButtonState(BUTTON_TYPE_B, M5.BtnB.isPressed());
   buttonManager.setButtonState(BUTTON_TYPE_C, M5.BtnC.isPressed());
  
-  // 短押しテスト出力
-  if (buttonManager.isShortPress(BUTTON_TYPE_A)) {
-    Serial.println("[TEST] Aボタン短押し検出");
-  }
-  if (buttonManager.isShortPress(BUTTON_TYPE_B)) {
-    Serial.println("[TEST] Bボタン短押し検出");
-  }
-  if (buttonManager.isShortPress(BUTTON_TYPE_C)) {
-    Serial.println("[TEST] Cボタン短押し検出");
-  }
-  // 長押しテスト出力
-  if (buttonManager.isLongPressed(BUTTON_TYPE_A)) {
-    Serial.println("[TEST] Aボタン長押し検出");
-  }
-  if (buttonManager.isLongPressed(BUTTON_TYPE_B)) {
-    Serial.println("[TEST] Bボタン長押し検出");
-  }
-  if (buttonManager.isLongPressed(BUTTON_TYPE_C)) {
-    Serial.println("[TEST] Cボタン長押し検出");
+  // ボタンイベント検出・画面遷移・テスト出力を一元化
+  bool eventHandled = false;
+  for (const auto& ev : eventOrder) {
+    bool pressed = (ev.action == SHORT_PRESS)
+      ? buttonManager.isShortPress(ev.type)
+      : buttonManager.isLongPressed(ev.type);
+    if (pressed) {
+      Serial.println(ev.testMsg);
+      currentMode = nextMode(currentMode, ev.type, ev.action);
+      eventHandled = true;
+      break; // 1ループ1イベントのみ処理
+    }
   }
  
   // 入力モード時はInputLogicのボタン処理を呼ぶ

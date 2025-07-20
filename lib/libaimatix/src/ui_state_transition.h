@@ -1,8 +1,8 @@
 #ifndef UI_STATE_TRANSITION_H
 #define UI_STATE_TRANSITION_H
 
-#include "types.h"
-#include "../include/IButtonManager.h"
+#include <types.h>
+#include <IButtonManager.h>
 
 // 画面遷移ロジック（純粋関数）
 inline Mode nextMode(Mode current, ButtonType btn, ButtonAction act) {

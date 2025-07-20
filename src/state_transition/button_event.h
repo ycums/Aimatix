@@ -3,13 +3,12 @@
 
 #include <Arduino.h>
 #include "../../lib/libaimatix/include/IButtonManager.h"
+#include "../../lib/libaimatix/src/types.h"
 
-// ボタンアクションの定義
-enum ButtonAction {
-  SHORT_PRESS,    // 短押し
-  LONG_PRESS,     // 長押し（1秒以上）
-  RELEASE         // リリース
-};
+// RELEASEアクションが必要な場合は独自定義
+#ifndef RELEASE
+#define RELEASE 2
+#endif
 
 // ボタンイベント構造体
 struct ButtonEvent {
