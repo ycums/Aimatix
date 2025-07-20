@@ -13,9 +13,15 @@ void ButtonManager::initialize() {
 
 void ButtonManager::update() {
   unsigned long currentTime = getTime();
-  // ここで全ボタンの状態を更新（buttonIdリストをループ）
   for (auto& kv : buttonStates) {
-    updateButtonState(kv.first, currentTime);
+    ButtonState& state = kv.second;
+    // 長押し判定: 押しっぱなし中、まだ未報告なら1回だけtrueに
+    if (state.isPressed && !state.longPressHandled) {
+      if (currentTime - state.pressStartTime >= 1000) {
+        state.longPressHandled = true;
+        state.longPressReported = true;
+      }
+    }
   }
   lastUpdateTime = currentTime;
 }
@@ -35,7 +41,13 @@ bool ButtonManager::isPressed(ButtonType buttonId) {
 
 bool ButtonManager::isLongPressed(ButtonType buttonId) {
   ButtonState* state = getButtonState(buttonId);
-  return state ? state->longPressHandled : false;
+  if (!state) return false;
+  if (!canProcessButton(buttonId)) return false;
+  if (state->longPressReported) {
+    state->longPressReported = false;
+    return true;
+  }
+  return false;
 }
 
 bool ButtonManager::isShortPress(ButtonType buttonId, unsigned long threshold) {
@@ -44,6 +56,7 @@ bool ButtonManager::isShortPress(ButtonType buttonId, unsigned long threshold) {
   if (!canProcessButton(buttonId)) return false;
   if (state->wasReleased) {
     unsigned long pressDuration = getTime() - state->pressStartTime;
+    state->wasReleased = false;
     return pressDuration < threshold;
   }
   return false;
@@ -53,7 +66,11 @@ bool ButtonManager::isReleased(ButtonType buttonId) {
   ButtonState* state = getButtonState(buttonId);
   if (!state) return false;
   if (!canProcessButton(buttonId)) return false;
-  return state->wasReleased;
+  if (state->wasReleased) {
+    state->wasReleased = false;
+    return true;
+  }
+  return false;
 }
 
 void ButtonManager::resetButtonStates() {
@@ -89,4 +106,19 @@ void ButtonManager::applyHardwareDebounce(ButtonState& state) {
 bool ButtonManager::canProcessButton(ButtonType buttonId) {
   // DebounceManagerと連携する場合はここで呼び出し
   return true;
+}
+
+void ButtonManager::setButtonState(ButtonType buttonId, bool isPressed) {
+  ButtonState& state = getOrCreateButtonState(buttonId);
+  bool prevPressed = state.isPressed;
+  state.isPressed = isPressed;
+  if (!prevPressed && isPressed) {
+    state.wasPressed = true;
+    state.pressStartTime = getTime();
+    // 長押しフラグは押し始め・離したときのみリセット
+  } else if (prevPressed && !isPressed) {
+    state.wasReleased = true;
+    state.longPressHandled = false;
+    state.longPressReported = false;
+  }
 } 

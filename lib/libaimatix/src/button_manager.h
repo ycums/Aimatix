@@ -14,6 +14,7 @@ struct ButtonState {
   unsigned long lastChangeTime;
   int pressCount;
   bool longPressHandled;
+  bool longPressReported; // 1回だけ長押しイベントを返すためのフラグ
 };
 
 // IButtonManager実装クラス
@@ -34,6 +35,7 @@ public:
   void resetButtonStates();
   ButtonState* getButtonState(ButtonType buttonId);
   void initialize();
+  void setButtonState(ButtonType buttonId, bool isPressed); // 物理ボタン状態注入用
 
 private:
   std::map<ButtonType, ButtonState> buttonStates;

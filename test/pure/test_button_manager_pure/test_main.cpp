@@ -646,6 +646,80 @@ void test_button_manager_multi_button() {
     printf("✓ test_button_manager_multi_button: 成功\n");
 }
 
+// --- TDD用: 短押し・長押し・押しっぱなし・連打の仕様テスト ---
+void test_short_press_only_once() {
+    ButtonManager btn(getTestTime);
+    btn.initialize();
+    // 短押し: 100ms押して離す
+    testTime = 0;
+    btn.setButtonState(BUTTON_TYPE_A, true); // 押す
+    btn.update();
+    testTime = 100;
+    btn.setButtonState(BUTTON_TYPE_A, false); // 離す
+    btn.update();
+    // 1回だけ短押しイベント
+    TEST_ASSERT_TRUE(btn.isShortPress(BUTTON_TYPE_A));
+    // 2回目以降はfalse
+    TEST_ASSERT_FALSE(btn.isShortPress(BUTTON_TYPE_A));
+    printf("✓ test_short_press_only_once: 成功\n");
+}
+
+void test_long_press_only_once() {
+    ButtonManager btn(getTestTime);
+    btn.initialize();
+    // 長押し: 0msで押し、1500msまで押しっぱなし
+    testTime = 0;
+    btn.setButtonState(BUTTON_TYPE_A, true); // 押す
+    btn.update();
+    testTime = 1500;
+    btn.update(); // 1.5秒経過
+    // 1回だけ長押しイベント
+    TEST_ASSERT_TRUE(btn.isLongPressed(BUTTON_TYPE_A));
+    // 2回目以降はfalse
+    TEST_ASSERT_FALSE(btn.isLongPressed(BUTTON_TYPE_A));
+    // 離す
+    btn.setButtonState(BUTTON_TYPE_A, false);
+    btn.update();
+    printf("✓ test_long_press_only_once: 成功\n");
+}
+
+void test_long_press_no_repeat_while_held() {
+    ButtonManager btn(getTestTime);
+    btn.initialize();
+    // 長押し: 0msで押し、3000msまで押しっぱなし
+    testTime = 0;
+    btn.setButtonState(BUTTON_TYPE_A, true);
+    btn.update();
+    testTime = 1500;
+    btn.update();
+    TEST_ASSERT_TRUE(btn.isLongPressed(BUTTON_TYPE_A));
+    // さらに押しっぱなし
+    testTime = 2500;
+    btn.update();
+    TEST_ASSERT_FALSE(btn.isLongPressed(BUTTON_TYPE_A));
+    // 離す
+    btn.setButtonState(BUTTON_TYPE_A, false);
+    btn.update();
+    printf("✓ test_long_press_no_repeat_while_held: 成功\n");
+}
+
+void test_multiple_short_presses() {
+    ButtonManager btn(getTestTime);
+    btn.initialize();
+    // 2回短押し
+    for (int i = 0; i < 2; ++i) {
+        testTime = i * 2000;
+        btn.setButtonState(BUTTON_TYPE_A, true);
+        btn.update();
+        testTime += 100;
+        btn.setButtonState(BUTTON_TYPE_A, false);
+        btn.update();
+        TEST_ASSERT_TRUE(btn.isShortPress(BUTTON_TYPE_A));
+        TEST_ASSERT_FALSE(btn.isShortPress(BUTTON_TYPE_A));
+    }
+    printf("✓ test_multiple_short_presses: 成功\n");
+}
+
 int main() {
     UNITY_BEGIN();
     
@@ -691,6 +765,10 @@ int main() {
     RUN_TEST(test_invalid_button_type);
     RUN_TEST(test_button_manager_short_and_long_press);
     RUN_TEST(test_button_manager_multi_button);
+    RUN_TEST(test_short_press_only_once);
+    RUN_TEST(test_long_press_only_once);
+    RUN_TEST(test_long_press_no_repeat_while_held);
+    RUN_TEST(test_multiple_short_presses);
     
     return UNITY_END();
 } 
