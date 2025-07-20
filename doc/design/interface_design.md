@@ -106,10 +106,27 @@ public:
 
 ---
 
-# インターフェース設計指針（責務分離）
+# インターフェース設計指針（責務分離・2024/Phase2.4.4反映）
 
-- ロジック層（InputLogic, SettingsLogic等）は純粋ロジックのみ担当し、UI遷移や画面制御は一切行わない。
-- UI層が「入力確定/保存」イベントを受けて画面遷移・UI反映を制御する。
+- ロジック層はUI遷移や画面制御を一切持たず、値の検証・保存・変換のみを担当する。
+- UI層は「入力確定/保存」イベントを受けて、ロジック層APIを呼び出し、戻り値やイベント通知をもとに画面遷移・UI反映を行う。
+- 必要に応じて、APIの戻り値として「成否」「エラー内容」「保存結果」等を構造体やenumで返す。
+
+## API設計例
+```cpp
+// 設定保存API例
+struct SaveResult {
+  bool success;
+  std::string errorMessage;
+};
+
+SaveResult saveSettings(IEEPROM* eeprom, const Settings& settings);
+```
+- 保存処理の成否やエラー内容をSaveResultで返し、UI層はこれを受けて画面遷移やエラー表示を制御する。
+
+## イベント通知方式の例
+- コマンド/イベント駆動方式への拡張も推奨。
+- 状態遷移や保存処理の結果として「UI更新」「設定保存」等のコマンド/イベントリストを返し、UI層でEffect/Command Dispatcherが副作用を一元管理する設計も可能。
 
 ## nextMode API設計例
 ```cpp
