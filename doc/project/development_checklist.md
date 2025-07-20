@@ -28,7 +28,7 @@
 
 ### 2-2: 状態遷移・API設計
 - [x] 2-2-1: 状態遷移API（`spec/api_specification.md`）の設計・型定義
-- [ ] 2-2-2: Transition/Command/Event設計方針の明確化
+- [x] 2-2-2: Transition/Command/Event設計方針の明確化
 
 ### 2-3: モック・テスト設計
 - [ ] 2-3-1: モック実装方針の決定（`test/mock/`の活用）
