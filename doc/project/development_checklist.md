@@ -9,7 +9,7 @@
 
 ### 1-1: 要件・仕様理解
 - [x] 1-1-1: 要件定義書（`spec/requirements.md`）を精読し、疑問点を洗い出す
-- [ ] 1-1-2: システム概要（`spec/system_overview.md`）・API仕様（`spec/api_specification.md`）を確認
+- [x] 1-1-2: システム概要（`spec/system_overview.md`）・API仕様（`spec/api_specification.md`）を確認
 - [ ] 1-1-3: カバレッジ・テスト戦略（`operation/testing_strategy.md`等）を確認
 
 ### 1-2: 設計方針理解
