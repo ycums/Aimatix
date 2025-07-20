@@ -3,6 +3,7 @@
 ## 1. 概要
 
 状態遷移システムは、M5Stack Fireのボタン操作による画面遷移・モード遷移を管理する純粋関数ベースのシステムです。
+**Aimatixではコマンド/イベント駆動設計を標準とし、状態遷移の結果として副作用（UI更新・保存・通信等）をコマンド/イベントリストで一元管理します。**
 
 ## 2. 型定義
 
@@ -49,34 +50,35 @@ struct SystemState {
 };
 ```
 
-### 2.3 TransitionResult型
+### 2.3 Command/Effect型（コマンド/イベント駆動設計・標準）
 
 ```cpp
-struct TransitionResult {
-    bool isValid;                    // 遷移の妥当性
-    Mode nextMode;                   // 次のモード
-    TransitionAction action;         // 実行アクション
-    const char* errorMessage;        // エラーメッセージ
-    
-    TransitionResult();  // デフォルトコンストラクタ
-    TransitionResult(bool valid, Mode mode, TransitionAction act, const char* msg = nullptr);
+// コマンドの種類
+enum class CommandType {
+    UpdateUI,
+    SaveSettings,
+    ShowWarning,
+    PlayAlarm,
+    StopAlarm,
+    // ... 必要に応じて拡張
+};
+
+// コマンド構造体
+struct Command {
+    CommandType type;
+    // 必要に応じてパラメータを追加
+    // 例: UI更新内容、保存対象データ、警告メッセージ等
+};
+
+// 状態遷移結果（コマンド/イベント駆動設計用）
+struct TransitionEffect {
+    Mode nextMode;                  // 次のモード
+    std::vector<Command> commands;  // 副作用コマンドリスト
+    const char* errorMessage;       // エラーメッセージ（必要時）
 };
 ```
 
-#### TransitionAction列挙型
-```cpp
-enum TransitionAction {
-    ACTION_NONE,           // アクションなし
-    ACTION_RESET_INPUT,    // 入力リセット
-    ACTION_ADD_ALARM,      // アラーム追加
-    ACTION_DELETE_ALARM,   // アラーム削除
-    ACTION_UPDATE_SETTINGS, // 設定更新
-    ACTION_PLAY_ALARM,     // アラーム再生
-    ACTION_STOP_ALARM,     // アラーム停止
-    ACTION_SHOW_WARNING,   // 警告表示
-    ACTION_CLEAR_WARNING   // 警告クリア
-};
-```
+---
 
 ## 3. 主要関数
 
@@ -107,22 +109,22 @@ SystemState getCurrentSystemState();
 **説明**: 現在のシステム状態を取得
 **戻り値**: 現在のシステム状態
 
-### 3.3 状態遷移関連
+### 3.3 状態遷移関連（コマンド/イベント駆動設計・標準）
 
 #### StateTransitionManager::handleStateTransition
 ```cpp
-static TransitionResult handleStateTransition(
+static TransitionEffect handleStateTransition(
     Mode currentMode,
     const ButtonEvent& event,
     const SystemState& state
 );
 ```
-**説明**: 状態遷移を処理
+**説明**: 状態遷移を処理し、次モードと副作用コマンドリストを返す
 **引数**:
 - `currentMode`: 現在のモード
 - `event`: ボタンイベント
 - `state`: システム状態
-**戻り値**: 遷移結果
+**戻り値**: 遷移結果（次モード・コマンドリスト・エラー）
 
 ### 3.4 遷移妥当性チェック
 
@@ -143,9 +145,11 @@ static bool validateTransition(
 - `errorMessage`: エラーメッセージの出力先（オプション）
 **戻り値**: 妥当な場合はtrue、そうでなければfalse
 
+---
+
 ## 4. 使用例
 
-### 4.1 基本的な使用例
+### 4.1 コマンド/イベント駆動設計の使用例
 
 ```cpp
 #include "state_transition/button_event.h"
@@ -153,29 +157,29 @@ static bool validateTransition(
 #include "state_transition/state_transition.h"
 
 void handleButtons() {
-    // ボタンイベントを作成
     ButtonEvent event = createButtonEventFromM5Stack();
-    
-    // 無効なイベントの場合は処理をスキップ
-    if (!isValidButtonEvent(event)) {
-        return;
-    }
-    
-    // 現在のシステム状態を取得
+    if (!isValidButtonEvent(event)) return;
     SystemState currentState = getCurrentSystemState();
-    
-    // 状態遷移を処理
-    TransitionResult result = StateTransitionManager::handleStateTransition(
+    TransitionEffect effect = StateTransitionManager::handleStateTransition(
         currentMode, event, currentState
     );
-    
-    // 遷移結果を処理
-    if (result.isValid) {
-        currentMode = result.nextMode;
-        executeTransitionAction(result);
-    } else {
-        // エラー処理
-        Serial.println(result.errorMessage);
+    currentMode = effect.nextMode;
+    for (const auto& cmd : effect.commands) {
+        switch (cmd.type) {
+            case CommandType::UpdateUI:
+                drawMainDisplay();
+                break;
+            case CommandType::SaveSettings:
+                saveSettings(settings, &eepromAdapter);
+                break;
+            case CommandType::ShowWarning:
+                showWarning(cmd.message);
+                break;
+            // ... 必要に応じて拡張
+        }
+    }
+    if (effect.errorMessage) {
+        Serial.println(effect.errorMessage);
     }
 }
 ```
@@ -183,7 +187,6 @@ void handleButtons() {
 ### 4.2 エラーハンドリング例
 
 ```cpp
-// 遷移の妥当性を事前チェック
 const char* errorMsg;
 if (!TransitionValidator::validateTransition(currentMode, event, state, &errorMsg)) {
     Serial.print("Invalid transition: ");
@@ -191,6 +194,8 @@ if (!TransitionValidator::validateTransition(currentMode, event, state, &errorMs
     return;
 }
 ```
+
+---
 
 ## 5. エラーメッセージ
 
@@ -209,6 +214,8 @@ if (!TransitionValidator::validateTransition(currentMode, event, state, &errorMs
 - `"Settings not available"`: 設定が利用できない
 - `"Alarm management not available"`: アラーム管理が利用できない
 
+---
+
 ## 6. 注意事項
 
 ### 6.1 スレッドセーフティ
@@ -222,6 +229,8 @@ if (!TransitionValidator::validateTransition(currentMode, event, state, &errorMs
 ### 6.3 パフォーマンス
 - 状態遷移処理は軽量で高速です
 - ボタンイベントの作成は毎フレーム実行可能です
+
+---
 
 ## 7. バージョン情報
 

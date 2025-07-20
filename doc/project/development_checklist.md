@@ -27,7 +27,7 @@
 - [x] 2-1-3: UIレイヤの画面遷移・状態管理設計
 
 ### 2-2: 状態遷移・API設計
-- [ ] 2-2-1: 状態遷移API（`spec/api_specification.md`）の設計・型定義
+- [x] 2-2-1: 状態遷移API（`spec/api_specification.md`）の設計・型定義
 - [ ] 2-2-2: Transition/Command/Event設計方針の明確化
 
 ### 2-3: モック・テスト設計
