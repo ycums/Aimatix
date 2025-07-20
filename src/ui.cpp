@@ -195,7 +195,7 @@ bool showYesNoDialog(const char* title, const char* detail) {
 // - 進捗バー
 // - NEXT時刻
 // - 鳴動時刻リスト
-void drawMainDisplay() {
+void drawMainDisplay(const Settings& settings) {
   removePastAlarms(); // アラーム一覧を最新化
   sprite.fillSprite(TFT_BLACK);
   drawTitleBar("MAIN");

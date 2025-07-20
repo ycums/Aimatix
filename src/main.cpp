@@ -6,9 +6,9 @@
 #include <alarm.h>
 #include "../lib/libaimatix/include/IButtonManager.h"
 #include "../lib/libaimatix/src/button_manager.h"
-#include <libaimatix/src/input.h>
-#include <libaimatix/src/ui_logic.h>
-#include <libaimatix/src/command.h>
+#include <input.h>
+#include <ui_logic.h>
+#include <command.h>
 #include <vector>
 
 // drawMainDisplay用ダミー変数
@@ -23,7 +23,7 @@ SettingsMenu settingsMenu;
 // ButtonManagerインスタンス生成（millisをDI）
 ButtonManager buttonManager(millis);
 
-DigitEditTimeInputState digitEditInput; // main.cppで状態を保持
+extern DigitEditTimeInputState digitEditInput;
 
 Settings appSettings;
 
@@ -121,26 +121,47 @@ void loop() {
   }
   // 設定メニューの選択・決定・保存・反映・画面遷移をmain.cppで一元管理
   if (currentMode == SETTINGS_MENU) {
-    // Cボタン短押しで決定
     if (buttonManager.isShortPress(BUTTON_TYPE_C)) {
       switch (settingsMenu.selectedItem) {
         case 0: // SOUND
           appSettings.sound_enabled = !appSettings.sound_enabled;
-          commandQueue.push_back({CommandType::SaveSettings});
+          {
+            Command cmd;
+            cmd.type = CommandType::SaveSettings;
+            commandQueue.push_back(cmd);
+          }
           break;
         case 1: // LCD BRIGHTNESS
           appSettings.lcd_brightness = (appSettings.lcd_brightness + 50) % 256;
           if (appSettings.lcd_brightness == 0) appSettings.lcd_brightness = 1;
-          commandQueue.push_back({CommandType::SetBrightness, appSettings.lcd_brightness});
-          commandQueue.push_back({CommandType::SaveSettings});
+          {
+            Command cmd;
+            cmd.type = CommandType::SetBrightness;
+            cmd.intValue = appSettings.lcd_brightness;
+            commandQueue.push_back(cmd);
+          }
+          {
+            Command cmd;
+            cmd.type = CommandType::SaveSettings;
+            commandQueue.push_back(cmd);
+          }
           break;
         case 2: // WARNING COLOR TEST
           currentMode = WARNING_COLOR_TEST;
           break;
         case 3: // ALL CLEAR
           resetSettings(&eepromAdapter, appSettings);
-          commandQueue.push_back({CommandType::SetBrightness, appSettings.lcd_brightness});
-          commandQueue.push_back({CommandType::SaveSettings});
+          {
+            Command cmd;
+            cmd.type = CommandType::SetBrightness;
+            cmd.intValue = appSettings.lcd_brightness;
+            commandQueue.push_back(cmd);
+          }
+          {
+            Command cmd;
+            cmd.type = CommandType::SaveSettings;
+            commandQueue.push_back(cmd);
+          }
           break;
         case 4: // INFO
           currentMode = INFO_DISPLAY;

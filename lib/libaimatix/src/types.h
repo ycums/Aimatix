@@ -1,6 +1,12 @@
 #ifndef TYPES_H
 #define TYPES_H
 
+// ボタンアクション種別（グローバルで必ず参照可能に）
+enum ButtonAction {
+    SHORT_PRESS,
+    LONG_PRESS
+};
+
 // Mode definition - 不要なモードを削除し、長押し処理に対応
 enum Mode {
   MAIN_DISPLAY,           // メイン表示画面

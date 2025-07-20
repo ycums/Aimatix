@@ -3,11 +3,12 @@
 #include <cstring>
 #include <input.h>
 #include <alarm.h>
-#include "types.h"
+#include "../../../lib/libaimatix/src/types.h"
 #include "../../../lib/libaimatix/src/time_logic.h"
 #include "../../../lib/libaimatix/src/ui_logic.h"
 #include "../../../lib/libaimatix/src/command.h"
 #include <vector>
+#include "../../../lib/libaimatix/src/ui_state_transition.h"
 
 // 外部変数のモック定義
 Mode currentMode = MAIN_DISPLAY;
@@ -588,6 +589,18 @@ void test_saveSettings_command_issued() {
     printf("✓ test_saveSettings_command_issued: 成功\n");
 }
 
+// 画面遷移ロジックのテスト
+void test_nextMode_transition() {
+    Mode m = MAIN_DISPLAY;
+    m = nextMode(m, BUTTON_TYPE_B, SHORT_PRESS);
+    TEST_ASSERT_EQUAL(SETTINGS_MENU, m);
+    m = nextMode(m, BUTTON_TYPE_C, LONG_PRESS);
+    TEST_ASSERT_EQUAL(MAIN_DISPLAY, m);
+    m = nextMode(m, BUTTON_TYPE_C, SHORT_PRESS);
+    TEST_ASSERT_EQUAL(INFO_DISPLAY, m);
+    printf("✓ test_nextMode_transition: 成功\n");
+}
+
 void setUp(void) {}
 void tearDown(void) {}
 
@@ -623,6 +636,7 @@ int main() {
   RUN_TEST(test_InputLogic_does_not_change_mode_or_call_ui);
   RUN_TEST(test_nextMenuIndex_and_prevMenuIndex);
   RUN_TEST(test_saveSettings_command_issued);
+  RUN_TEST(test_nextMode_transition);
   
   printf("=== 全テスト完了 ===\n");
   
