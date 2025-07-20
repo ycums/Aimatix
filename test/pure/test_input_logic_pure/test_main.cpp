@@ -5,6 +5,7 @@
 #include <alarm.h>
 #include "types.h"
 #include "../../../lib/libaimatix/src/time_logic.h"
+#include "../../../lib/libaimatix/src/ui_logic.h"
 
 // 外部変数のモック定義
 Mode currentMode = MAIN_DISPLAY;
@@ -549,6 +550,27 @@ void test_InputLogic_does_not_change_mode_or_call_ui() {
     printf("✓ InputLogicはUI遷移や画面制御を直接行わない: 成功\n");
 }
 
+// UIロジックの単体テスト
+void test_nextMenuIndex_and_prevMenuIndex() {
+    int n = 5;
+    // nextMenuIndex
+    TEST_ASSERT_EQUAL(1, nextMenuIndex(0, n));
+    TEST_ASSERT_EQUAL(2, nextMenuIndex(1, n));
+    TEST_ASSERT_EQUAL(0, nextMenuIndex(4, n));
+    // prevMenuIndex
+    TEST_ASSERT_EQUAL(4, prevMenuIndex(0, n));
+    TEST_ASSERT_EQUAL(0, prevMenuIndex(1, n));
+    TEST_ASSERT_EQUAL(3, prevMenuIndex(4, n));
+    // nextAlarmIndex/prevAlarmIndex
+    TEST_ASSERT_EQUAL(1, nextAlarmIndex(0, n));
+    TEST_ASSERT_EQUAL(2, nextAlarmIndex(1, n));
+    TEST_ASSERT_EQUAL(0, nextAlarmIndex(4, n));
+    TEST_ASSERT_EQUAL(4, prevAlarmIndex(0, n));
+    TEST_ASSERT_EQUAL(0, prevAlarmIndex(1, n));
+    TEST_ASSERT_EQUAL(3, prevAlarmIndex(4, n));
+    printf("✓ nextMenuIndex/prevMenuIndex/nextAlarmIndex/prevAlarmIndex: 成功\n");
+}
+
 void setUp(void) {}
 void tearDown(void) {}
 
@@ -582,6 +604,7 @@ int main() {
   RUN_TEST(test_input_multiple_buttons);
   RUN_TEST(test_input_time_dependency);
   RUN_TEST(test_InputLogic_does_not_change_mode_or_call_ui);
+  RUN_TEST(test_nextMenuIndex_and_prevMenuIndex);
   
   printf("=== 全テスト完了 ===\n");
   

@@ -7,6 +7,7 @@
 #include "../lib/libaimatix/include/IButtonManager.h"
 #include "../lib/libaimatix/src/button_manager.h"
 #include <libaimatix/src/input.h>
+#include <libaimatix/src/ui_logic.h>
 
 // drawMainDisplay用ダミー変数
 #include <time.h>
@@ -23,6 +24,8 @@ ButtonManager buttonManager(millis);
 DigitEditTimeInputState digitEditInput; // main.cppで状態を保持
 
 Settings appSettings;
+
+int scheduleSelectedIndex = 0;
 
 void setup() {
   M5.begin();
@@ -75,6 +78,41 @@ void loop() {
     InputEventResult inputResult = handleDigitEditInput(&buttonManager, (TimeFunction)millis, digitEditInput);
     if (inputResult == InputEventResult::Confirmed || inputResult == InputEventResult::Cancelled) {
       currentMode = MAIN_DISPLAY;
+    }
+  }
+  // 設定メニューの選択・決定・保存・反映・画面遷移をmain.cppで一元管理
+  if (currentMode == SETTINGS_MENU) {
+    // Cボタン短押しで決定
+    if (buttonManager.isShortPress(BUTTON_TYPE_C)) {
+      switch (settingsMenu.selectedItem) {
+        case 0: // SOUND
+          appSettings.sound_enabled = !appSettings.sound_enabled;
+          saveSettings(&eepromAdapter, appSettings);
+          break;
+        case 1: // LCD BRIGHTNESS
+          appSettings.lcd_brightness = (appSettings.lcd_brightness + 50) % 256;
+          if (appSettings.lcd_brightness == 0) appSettings.lcd_brightness = 1;
+          saveSettings(&eepromAdapter, appSettings);
+          M5.Lcd.setBrightness(appSettings.lcd_brightness);
+          break;
+        case 2: // WARNING COLOR TEST
+          currentMode = WARNING_COLOR_TEST;
+          break;
+        case 3: // ALL CLEAR
+          resetSettings(&eepromAdapter, appSettings);
+          M5.Lcd.setBrightness(appSettings.lcd_brightness);
+          break;
+        case 4: // INFO
+          currentMode = INFO_DISPLAY;
+          break;
+      }
+    }
+    // A/Bボタンで項目移動
+    if (buttonManager.isShortPress(BUTTON_TYPE_A)) {
+      settingsMenu.selectedItem = prevMenuIndex(settingsMenu.selectedItem, settingsMenu.itemCount);
+    }
+    if (buttonManager.isShortPress(BUTTON_TYPE_B)) {
+      settingsMenu.selectedItem = nextMenuIndex(settingsMenu.selectedItem, settingsMenu.itemCount);
     }
   }
   // 画面更新のみ（100ms間隔）
