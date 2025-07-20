@@ -57,12 +57,12 @@
   - [x] 3. ButtonManagerの統合
      - [x] ボタン判定・デバウンス処理をtest/pure/ロジックに切り替え
      - [x] ボタン反応・長押し/短押し判定が正しいか確認
-  - [ ] 4. 設計リファクタ・責務分離・API設計改善（InputLogic/SettingsLogic含む）
-     - [ ] UI遷移責務とロジック責務の分離（入力・設定の確定/保存イベントをUI層で受けて画面遷移・反映する設計へ）
-     - [ ] InputLogic/SettingsLogicのAPI設計見直し・テスト容易性向上
-  - [ ] 5. InputLogic/SettingsLogicの統合
-     - [ ] 入力処理や設定保存/ロードをtest/pure/ロジックに切り替え
-     - [ ] 設定変更・保存・反映が正しいか確認
+  - [x] 4. 設計リファクタ・責務分離・API設計改善（InputLogic/SettingsLogic含む）
+     - [x] UI遷移責務とロジック責務の分離（入力・設定の確定/保存イベントをUI層で受けて画面遷移・反映する設計へ）
+     - [x] InputLogic/SettingsLogicのAPI設計見直し・テスト容易性向上
+  - [x] 5. InputLogic/SettingsLogicの統合
+     - [x] 入力処理や設定保存/ロードをtest/pure/ロジックに切り替え
+     - [x] 設定変更・保存・反映が正しいか確認
   - [ ] 6. 状態遷移システムとの本格統合
     - [ ] すべてのロジックを統合し、画面遷移・アラーム・設定等の一連動作を検証
 - [ ] 5. DI/アダプター層で物理層と純粋ロジック層をIButtonManager等で抽象化・接続
