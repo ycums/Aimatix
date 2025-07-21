@@ -44,19 +44,6 @@ void M5SetTextDatumImpl(int datum) {
 void M5FillRectImpl(int x, int y, int w, int h, int color) {
     M5.Lcd.fillRect(x, y, w, h, color);
 }
-TFT_eSprite progressSprite(&M5.Lcd);
-void M5FillProgressBarSpriteImpl(int x, int y, int w, int h, int percent) {
-    TFT_eSprite sprite(&M5.Lcd);
-    sprite.createSprite(w, h);
-    sprite.fillRect(0, 0, w, h, TFT_BLACK);
-    sprite.drawRect(0, 0, w, h, AMBER_COLOR);
-    int fillW = (w - 2) * percent / 100;
-    if (fillW > 0) {
-        sprite.fillRect(1, 1, fillW, h - 2, AMBER_COLOR);
-    }
-    sprite.pushSprite(x, y);
-    sprite.deleteSprite();
-}
 #endif
 
 // --- アラームリスト ---

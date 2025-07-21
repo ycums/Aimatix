@@ -40,4 +40,18 @@ public:
         M5.Lcd.setTextFont(font);
 #endif
     }
+    void fillProgressBarSprite(int x, int y, int w, int h, int percent) override {
+#ifdef ARDUINO
+        TFT_eSprite sprite(&M5.Lcd);
+        sprite.createSprite(w, h);
+        sprite.fillRect(0, 0, w, h, TFT_BLACK);
+        sprite.drawRect(0, 0, w, h, AMBER_COLOR);
+        int fillW = (w - 2) * percent / 100;
+        if (fillW > 0) {
+            sprite.fillRect(1, 1, fillW, h - 2, AMBER_COLOR);
+        }
+        sprite.pushSprite(x, y);
+        sprite.deleteSprite();
+#endif
+    }
 }; 

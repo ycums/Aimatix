@@ -33,6 +33,11 @@ public:
     void setTextFont(int font) override {
         log.push_back("setTextFont");
     }
+    void fillProgressBarSprite(int x, int y, int w, int h, int percent) override {
+        char buf[128];
+        snprintf(buf, sizeof(buf), "fillProgressBarSprite(%d,%d,%d,%d,%d)", x, y, w, h, percent);
+        log.push_back(buf);
+    }
 };
 
 void setUp(void) {}

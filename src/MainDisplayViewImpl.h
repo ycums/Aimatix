@@ -12,27 +12,24 @@ public:
         drawTitleBar(disp, modeName, batteryLevel, isCharging);
     }
     void showTime(const char* currentTime) override {
-        disp->setTextFont(FONT_IMPORTANT);
         disp->setTextColor(AMBER_COLOR, TFT_BLACK);
         disp->setTextDatum(MC_DATUM);
-        disp->drawText(SCREEN_WIDTH/2, GRID_Y(2) + GRID_HEIGHT, currentTime, FONT_IMPORTANT);
+        disp->drawText(SCREEN_WIDTH/2, GRID_Y(2) + GRID_HEIGHT, currentTime, FONT_MAIN);
     }
     void showRemain(const char* remainTime) override {
         disp->setTextDatum(TC_DATUM);
-        disp->setTextFont(FONT_MAIN);
-        disp->drawText(SCREEN_WIDTH/2, GRID_Y(4), remainTime, FONT_MAIN);
+        disp->drawText(SCREEN_WIDTH/2, GRID_Y(4), remainTime, FONT_IMPORTANT);
     }
     void showProgress(int percent) override {
-        fillProgressBarSprite(disp, GRID_X(0), GRID_Y(7), SCREEN_WIDTH, 8, percent);
+        disp->fillProgressBarSprite(GRID_X(0), GRID_Y(7), SCREEN_WIDTH, 8, percent);
     }
     void showAlarmList(const std::vector<std::string>& alarmStrs) override {
         const int alermColStep = (14 * GRID_WIDTH / 5);
-        disp->setTextFont(FONT_AUXILIARY);
         disp->setTextDatum(MC_DATUM);
         const int clearW = 48;
         const int clearH = 24;
         for (int i = 0; i < 5; ++i) {
-            int x = GRID_X(1) + i * alermColStep + alermColStep/2;
+            int x = GRID_X(1) + alermColStep /2 + i * alermColStep ;            
             int y = GRID_Y(9);
             if (i < (int)alarmStrs.size()) {
                 disp->drawText(x, y, alarmStrs[i].c_str(), FONT_AUXILIARY);

@@ -12,7 +12,7 @@
 // UIレイアウト
 #define TITLE_HEIGHT 20
 #define HINT_HEIGHT 20
-#define GRID_WIDTH 32
+#define GRID_WIDTH 20
 #define GRID_HEIGHT 20
 #define GRID_X(col) ((col) * GRID_WIDTH)
 #define GRID_Y(row) (TITLE_HEIGHT + (row) * GRID_HEIGHT)
