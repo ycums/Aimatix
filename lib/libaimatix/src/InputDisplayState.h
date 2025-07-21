@@ -1,40 +1,30 @@
 #pragma once
 #include "StateManager.h"
 #include "InputLogic.h"
-#include "DisplayCommon.h"
-#ifdef ARDUINO
-#include <M5Stack.h>
-#endif
+#include "IInputDisplayView.h"
 #include <stdio.h>
 
 class InputDisplayState : public IState {
 public:
-    InputDisplayState(InputLogic* logic = nullptr) : inputLogic(logic), lastValue(-1) {}
+    InputDisplayState(InputLogic* logic = nullptr, IInputDisplayView* view = nullptr)
+        : inputLogic(logic), view(view), lastValue(-1) {}
     void onEnter() override {
-#ifdef ARDUINO
-        M5.Lcd.fillScreen(TFT_BLACK);
-        drawCommonTitleBar("INPUT", 42, false);
-        drawCommonButtonHints("OK", "", "CANCEL");
-        lastValue = -1;
-#endif
+        if (view) {
+            view->clear();
+            view->showTitle("INPUT", 42, false);
+            view->showHints("OK", "", "CANCEL");
+            lastValue = -1;
+        }
     }
     void onExit() override {}
     void onDraw() override {
-#ifdef ARDUINO
         int value = inputLogic ? inputLogic->getValue() : 0;
-        if (value != lastValue) {
-            // 値部分のみ再描画
-            M5.Lcd.fillRect(SCREEN_WIDTH/2-40, SCREEN_HEIGHT/2-30, 80, 60, TFT_BLACK);
-            M5.Lcd.setTextFont(FONT_MAIN);
-            M5.Lcd.setTextColor(AMBER_COLOR, TFT_BLACK);
-            M5.Lcd.setTextDatum(MC_DATUM);
-            char buf[16];
-            snprintf(buf, sizeof(buf), "%02d", value);
-            M5.Lcd.drawString(buf, SCREEN_WIDTH/2, SCREEN_HEIGHT/2);
+        if (view && value != lastValue) {
+            view->showValue(value);
             lastValue = value;
         }
-#else
-        int value = inputLogic ? inputLogic->getValue() : 0;
+#ifndef ARDUINO
+        // テスト用: 標準出力に値を出すだけ
         printf("[InputDisplay] value=%d\n", value);
 #endif
     }
@@ -43,7 +33,9 @@ public:
     void onButtonC() override {}
     void onButtonALongPress() override {}
     void onButtonCLongPress() override {}
+    void setView(IInputDisplayView* v) { view = v; }
 private:
     InputLogic* inputLogic;
+    IInputDisplayView* view;
     int lastValue;
 }; 

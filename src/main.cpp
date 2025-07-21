@@ -3,6 +3,8 @@
 #include "MainDisplayState.h"
 #include "InputDisplayState.h"
 #include "InputLogic.h"
+#include "InputDisplayViewImpl.h"
+#include "MainDisplayViewImpl.h"
 #ifdef ARDUINO
 #include <M5Stack.h>
 #include <vector>
@@ -62,8 +64,10 @@ std::vector<time_t> alarmTimes;
 // --- 状態管理クラスのグローバル生成 ---
 StateManager stateManager;
 InputLogic inputLogic;
-InputDisplayState inputDisplayState(&inputLogic);
-MainDisplayState mainDisplayState(&stateManager, &inputDisplayState);
+InputDisplayViewImpl inputDisplayViewImpl;
+MainDisplayViewImpl mainDisplayViewImpl;
+InputDisplayState inputDisplayState(&inputLogic, &inputDisplayViewImpl);
+MainDisplayState mainDisplayState(&stateManager, &inputDisplayState, &mainDisplayViewImpl);
 
 void setup() {
 #ifdef ARDUINO
