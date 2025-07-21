@@ -86,7 +86,7 @@
 ---
 
 ### 3-1: ロジック・アダプタ最終実装・結合
-- [ ] 3-1-1: 純粋ロジック（lib/aimatix_lib/src/）の本実装（`doc/design/logic_interface.md`に基づく）
+- [ ] 3-1-1: 純粋ロジック（lib/libaimatix/src/）の本実装（`doc/design/logic_interface.md`に基づく）
 - [ ] 3-1-2: ハードウェアアダプタ（src/）の本実装（`doc/design/hw_adapter_design.md`に基づく）
 - [ ] 3-1-3: DI/アダプタの結合テスト（本番/モック切替の動作確認）
 
