@@ -74,30 +74,33 @@ void drawMainDisplay() {
     // --- 現在時刻（中央寄せ・Font4）---
     setFont(FONT_IMPORTANT);
     setTextDatum(MC_DATUM);
-    drawString(currentTime, SCREEN_WIDTH/2, GRID_Y(1) + GRID_HEIGHT);
+    drawString(currentTime, SCREEN_WIDTH/2, GRID_Y(2) + GRID_HEIGHT);
 
     // --- 残り時間（中央寄せ・Font7）---
+    setTextDatum(TC_DATUM);
     setFont(FONT_MAIN);
-    drawString(remainTime, SCREEN_WIDTH/2, GRID_Y(3) + (GRID_HEIGHT * 3) / 2);
-    setTextDatum(TL_DATUM); // 以降は左上基準に戻す
+    drawString(remainTime, SCREEN_WIDTH/2, GRID_Y(4));
 
     // --- プログレスバー（グリッドセル(0,6)-(15,7)）---
     const int progressBarHeight = 8;
     fillProgressBar(
         GRID_X(0),
-        GRID_Y(6) + GRID_HEIGHT - progressBarHeight / 2,
-        16 * GRID_WIDTH,
+        GRID_Y(7),
+        SCREEN_WIDTH,
         progressBarHeight,
         progressPercent
     );
 
     // --- アラームリスト（最大5件・Font2）---
+    const int alermColStep = (14 * GRID_WIDTH / 5);
     setFont(FONT_AUXILIARY);
+    setTextDatum(MC_DATUM);
     for (int i = 0; i < alarmCount; ++i) {
-        int x = GRID_X(1) + i * (14 * GRID_WIDTH / 5);
-        int y = GRID_Y(8) + GRID_HEIGHT / 2;
+        int x = GRID_X(1) + i * alermColStep + alermColStep/2;
+        int y = GRID_Y(9);
         drawString(alarmList[i], x, y);
     }
+    setTextDatum(TL_DATUM); // 以降は左上基準に戻す
 }
 
 void drawGridLines() {
