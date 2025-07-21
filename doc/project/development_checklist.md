@@ -36,29 +36,76 @@
 
 ---
 
-## Phase3: 実装
+## Phase3: 段階的マイルストーン開発・動作/品質チェック
 
-### 3-1: ロジック・アダプタ実装
-- [ ] 3-1-1: 純粋ロジック（lib/aimatix_lib/src/）の実装
-- [ ] 3-1-2: ハードウェアアダプタ（src/）の実装
-- [ ] 3-1-3: DI/アダプタの結合テスト
+### 3-0: 機能・UI積み上げ型マイルストーン（背骨構築＋段階的拡張）
+- [ ] 3-0-1: 実機で「でたらめな」メイン画面が表示される（MainDisplay雛形＋TimeLogic stub）
+    - [ ] 実機転送・画面表示確認
+    - [ ] 最低限のビルド・テスト・カバレッジ確認
+- [ ] 3-0-2: メイン画面の体裁が整う（MainDisplay UIレイアウト・描画拡張、TimeLogic「現在時刻」仮実装）
+    - [ ] 実機での見た目確認
+- [ ] 3-0-3: 決め打ちで5分カウントダウンが走る（TimeLogic/AlarmLogic stub/仮実装、コマンド/イベント駆動の背骨完成）
+    - [ ] カウントダウン動作確認
+    - [ ] テスト・カバレッジ確認
+- [ ] 3-0-4: 入力画面（InputDisplay）雛形追加・画面遷移（InputLogic stub、状態遷移/nextMode）
+    - [ ] ボタン操作で画面遷移確認
+- [ ] 3-0-5: 入力画面からC長押しでメイン画面に戻れる（状態遷移・画面遷移の双方向確認）
+- [ ] 3-0-6: 入力画面に初期値__:__が表示される（InputLogicの初期値管理、InputDisplayで値表示）
+- [ ] 3-0-7: 入力画面で+1/+5ができる（InputLogicの+1/+5実装、ユーザー入力反映の背骨完成）
+    - [ ] コマンド/イベント駆動で「ユーザー入力→状態変化→UI反映」仕組みを整備
+- [ ] 3-0-8: 入力画面C短押しでアラーム追加（AlarmLogicのaddAlarm実装、内部状態コミット・画面反映の背骨完成）
+    - [ ] コマンド/イベント駆動で「内部状態コミット→他画面反映」仕組みを整備
+    - [ ] AlarmDisplay雛形追加（リスト表示stub）
+- [ ] 3-0-9: 入力画面で桁送りができる（InputLogic/UIの編集操作拡張）
+- [ ] 3-0-10: アラーム管理画面（AlarmDisplay）雛形追加・遷移（AlarmLogic連携、リスト表示・選択）
+- [ ] 3-0-11: 設定画面（SettingsDisplay）雛形追加・遷移（SettingsLogic stub、設定値の表示・編集雛形）
+- [ ] 3-0-12: 項目選択・アラーム削除（AlarmLogic/AlarmDisplayの機能拡張、副作用コマンド一元管理）
+- [ ] 3-0-13: 設定保存・復元・バリデーション（SettingsLogic本実装＋MockEEPROMAdapter連携、設定保存/復元/バリデーションのUI・副作用コマンド）
+- [ ] 3-0-14: 警告・エラー表示、副作用コマンド拡張（ShowWarningコマンド、エラー時のUI反映）
+- [ ] 3-0-15: すべての主要コンポーネント・全仕様網羅（MainDisplay, InputDisplay, AlarmDisplay, SettingsDisplay, TimeLogic, AlarmLogic, InputLogic, SettingsLogic, ButtonManager, DebounceManager, 各Adapter/Hardware層）
+    - [ ] すべての画面・機能・副作用コマンドが連携し、全仕様を満たす
 
-### 3-2: UI・状態遷移実装
-- [ ] 3-2-1: UIレイヤ（src/ui.cpp等）の実装
-- [ ] 3-2-2: 状態遷移システム（src/state_transition/）の実装
-- [ ] 3-2-3: 画面遷移・エラー表示・警告表示の実装
+---
+
+#### 主要コンポーネントの導入・完成タイミング
+
+| コンポーネント         | 初登場         | 完成           |
+|----------------------|---------------|---------------|
+| MainDisplay          | 3-0-1         | 3-0-15        |
+| InputDisplay         | 3-0-4         | 3-0-15        |
+| AlarmDisplay         | 3-0-8/10      | 3-0-15        |
+| SettingsDisplay      | 3-0-11        | 3-0-15        |
+| TimeLogic            | 3-0-1/3       | 3-1-1/3-0-15  |
+| AlarmLogic           | 3-0-3/8       | 3-1-1/3-0-15  |
+| InputLogic           | 3-0-4/7       | 3-1-1/3-0-15  |
+| SettingsLogic        | 3-0-11/13     | 3-1-1/3-0-15  |
+| ButtonManager        | 3-0-1         | 3-1-1/3-0-15  |
+| DebounceManager      | 3-0-1         | 3-1-1/3-0-15  |
+| 各Adapter/Hardware層 | 3-0-1         | 3-1-2/3-0-15  |
+
+---
+
+### 3-1: ロジック・アダプタ最終実装・結合
+- [ ] 3-1-1: 純粋ロジック（lib/aimatix_lib/src/）の本実装（`doc/design/logic_interface.md`に基づく）
+- [ ] 3-1-2: ハードウェアアダプタ（src/）の本実装（`doc/design/hw_adapter_design.md`に基づく）
+- [ ] 3-1-3: DI/アダプタの結合テスト（本番/モック切替の動作確認）
+
+### 3-2: 状態遷移・UI最終実装（コマンド/イベント駆動設計）
+- [ ] 3-2-1: 状態遷移システム（src/state_transition/）の本実装（`doc/spec/api_specification.md`・`doc/design/ui_state_management.md`参照）
+- [ ] 3-2-2: UIレイヤ（src/ui.cpp等）の本実装（コマンド/イベント駆動で副作用一元管理）
+- [ ] 3-2-3: 画面遷移・エラー表示・警告表示の本実装（状態遷移テーブル・コマンド/イベント分岐に基づく）
 
 ---
 
 ## Phase4: テスト・品質保証
 
 ### 4-1: テスト作成・実行
-- [ ] 4-1-1: Unit Test作成（test/pure/、native環境）
-- [ ] 4-1-2: 統合テスト作成（test/integration/等）
-- [ ] 4-1-3: 実機テスト（M5Stack Fire）
+- [ ] 4-1-1: Unit Test作成（test/pure/、native環境、`doc/design/test_case_policy.md`参照）
+- [ ] 4-1-2: Integration Test作成（test/integration/等、コマンド/イベント副作用の検証）
+- [ ] 4-1-3: 実機テスト（M5Stack Fire、UI/副作用の一貫性確認）
 
 ### 4-2: カバレッジ・品質管理
-- [ ] 4-2-1: カバレッジ計測（scripts/test_coverage.py等）
+- [ ] 4-2-1: カバレッジ計測（scripts/test_coverage.py等、`doc/spec/coverage_measurement_spec.md`参照）
 - [ ] 4-2-2: 品質指標（要件定義5.2, 5.3）充足の確認
 - [ ] 4-2-3: 成果物レビュー・要件充足確認
 
