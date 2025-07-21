@@ -51,7 +51,7 @@
     - [x] StateManager（状態遷移管理クラス）雛形追加・画面/ロジック状態の一元管理
     - [x] MainDisplay, InputDisplay, InputLogic等をStateManagerに登録し、状態遷移APIで画面遷移を制御
     - [x] ボタン操作イベントをStateManager経由で処理し、画面遷移・状態遷移のテスト容易性を確保
-- [ ] 3-0-5: 入力画面からC長押しでメイン画面に戻れる（状態遷移・画面遷移の双方向確認）
+- [x] 3-0-5: 入力画面からC長押しでメイン画面に戻れる（状態遷移・画面遷移の双方向確認）
 - [ ] 3-0-6: 入力画面に初期値__:__が表示される（InputLogicの初期値管理、InputDisplayで値表示）
 - [ ] 3-0-7: 入力画面で+1/+5ができる（InputLogicの+1/+5実装、ユーザー入力反映の背骨完成）
     - [ ] ButtonManagerがDebounceManagerを内部で利用し、物理ボタン入力のデバウンス処理を行う

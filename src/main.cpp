@@ -72,6 +72,9 @@ void setup() {
     time_t now = time(nullptr);
     AlarmLogic::initAlarms(alarmTimes, now);
 #endif
+    // --- 状態遷移の依存注入（@/design/ui_state_management.md準拠） ---
+    inputDisplayState.setManager(&stateManager);
+    inputDisplayState.setMainDisplayState(&mainDisplayState);
     // 状態遷移の初期状態をMainDisplayに
     stateManager.setState(&mainDisplayState);
 }
@@ -83,7 +86,8 @@ void loop() {
     if (M5.BtnA.wasPressed()) stateManager.handleButtonA();
     if (M5.BtnB.wasPressed()) stateManager.handleButtonB();
     if (M5.BtnC.wasPressed()) stateManager.handleButtonC();
-    // 長押し等も必要に応じて追加
+    // --- Cボタン長押しイベントも伝搬 ---
+    if (M5.BtnC.pressedFor(500)) stateManager.handleButtonCLongPress();
     // 現在の状態の描画
     IState* current = stateManager.getCurrentState();
     if (current) current->onDraw();
