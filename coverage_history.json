@@ -110,5 +110,19 @@
     "pure_coverage": 74.86338797814209,
     "m5stack_coverage": 0.0,
     "quality_gate": false
+  },
+  {
+    "timestamp": "2025-07-22T04:51:17.191942",
+    "coverage": 58.29787234042553,
+    "pure_coverage": 58.29787234042553,
+    "m5stack_coverage": 0.0,
+    "quality_gate": false
+  },
+  {
+    "timestamp": "2025-07-22T07:12:26.418942",
+    "coverage": 56.17021276595745,
+    "pure_coverage": 56.17021276595745,
+    "m5stack_coverage": 0.0,
+    "quality_gate": false
   }
 ]
