@@ -21,7 +21,9 @@ public:
         disp->drawText(SCREEN_WIDTH/2, GRID_Y(4), remainTime, FONT_IMPORTANT);
     }
     void showProgress(int percent) override {
-        disp->fillProgressBarSprite(GRID_X(0), GRID_Y(7), SCREEN_WIDTH, 8, percent);
+        constexpr int kProgressBarHeight = 8; 
+        const int y = GRID_Y(7) + (GRID_HEIGHT - kProgressBarHeight) / 2;
+        disp->fillProgressBarSprite(GRID_X(0), y, SCREEN_WIDTH, kProgressBarHeight, percent);
     }
     void showAlarmList(const std::vector<std::string>& alarmStrs) override {
         const int alermColStep = (14 * GRID_WIDTH / 5);

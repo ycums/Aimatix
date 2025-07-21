@@ -57,9 +57,28 @@ void test_drawTitleBar_and_buttonHints() {
     TEST_ASSERT(foundHint);
 }
 
+void test_drawGridLines() {
+    MockDisplay disp;
+    drawGridLines(&disp);
+    // 縦線17本、横線13本（合計30本）
+    int vertCount = 0, horiCount = 0;
+    for (const auto& s : disp.log) {
+        if (s.find("drawRect") != std::string::npos) {
+            int x, y, w, h; unsigned int color;
+            if (sscanf(s.c_str(), "drawRect(%d,%d,%d,%d,%u)", &x, &y, &w, &h, &color) == 5) {
+                if (w == 1 && h == 240) vertCount++;
+                if (w == 320 && h == 1) horiCount++;
+            }
+        }
+    }
+    TEST_ASSERT_EQUAL(17, vertCount);
+    TEST_ASSERT_EQUAL(13, horiCount);
+}
+
 int main(int argc, char **argv) {
     UNITY_BEGIN();
     RUN_TEST(test_drawTitleBar_and_buttonHints);
+    RUN_TEST(test_drawGridLines);
     UNITY_END();
     return 0;
 } 
