@@ -37,8 +37,7 @@ void AlarmLogic::getAlarmTimeStrings(const std::vector<time_t>& alarms, std::vec
         std::tm* tm_alarm = std::localtime(&t);
         std::ostringstream oss;
         oss << std::setfill('0') << std::setw(2) << tm_alarm->tm_hour << ":"
-            << std::setw(2) << tm_alarm->tm_min << ":"
-            << std::setw(2) << tm_alarm->tm_sec;
+            << std::setw(2) << tm_alarm->tm_min;
         out.push_back(oss.str());
     }
 } 

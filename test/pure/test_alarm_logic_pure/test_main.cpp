@@ -40,9 +40,8 @@ void test_alarmlogic_time_strings() {
     TEST_ASSERT_EQUAL(4, strs.size());
     // 文字列の形式だけ簡易チェック
     for (const auto& s : strs) {
-        TEST_ASSERT_EQUAL(8, (int)s.size());
+        TEST_ASSERT_EQUAL(5, (int)s.size());
         TEST_ASSERT_EQUAL(':', s[2]);
-        TEST_ASSERT_EQUAL(':', s[5]);
     }
 }
 
