@@ -23,7 +23,7 @@ int AlarmLogic::getRemainSec(const std::vector<time_t>& alarms, time_t now) {
     return static_cast<int>(alarms.front() - now);
 }
 
-int AlarmLogic::getProgressPercent(int remainSec, int totalSec) {
+int AlarmLogic::getRemainPercent(int remainSec, int totalSec) {
     if (totalSec <= 0) return 0;
     int percent = (remainSec * 100) / totalSec;
     if (percent < 0) percent = 0;

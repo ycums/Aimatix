@@ -14,12 +14,16 @@ static void (*drawString_impl)(const char*, int, int) = nullptr;
 static void (*fillProgressBar_impl)(int, int, int, int, int) = nullptr;
 static void (*setFont_impl)(int) = nullptr;
 static void (*setTextDatum_impl)(int) = nullptr;
+static void (*fillRect_impl)(int, int, int, int, int) = nullptr;
+static void (*fillProgressBarSprite_impl)(int, int, int, int, int) = nullptr;
 
 void setDrawRectImpl(void (*impl)(int, int, int, int)) { drawRect_impl = impl; }
 void setDrawStringImpl(void (*impl)(const char*, int, int)) { drawString_impl = impl; }
 void setFillProgressBarImpl(void (*impl)(int, int, int, int, int)) { fillProgressBar_impl = impl; }
 void setFontImpl(void (*impl)(int)) { setFont_impl = impl; }
 void setTextDatumImpl(void (*impl)(int)) { setTextDatum_impl = impl; }
+void setFillRectImpl(void (*impl)(int, int, int, int, int)) { fillRect_impl = impl; }
+void setFillProgressBarSpriteImpl(void (*impl)(int, int, int, int, int)) { fillProgressBarSprite_impl = impl; }
 
 void drawRect(int x, int y, int w, int h) {
     if (drawRect_impl) drawRect_impl(x, y, w, h);
@@ -30,10 +34,17 @@ void drawString(const char* str, int x, int y) {
 void fillProgressBar(int x, int y, int w, int h, int percent) {
     if (fillProgressBar_impl) fillProgressBar_impl(x, y, w, h, percent);
 }
+void fillProgressBarSprite(int x, int y, int w, int h, int percent) {
+    if (fillProgressBarSprite_impl) fillProgressBarSprite_impl(x, y, w, h, percent);
+    else if (fillProgressBar_impl) fillProgressBar_impl(x, y, w, h, percent); // フォールバック
+}
 void setFont(int font) {
     if (setFont_impl) setFont_impl(font);
 }
 void setTextDatum(int datum) { if (setTextDatum_impl) setTextDatum_impl(datum); }
+void fillRect(int x, int y, int w, int h, int color) {
+    if (fillRect_impl) fillRect_impl(x, y, w, h, color);
+}
 
 // --- タイトルバー描画 ---
 void drawTitleBar(const char* modeName, int batteryLevel, bool isCharging) {
@@ -60,6 +71,8 @@ void drawButtonHintsGrid(const char* btnA, const char* btnB, const char* btnC) {
 
 // --- メイン画面描画 ---
 void drawMainDisplay() {
+    static time_t lastAlarmStart = 0;
+    static int lastAlarmTotalSec = 0;
     const char* modeName = "MAIN";
     int batteryLevel = 42;
     bool isCharging = false;
@@ -70,15 +83,24 @@ void drawMainDisplay() {
     // --- 現在時刻取得 ---
     time_t now = time(nullptr);
     struct tm* tm_now = localtime(&now);
-    snprintf(currentTime, sizeof(currentTime), "%02d:%02d:%02d", tm_now->tm_hour, tm_now->tm_min, tm_now->tm_sec);
+    snprintf(currentTime, sizeof(currentTime), "%02d:%02d", tm_now->tm_hour, tm_now->tm_min);
 
     // --- アラームリストの消化 ---
     AlarmLogic::removePastAlarms(alarmTimes, now);
 
     // --- 残り時間・進捗計算 ---
     int remainSec = AlarmLogic::getRemainSec(alarmTimes, now);
-    int totalSec = 120; // TODO: 本来はアラームごとに開始時点の値を保持する
-    progressPercent = AlarmLogic::getProgressPercent(remainSec, totalSec);
+    // アラームが変わったら開始時刻・初期残り時間を更新
+    static time_t prevNextAlarm = 0;
+    time_t nextAlarm = (!alarmTimes.empty()) ? alarmTimes.front() : 0;
+    if (nextAlarm != prevNextAlarm) {
+        lastAlarmStart = now;
+        lastAlarmTotalSec = remainSec;
+        prevNextAlarm = nextAlarm;
+    }
+    int totalSec = lastAlarmTotalSec > 0 ? lastAlarmTotalSec : 1;
+    // 残り割合（右から左へ縮む）
+    progressPercent = AlarmLogic::getRemainPercent(remainSec, totalSec);
     snprintf(remainTime, sizeof(remainTime), "%02d:%02d:%02d", remainSec/3600, (remainSec/60)%60, remainSec%60);
     if (alarmTimes.empty()) {
         snprintf(remainTime, sizeof(remainTime), "00:00:00");
@@ -103,7 +125,7 @@ void drawMainDisplay() {
 
     // --- プログレスバー（グリッドセル(0,6)-(15,7)）---
     const int progressBarHeight = 8;
-    fillProgressBar(
+    fillProgressBarSprite(
         GRID_X(0),
         GRID_Y(7),
         SCREEN_WIDTH,
@@ -118,10 +140,17 @@ void drawMainDisplay() {
     std::vector<std::string> alarmStrs;
     AlarmLogic::getAlarmTimeStrings(alarmTimes, alarmStrs);
     int alarmCount = alarmStrs.size();
-    for (int i = 0; i < alarmCount && i < 5; ++i) {
+    // Font2の高さ・幅を仮定（必要に応じて調整）
+    const int clearW = 48; // 文字列幅の目安
+    const int clearH = 24; // 文字列高さの目安
+    for (int i = 0; i < 5; ++i) {
         int x = GRID_X(1) + i * alermColStep + alermColStep/2;
         int y = GRID_Y(9);
-        drawString(alarmStrs[i].c_str(), x, y);
+        if (i < alarmCount) {
+            drawString(alarmStrs[i].c_str(), x, y);
+        } else {
+            fillRect(x - clearW/2, y - clearH/2, clearW, clearH, TFT_BLACK);
+        }
     }
     setTextDatum(TL_DATUM); // 以降は左上基準に戻す
 }
