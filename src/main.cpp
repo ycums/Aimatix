@@ -1,6 +1,8 @@
 #include "main_display.h"
 #ifdef ARDUINO
 #include <M5Stack.h>
+#include <vector>
+#include <ctime>
 #endif
 
 #ifdef ARDUINO
@@ -29,6 +31,11 @@ void M5SetTextDatumImpl(int datum) {
 }
 #endif
 
+// --- アラームリスト ---
+#include <vector>
+#include <ctime>
+std::vector<time_t> alarmTimes;
+
 void setup() {
 #ifdef ARDUINO
     M5.begin();
@@ -38,6 +45,14 @@ void setup() {
     setFontImpl(M5SetFontImpl);
     setTextDatumImpl(M5SetTextDatumImpl);
     M5.Lcd.setTextColor(AMBER_COLOR, TFT_BLACK);
+
+    // アラームリスト初期化
+    alarmTimes.clear();
+    time_t now = time(nullptr);
+    alarmTimes.push_back(now + 10);    // +10秒
+    alarmTimes.push_back(now + 30);    // +30秒
+    alarmTimes.push_back(now + 60);    // +1分
+    alarmTimes.push_back(now + 120);   // +2分
 #endif
     // drawGridLines(); // デバッグ用グリッド線
     drawMainDisplay();

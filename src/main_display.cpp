@@ -2,6 +2,9 @@
 #include "TimeLogic.h"
 #include <stdio.h>
 #include <string.h>
+#include <vector>
+#include <ctime>
+extern std::vector<time_t> alarmTimes;
 
 // --- Adapter層で差し替え可能な関数ポインタ ---
 static void (*drawRect_impl)(int, int, int, int) = nullptr;
@@ -55,15 +58,41 @@ void drawButtonHintsGrid(const char* btnA, const char* btnB, const char* btnC) {
 
 // --- メイン画面描画 ---
 void drawMainDisplay() {
-    // 仮データ（固定値）
+    // 仮データ（固定値→動的に変更）
     const char* modeName = "MAIN";
     int batteryLevel = 42;
     bool isCharging = false;
-    const char* currentTime = "12:00";
-    const char* remainTime = "00:04:59";
-    int progressPercent = 80;
-    const char* alarmList[5] = {"12:30", "13:00", "14:00", "15:00", "16:00"};
-    int alarmCount = 5;
+    char currentTime[16];
+    char remainTime[16];
+    int progressPercent = 0;
+
+    // --- 現在時刻取得 ---
+    time_t now = time(nullptr);
+    struct tm* tm_now = localtime(&now);
+    snprintf(currentTime, sizeof(currentTime), "%02d:%02d:%02d", tm_now->tm_hour, tm_now->tm_min, tm_now->tm_sec);
+
+    // --- アラームリストの消化 ---
+    // 過去のアラームは除去
+    while (!alarmTimes.empty() && alarmTimes.front() <= now) {
+        alarmTimes.erase(alarmTimes.begin());
+    }
+
+    // --- 残り時間・進捗計算 ---
+    int remainSec = 0;
+    int totalSec = 0;
+    if (!alarmTimes.empty()) {
+        remainSec = (int)(alarmTimes.front() - now);
+        // 開始時点の残り時間（最初のアラーム追加時の値）を保持する必要があるが、
+        // ここでは仮に+2分（120秒）とする
+        totalSec = 120;
+        progressPercent = (remainSec > 0 && totalSec > 0) ? (remainSec * 100 / totalSec) : 0;
+        if (progressPercent < 0) progressPercent = 0;
+        if (progressPercent > 100) progressPercent = 100;
+        snprintf(remainTime, sizeof(remainTime), "%02d:%02d:%02d", remainSec/3600, (remainSec/60)%60, remainSec%60);
+    } else {
+        snprintf(remainTime, sizeof(remainTime), "00:00:00");
+        progressPercent = 0;
+    }
 
     // --- タイトルバー ---
     drawTitleBar(modeName, batteryLevel, isCharging);
@@ -95,10 +124,15 @@ void drawMainDisplay() {
     const int alermColStep = (14 * GRID_WIDTH / 5);
     setFont(FONT_AUXILIARY);
     setTextDatum(MC_DATUM);
-    for (int i = 0; i < alarmCount; ++i) {
+    int alarmCount = alarmTimes.size();
+    for (int i = 0; i < alarmCount && i < 5; ++i) {
+        time_t t = alarmTimes[i];
+        struct tm* tm_alarm = localtime(&t);
+        char buf[16];
+        snprintf(buf, sizeof(buf), "%02d:%02d:%02d", tm_alarm->tm_hour, tm_alarm->tm_min, tm_alarm->tm_sec);
         int x = GRID_X(1) + i * alermColStep + alermColStep/2;
         int y = GRID_Y(9);
-        drawString(alarmList[i], x, y);
+        drawString(buf, x, y);
     }
     setTextDatum(TL_DATUM); // 以降は左上基準に戻す
 }
