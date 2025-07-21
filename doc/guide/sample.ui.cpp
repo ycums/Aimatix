@@ -191,7 +191,7 @@ bool showYesNoDialog(const char* title, const char* detail) {
 // 必要に応じて本実装を追加してください。
 
 // メイン表示画面の詳細描画
-// - 残り時間（-HH:MM:SS）
+// - 残り時間（HH:MM:SS）
 // - 進捗バー
 // - NEXT時刻
 // - 鳴動時刻リスト
