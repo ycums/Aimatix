@@ -26,9 +26,9 @@ void test_alarmlogic_remain_and_progress() {
     time_t now = 2000;
     AlarmLogic::initAlarms(alarms, now);
     int remain = AlarmLogic::getRemainSec(alarms, now);
+    int remainPercent = AlarmLogic::getRemainPercent(remain, 120);
     TEST_ASSERT_EQUAL(10, remain);
-    int progress = AlarmLogic::getProgressPercent(remain, 120);
-    TEST_ASSERT_EQUAL(8, progress); // 10/120*100=8
+    TEST_ASSERT_EQUAL(8, remainPercent); // 10/120*100=8
 }
 
 void test_alarmlogic_time_strings() {
