@@ -7,7 +7,7 @@
 class InputDisplayState : public IState {
 public:
     InputDisplayState(InputLogic* logic = nullptr, IInputDisplayView* view = nullptr)
-        : inputLogic(logic), view(view), lastValue(-1) {}
+        : inputLogic(logic), view(view), lastValue(-1), manager(nullptr), mainDisplayState(nullptr) {}
     void onEnter() override {
         if (view) {
             view->clear();
@@ -32,10 +32,19 @@ public:
     void onButtonB() override {}
     void onButtonC() override {}
     void onButtonALongPress() override {}
-    void onButtonCLongPress() override {}
+    void onButtonCLongPress() override {
+        if (manager && mainDisplayState) {
+            manager->setState(mainDisplayState);
+        }
+    }
     void setView(IInputDisplayView* v) { view = v; }
+    // StateManager, MainDisplayStateのsetterを追加
+    void setManager(StateManager* m) { manager = m; }
+    void setMainDisplayState(IState* mainState) { mainDisplayState = mainState; }
 private:
     InputLogic* inputLogic;
     IInputDisplayView* view;
     int lastValue;
+    StateManager* manager;
+    IState* mainDisplayState;
 }; 

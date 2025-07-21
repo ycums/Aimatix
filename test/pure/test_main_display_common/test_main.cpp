@@ -1,1 +1,0 @@
-// このファイルは test/pure/test_main_display_common/test_main.cpp に移動してください。 

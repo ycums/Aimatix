@@ -87,6 +87,7 @@ void test_input_display_c_long_press_returns_to_main() {
     InputLogic logic;
     InputDisplayState inputState(&logic);
     MainDisplayState mainState(&sm, &inputState);
+    // 参照をセット
     inputState.setManager(&sm);
     inputState.setMainDisplayState(&mainState);
     sm.setState(&mainState);
