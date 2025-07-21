@@ -63,11 +63,36 @@ void test_button_event_propagation() {
     TEST_ASSERT_EQUAL(1, s.buttonCLongCount);
 }
 
+// currentState==nullptr時の各handleButton系、setState(nullptr)のテスト
+void test_null_state_handling() {
+    StateManager sm;
+    // 何もセットしない状態で各ボタンイベントを呼んでも例外やクラッシュしないこと
+    sm.handleButtonA();
+    sm.handleButtonB();
+    sm.handleButtonC();
+    sm.handleButtonALongPress();
+    sm.handleButtonCLongPress();
+    // nullptrを明示的にsetStateしてもonEnter/onExitが呼ばれないこと
+    MockState s;
+    sm.setState(&s);
+    TEST_ASSERT_EQUAL(1, s.enterCount);
+    sm.setState(nullptr); // onExitだけ呼ばれる
+    TEST_ASSERT_EQUAL(1, s.exitCount);
+    // 以降、currentState==nullptr
+    sm.handleButtonA();
+    sm.handleButtonB();
+    sm.handleButtonC();
+    sm.handleButtonALongPress();
+    sm.handleButtonCLongPress();
+    // 何も起きない（例外もクラッシュも起きない）ことを確認
+}
+
 int main(int argc, char **argv) {
     UNITY_BEGIN();
     RUN_TEST(test_state_transition_main_to_input);
     RUN_TEST(test_state_manager_holds_current_state);
     RUN_TEST(test_button_event_propagation);
+    RUN_TEST(test_null_state_handling);
     UNITY_END();
     return 0;
 } 

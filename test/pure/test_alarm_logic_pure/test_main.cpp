@@ -45,6 +45,35 @@ void test_alarmlogic_time_strings() {
     }
 }
 
+void test_alarmlogic_edge_and_error_cases() {
+    // removePastAlarms: 全て過去
+    std::vector<time_t> alarms = {100, 200, 300};
+    AlarmLogic::removePastAlarms(alarms, 500);
+    TEST_ASSERT_EQUAL(0, alarms.size());
+    // removePastAlarms: 1つだけ未来
+    alarms = {100, 200, 600};
+    AlarmLogic::removePastAlarms(alarms, 500);
+    TEST_ASSERT_EQUAL(1, alarms.size());
+    TEST_ASSERT_EQUAL(600, alarms[0]);
+    // getRemainSec: 空リスト
+    alarms.clear();
+    int remain = AlarmLogic::getRemainSec(alarms, 1000);
+    TEST_ASSERT_EQUAL(0, remain);
+    // getRemainSec: 負の値
+    alarms = {900};
+    remain = AlarmLogic::getRemainSec(alarms, 1000);
+    TEST_ASSERT_EQUAL(-100, remain);
+    // getRemainPercent: totalSec=0, remainSec負値、100超
+    TEST_ASSERT_EQUAL(0, AlarmLogic::getRemainPercent(10, 0));
+    TEST_ASSERT_EQUAL(0, AlarmLogic::getRemainPercent(-10, 100));
+    TEST_ASSERT_EQUAL(100, AlarmLogic::getRemainPercent(200, 100));
+    // getAlarmTimeStrings: 空リスト
+    alarms.clear();
+    std::vector<std::string> strs;
+    AlarmLogic::getAlarmTimeStrings(alarms, strs);
+    TEST_ASSERT_EQUAL(0, strs.size());
+}
+
 void setUp(void) {}
 void tearDown(void) {}
 
@@ -53,6 +82,7 @@ int main(int argc, char **argv) {
     RUN_TEST(test_alarmlogic_init_and_remove);
     RUN_TEST(test_alarmlogic_remain_and_progress);
     RUN_TEST(test_alarmlogic_time_strings);
+    RUN_TEST(test_alarmlogic_edge_and_error_cases);
     UNITY_END();
     return 0;
 } 

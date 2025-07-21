@@ -1,4 +1,4 @@
-#include "main_display.h"
+#include "DisplayCommon.h"
 #include "StateManager.h"
 #include "MainDisplayState.h"
 #include "InputDisplayState.h"

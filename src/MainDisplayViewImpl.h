@@ -1,6 +1,6 @@
 #pragma once
 #include "IMainDisplayView.h"
-#include "main_display.h"
+#include "DisplayCommon.h"
 #include "IDisplay.h"
 #include <vector>
 #include <string>

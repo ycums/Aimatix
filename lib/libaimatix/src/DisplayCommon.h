@@ -1,10 +1,7 @@
 #pragma once
-#include "main_display.h"
+#include "IDisplay.h"
+#include "ui_constants.h"
 
-inline void drawCommonTitleBar(const char* modeName, int batteryLevel = 42, bool isCharging = false) {
-    drawTitleBar(modeName, batteryLevel, isCharging);
-}
-
-inline void drawCommonButtonHints(const char* btnA, const char* btnB, const char* btnC) {
-    drawButtonHintsGrid(btnA, btnB, btnC);
-} 
+void drawTitleBar(IDisplay* disp, const char* modeName, int batteryLevel, bool isCharging);
+void drawButtonHintsGrid(IDisplay* disp, const char* btnA, const char* btnB, const char* btnC);
+void drawGridLines(IDisplay* disp); 

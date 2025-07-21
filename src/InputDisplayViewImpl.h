@@ -1,6 +1,6 @@
 #pragma once
 #include "IInputDisplayView.h"
-#include "main_display.h"
+#include "DisplayCommon.h"
 #include "IDisplay.h"
 
 class InputDisplayViewImpl : public IInputDisplayView {
