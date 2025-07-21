@@ -1,72 +1,42 @@
 #include "main_display.h"
-#include "TimeLogic.h"
 #include <stdio.h>
 #include <string.h>
 #include <vector>
-#include <ctime>
 #include <string>
+#include <ctime>
 #include "AlarmLogic.h"
-extern std::vector<time_t> alarmTimes;
 
-// --- Adapter層で差し替え可能な関数ポインタ ---
-static void (*drawRect_impl)(int, int, int, int) = nullptr;
-static void (*drawString_impl)(const char*, int, int) = nullptr;
-static void (*fillProgressBar_impl)(int, int, int, int, int) = nullptr;
-static void (*setFont_impl)(int) = nullptr;
-static void (*setTextDatum_impl)(int) = nullptr;
-static void (*fillRect_impl)(int, int, int, int, int) = nullptr;
-static void (*fillProgressBarSprite_impl)(int, int, int, int, int) = nullptr;
-
-void setDrawRectImpl(void (*impl)(int, int, int, int)) { drawRect_impl = impl; }
-void setDrawStringImpl(void (*impl)(const char*, int, int)) { drawString_impl = impl; }
-void setFillProgressBarImpl(void (*impl)(int, int, int, int, int)) { fillProgressBar_impl = impl; }
-void setFontImpl(void (*impl)(int)) { setFont_impl = impl; }
-void setTextDatumImpl(void (*impl)(int)) { setTextDatum_impl = impl; }
-void setFillRectImpl(void (*impl)(int, int, int, int, int)) { fillRect_impl = impl; }
-void setFillProgressBarSpriteImpl(void (*impl)(int, int, int, int, int)) { fillProgressBarSprite_impl = impl; }
-
-void drawRect(int x, int y, int w, int h) {
-    if (drawRect_impl) drawRect_impl(x, y, w, h);
-}
-void drawString(const char* str, int x, int y) {
-    if (drawString_impl) drawString_impl(str, x, y);
-}
-void fillProgressBar(int x, int y, int w, int h, int percent) {
-    if (fillProgressBar_impl) fillProgressBar_impl(x, y, w, h, percent);
-}
-void fillProgressBarSprite(int x, int y, int w, int h, int percent) {
-    if (fillProgressBarSprite_impl) fillProgressBarSprite_impl(x, y, w, h, percent);
-    else if (fillProgressBar_impl) fillProgressBar_impl(x, y, w, h, percent); // フォールバック
-}
-void setFont(int font) {
-    if (setFont_impl) setFont_impl(font);
-}
-void setTextDatum(int datum) { if (setTextDatum_impl) setTextDatum_impl(datum); }
-void fillRect(int x, int y, int w, int h, int color) {
-    if (fillRect_impl) fillRect_impl(x, y, w, h, color);
-}
-
-// --- タイトルバー描画 ---
-void drawTitleBar(const char* modeName, int batteryLevel, bool isCharging) {
-    // 下ボーダーのみ（fillRectで1px線）
-    if (drawRect_impl) drawRect_impl(0, TITLE_HEIGHT - 1, SCREEN_WIDTH, 1); // 横線
-    // モード名（左）
-    setFont(FONT_AUXILIARY);
-    drawString(modeName, 5, 2);
-    // バッテリー表示（右）
+void drawTitleBar(IDisplay* disp, const char* modeName, int batteryLevel, bool isCharging) {
+    disp->fillRect(0, TITLE_HEIGHT - 1, SCREEN_WIDTH, 1, AMBER_COLOR); // 横線
+    disp->setTextFont(FONT_AUXILIARY);
+    disp->setTextColor(AMBER_COLOR, TFT_BLACK);
+    disp->setTextDatum(TL_DATUM);
+    disp->drawText(5, 2, modeName, FONT_AUXILIARY);
     char batteryStr[16];
     snprintf(batteryStr, sizeof(batteryStr), "%s %d%%", isCharging ? "CHG" : "BAT", batteryLevel);
-    drawString(batteryStr, SCREEN_WIDTH - 70, 2);
+    disp->drawText(SCREEN_WIDTH - 70, 2, batteryStr, FONT_AUXILIARY);
 }
 
-// --- ボタンヒント描画 ---
-void drawButtonHintsGrid(const char* btnA, const char* btnB, const char* btnC) {
-    // 上ボーダーのみ（fillRectで1px線）
-    if (drawRect_impl) drawRect_impl(0, SCREEN_HEIGHT - HINT_HEIGHT, SCREEN_WIDTH, 1); // 横線
-    setFont(FONT_AUXILIARY);
-    if (btnA) drawString(btnA, 20, SCREEN_HEIGHT - HINT_HEIGHT + 2);
-    if (btnB) drawString(btnB, SCREEN_WIDTH / 2 - 30, SCREEN_HEIGHT - HINT_HEIGHT + 2);
-    if (btnC) drawString(btnC, SCREEN_WIDTH - 80, SCREEN_HEIGHT - HINT_HEIGHT + 2);
+void drawButtonHintsGrid(IDisplay* disp, const char* btnA, const char* btnB, const char* btnC) {
+    disp->fillRect(0, SCREEN_HEIGHT - HINT_HEIGHT, SCREEN_WIDTH, 1, AMBER_COLOR); // 横線
+    disp->setTextFont(FONT_AUXILIARY);
+    disp->setTextColor(AMBER_COLOR, TFT_BLACK);
+    disp->setTextDatum(TL_DATUM);
+    if (btnA) disp->drawText(20, SCREEN_HEIGHT - HINT_HEIGHT + 2, btnA, FONT_AUXILIARY);
+    if (btnB) disp->drawText(SCREEN_WIDTH / 2 - 30, SCREEN_HEIGHT - HINT_HEIGHT + 2, btnB, FONT_AUXILIARY);
+    if (btnC) disp->drawText(SCREEN_WIDTH - 80, SCREEN_HEIGHT - HINT_HEIGHT + 2, btnC, FONT_AUXILIARY);
+}
+
+void fillProgressBarSprite(IDisplay* disp, int x, int y, int w, int h, int percent) {
+    disp->fillRect(x, y, w, h, TFT_BLACK);
+    disp->fillRect(x, y, w, 1, AMBER_COLOR); // 上枠
+    disp->fillRect(x, y + h - 1, w, 1, AMBER_COLOR); // 下枠
+    disp->fillRect(x, y, 1, h, AMBER_COLOR); // 左枠
+    disp->fillRect(x + w - 1, y, 1, h, AMBER_COLOR); // 右枠
+    int fillW = (w - 2) * percent / 100;
+    if (fillW > 0) {
+        disp->fillRect(x + 1, y + 1, fillW, h - 2, AMBER_COLOR);
+    }
 }
 
 // --- メイン画面描画 ---
@@ -108,24 +78,24 @@ void drawMainDisplay() {
     }
 
     // --- タイトルバー ---
-    drawTitleBar(modeName, batteryLevel, isCharging);
+    drawTitleBar(disp, modeName, batteryLevel, isCharging);
 
     // --- ボタンヒント ---
-    drawButtonHintsGrid("ABS", "REL+", "MGMT");
+    drawButtonHintsGrid(disp, "ABS", "REL+", "MGMT");
 
     // --- 現在時刻（中央寄せ・Font4）---
-    setFont(FONT_IMPORTANT);
-    setTextDatum(MC_DATUM);
-    drawString(currentTime, SCREEN_WIDTH/2, GRID_Y(2) + GRID_HEIGHT);
+    disp->setTextFont(FONT_IMPORTANT);
+    disp->setTextDatum(MC_DATUM);
+    disp->drawText(SCREEN_WIDTH/2, GRID_Y(2) + GRID_HEIGHT, currentTime, FONT_IMPORTANT);
 
     // --- 残り時間（中央寄せ・Font7）---
-    setTextDatum(TC_DATUM);
-    setFont(FONT_MAIN);
-    drawString(remainTime, SCREEN_WIDTH/2, GRID_Y(4));
+    disp->setTextDatum(TC_DATUM);
+    disp->setTextFont(FONT_MAIN);
+    disp->drawText(SCREEN_WIDTH/2, GRID_Y(4), remainTime, FONT_MAIN);
 
     // --- プログレスバー（グリッドセル(0,6)-(15,7)）---
     const int progressBarHeight = 8;
-    fillProgressBarSprite(
+    fillProgressBarSprite(disp,
         GRID_X(0),
         GRID_Y(7),
         SCREEN_WIDTH,
@@ -135,8 +105,8 @@ void drawMainDisplay() {
 
     // --- アラームリスト（最大5件・Font2）---
     const int alermColStep = (14 * GRID_WIDTH / 5);
-    setFont(FONT_AUXILIARY);
-    setTextDatum(MC_DATUM);
+    disp->setTextFont(FONT_AUXILIARY);
+    disp->setTextDatum(MC_DATUM);
     std::vector<std::string> alarmStrs;
     AlarmLogic::getAlarmTimeStrings(alarmTimes, alarmStrs);
     int alarmCount = alarmStrs.size();
@@ -147,23 +117,23 @@ void drawMainDisplay() {
         int x = GRID_X(1) + i * alermColStep + alermColStep/2;
         int y = GRID_Y(9);
         if (i < alarmCount) {
-            drawString(alarmStrs[i].c_str(), x, y);
+            disp->drawText(x, y, alarmStrs[i].c_str(), FONT_AUXILIARY);
         } else {
-            fillRect(x - clearW/2, y - clearH/2, clearW, clearH, TFT_BLACK);
+            disp->fillRect(x - clearW/2, y - clearH/2, clearW, clearH, TFT_BLACK);
         }
     }
-    setTextDatum(TL_DATUM); // 以降は左上基準に戻す
+    disp->setTextDatum(TL_DATUM); // 以降は左上基準に戻す
 }
 
 void drawGridLines() {
     // 縦線（17本）
     for (int i = 0; i <= 16; ++i) {
         int x = i * GRID_WIDTH;
-        if (drawRect_impl) drawRect_impl(x, 0, 1, SCREEN_HEIGHT);
+        if (disp->drawRect) disp->drawRect(x, 0, 1, SCREEN_HEIGHT);
     }
     // 横線（13本）
     for (int i = 0; i <= 12; ++i) {
         int y = TITLE_HEIGHT + i * GRID_HEIGHT;
-        if (drawRect_impl) drawRect_impl(0, y, SCREEN_WIDTH, 1);
+        if (disp->drawRect) disp->drawRect(0, y, SCREEN_WIDTH, 1);
     }
 } 

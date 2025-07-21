@@ -367,6 +367,17 @@ struct Command {
 - 既存のレイヤー分離・依存抽象化・DI設計はそのまま活かせる
 - 本方式はAimatixの標準設計方針であり、今後の全ての副作用管理に適用する
 
+## 10.5 UIレイヤの設計整理・描画アーキテクチャ
+
+- UIレイヤは「汎用描画アダプタ（IDisplay実装）」と「プロジェクト固有UI部品ユーティリティ（main_display.cpp/h）」を分離する。
+- IDisplayはM5Stack等の描画APIをラップし、clear/drawText/fillRect等の低レベルAPIを提供。
+- main_display.cpp/hはIDisplay*を受け取り、Aimatix固有のUI部品（タイトルバー、進捗バー等）を描画する。
+- View実装（MainDisplayViewImpl等）はIDisplay*をDIし、main_displayユーティリティ経由で描画を行う。
+- これによりUI/ロジック/描画APIの責務分離が明確化し、テスト容易性・mock化・将来のハード差し替えが容易となる。
+- 設計原則：lib配下のロジック層はIDisplayやmain_displayユーティリティを直接参照せず、Viewインターフェース経由でのみ描画を委譲する。
+
+---
+
 ## UI層とロジック層の責務分離設計
 
 - ロジック層（InputLogic, SettingsLogic等）は値の検証・変換・保存などの純粋ロジックのみ担当し、UI遷移や画面制御は一切行わない。

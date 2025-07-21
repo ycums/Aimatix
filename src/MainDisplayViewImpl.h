@@ -1,41 +1,53 @@
 #pragma once
 #include "IMainDisplayView.h"
 #include "main_display.h"
-#ifdef ARDUINO
-#include <M5Stack.h>
-#endif
+#include "IDisplay.h"
+#include <vector>
+#include <string>
 
 class MainDisplayViewImpl : public IMainDisplayView {
 public:
+    MainDisplayViewImpl(IDisplay* disp) : disp(disp) {}
     void showTitle(const char* modeName, int batteryLevel, bool isCharging) override {
-#ifdef ARDUINO
-        drawTitleBar(modeName, batteryLevel, isCharging);
-#endif
+        drawTitleBar(disp, modeName, batteryLevel, isCharging);
     }
     void showTime(const char* currentTime) override {
-#ifdef ARDUINO
-        // 仮実装: 時刻表示エリアのみ再描画
-        M5.Lcd.fillRect(SCREEN_WIDTH/2-40, 60, 80, 40, TFT_BLACK);
-        M5.Lcd.setTextFont(FONT_MAIN);
-        M5.Lcd.setTextColor(AMBER_COLOR, TFT_BLACK);
-        M5.Lcd.setTextDatum(MC_DATUM);
-        M5.Lcd.drawString(currentTime, SCREEN_WIDTH/2, 80);
-#endif
+        disp->setTextFont(FONT_IMPORTANT);
+        disp->setTextColor(AMBER_COLOR, TFT_BLACK);
+        disp->setTextDatum(MC_DATUM);
+        disp->drawText(SCREEN_WIDTH/2, GRID_Y(2) + GRID_HEIGHT, currentTime, FONT_IMPORTANT);
+    }
+    void showRemain(const char* remainTime) override {
+        disp->setTextDatum(TC_DATUM);
+        disp->setTextFont(FONT_MAIN);
+        disp->drawText(SCREEN_WIDTH/2, GRID_Y(4), remainTime, FONT_MAIN);
     }
     void showProgress(int percent) override {
-#ifdef ARDUINO
-        // 仮実装: 進捗バー描画
-        fillProgressBar(40, 140, 240, 20, percent);
-#endif
+        fillProgressBarSprite(disp, GRID_X(0), GRID_Y(7), SCREEN_WIDTH, 8, percent);
+    }
+    void showAlarmList(const std::vector<std::string>& alarmStrs) override {
+        const int alermColStep = (14 * GRID_WIDTH / 5);
+        disp->setTextFont(FONT_AUXILIARY);
+        disp->setTextDatum(MC_DATUM);
+        const int clearW = 48;
+        const int clearH = 24;
+        for (int i = 0; i < 5; ++i) {
+            int x = GRID_X(1) + i * alermColStep + alermColStep/2;
+            int y = GRID_Y(9);
+            if (i < (int)alarmStrs.size()) {
+                disp->drawText(x, y, alarmStrs[i].c_str(), FONT_AUXILIARY);
+            } else {
+                disp->fillRect(x - clearW/2, y - clearH/2, clearW, clearH, TFT_BLACK);
+            }
+        }
+        disp->setTextDatum(TL_DATUM);
     }
     void showHints(const char* btnA, const char* btnB, const char* btnC) override {
-#ifdef ARDUINO
-        drawButtonHintsGrid(btnA, btnB, btnC);
-#endif
+        drawButtonHintsGrid(disp, btnA, btnB, btnC);
     }
     void clear() override {
-#ifdef ARDUINO
-        M5.Lcd.fillScreen(TFT_BLACK);
-#endif
+        disp->clear();
     }
+private:
+    IDisplay* disp;
 }; 

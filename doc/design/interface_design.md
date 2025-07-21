@@ -36,6 +36,14 @@ public:
 
 ---
 
+## 1.5 main_displayユーティリティの役割
+- main_display.cpp/hはIDisplay*を受け取り、Aimatix固有のUI部品（タイトルバー、進捗バー等）を描画する。
+- 低レベルAPIへの直接依存を排除し、IDisplay経由でのみ描画する。
+- View実装（MainDisplayViewImpl等）はIDisplay*をDIし、main_displayユーティリティ経由で描画を行う。
+- 設計原則：lib配下のロジック層はIDisplayやmain_displayユーティリティを直接参照せず、Viewインターフェース経由でのみ描画を委譲する。
+
+---
+
 ### 2. ISpeaker（スピーカー制御用）
 ```cpp
 // スピーカー制御の抽象インターフェース
@@ -102,7 +110,7 @@ public:
   - Effect/Command Dispatcherがそれぞれのインターフェース実装（UiRenderer, EepromWriter, NetworkSender等）に処理を振り分ける
   方式が有効。
 - この拡張方式により、UI以外の副作用も同じ仕組みで柔軟に追加・管理できる。
-- 既存のインターフェース設計思想（単一責任・DI）はそのまま活かせる。
+- 既存のインターフェース設計思想（単一責務・DI）はそのまま活かせる。
 
 ---
 

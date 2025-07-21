@@ -5,6 +5,10 @@
 #include "InputLogic.h"
 #include <cstdio>
 #include <cstring>
+#include <vector>
+#include <ctime>
+
+std::vector<time_t> alarmTimes;
 
 void setUp(void) {}
 void tearDown(void) {}
@@ -42,8 +46,8 @@ void test_input_display_stable_rendering() {
 }
 
 void test_no_transition_on_a_button_long_press() {
-    // TODO: 長押しイベントのモック・実装後に有効化
-    TEST_IGNORE_MESSAGE("長押し判定実装後に有効化");
+    // TODO: Enable after implementing long-press event mock
+    TEST_IGNORE_MESSAGE("Enable after implementing long-press event mock.");
 }
 
 int main(int argc, char **argv) {
