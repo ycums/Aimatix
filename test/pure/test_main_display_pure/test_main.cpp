@@ -22,6 +22,11 @@ public:
         snprintf(buf, sizeof(buf), "fillRect(%d,%d,%d,%d,%u)", x, y, w, h, color);
         log.push_back(buf);
     }
+    void drawRect(int x, int y, int w, int h, uint32_t color) override {
+        char buf[128];
+        snprintf(buf, sizeof(buf), "drawRect(%d,%d,%d,%d,%u)", x, y, w, h, color);
+        log.push_back(buf);
+    }
     void setTextDatum(int datum) override {
         log.push_back("setTextDatum");
     }

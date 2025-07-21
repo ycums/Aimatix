@@ -41,3 +41,83 @@ void fillProgressBarSprite(IDisplay* disp, int x, int y, int w, int h, int perce
     }
 }
 // ...他UI部品も同様にIDisplay*経由で実装... 
+
+// --- メイン画面描画 ---
+void drawMainDisplay(IDisplay* disp, const std::vector<time_t>& alarmTimes, const char* modeName, int batteryLevel, bool isCharging) {
+    static time_t lastAlarmStart = 0;
+    static int lastAlarmTotalSec = 0;
+    char currentTime[16];
+    char remainTime[16];
+    int progressPercent = 0;
+
+    // --- 現在時刻取得 ---
+    time_t now = time(nullptr);
+    struct tm* tm_now = localtime(&now);
+    snprintf(currentTime, sizeof(currentTime), "%02d:%02d", tm_now->tm_hour, tm_now->tm_min);
+
+    // --- アラームリストの消化 ---
+    AlarmLogic::removePastAlarms(const_cast<std::vector<time_t>&>(alarmTimes), now);
+
+    // --- 残り時間・進捗計算 ---
+    int remainSec = AlarmLogic::getRemainSec(alarmTimes, now);
+    static time_t prevNextAlarm = 0;
+    time_t nextAlarm = (!alarmTimes.empty()) ? alarmTimes.front() : 0;
+    if (nextAlarm != prevNextAlarm) {
+        lastAlarmStart = now;
+        lastAlarmTotalSec = remainSec;
+        prevNextAlarm = nextAlarm;
+    }
+    int totalSec = lastAlarmTotalSec > 0 ? lastAlarmTotalSec : 1;
+    progressPercent = AlarmLogic::getRemainPercent(remainSec, totalSec);
+    snprintf(remainTime, sizeof(remainTime), "%02d:%02d:%02d", remainSec/3600, (remainSec/60)%60, remainSec%60);
+    if (alarmTimes.empty()) {
+        snprintf(remainTime, sizeof(remainTime), "00:00:00");
+        progressPercent = 0;
+    }
+
+    // --- タイトルバー ---
+    drawTitleBar(disp, modeName, batteryLevel, isCharging);
+    // --- ボタンヒント ---
+    drawButtonHintsGrid(disp, "ABS", "REL+", "MGMT");
+    // --- 現在時刻（中央寄せ・Font4）---
+    disp->setTextFont(FONT_IMPORTANT);
+    disp->setTextDatum(MC_DATUM);
+    disp->drawText(SCREEN_WIDTH/2, GRID_Y(2) + GRID_HEIGHT, currentTime, FONT_IMPORTANT);
+    // --- 残り時間（中央寄せ・Font7）---
+    disp->setTextDatum(TC_DATUM);
+    disp->setTextFont(FONT_MAIN);
+    disp->drawText(SCREEN_WIDTH/2, GRID_Y(4), remainTime, FONT_MAIN);
+    // --- プログレスバー ---
+    const int progressBarHeight = 8;
+    fillProgressBarSprite(disp, GRID_X(0), GRID_Y(7), SCREEN_WIDTH, progressBarHeight, progressPercent);
+    // --- アラームリスト ---
+    const int alermColStep = (14 * GRID_WIDTH / 5);
+    disp->setTextFont(FONT_AUXILIARY);
+    disp->setTextDatum(MC_DATUM);
+    std::vector<std::string> alarmStrs;
+    AlarmLogic::getAlarmTimeStrings(alarmTimes, alarmStrs);
+    int alarmCount = alarmStrs.size();
+    const int clearW = 48;
+    const int clearH = 24;
+    for (int i = 0; i < 5; ++i) {
+        int x = GRID_X(1) + i * alermColStep + alermColStep/2;
+        int y = GRID_Y(9);
+        if (i < alarmCount) {
+            disp->drawText(x, y, alarmStrs[i].c_str(), FONT_AUXILIARY);
+        } else {
+            disp->fillRect(x - clearW/2, y - clearH/2, clearW, clearH, TFT_BLACK);
+        }
+    }
+    disp->setTextDatum(TL_DATUM);
+}
+
+void drawGridLines(IDisplay* disp) {
+    for (int i = 0; i <= 16; ++i) {
+        int x = i * GRID_WIDTH;
+        disp->drawRect(x, 0, 1, SCREEN_HEIGHT, AMBER_COLOR);
+    }
+    for (int i = 0; i <= 12; ++i) {
+        int y = TITLE_HEIGHT + i * GRID_HEIGHT;
+        disp->drawRect(0, y, SCREEN_WIDTH, 1, AMBER_COLOR);
+    }
+} 

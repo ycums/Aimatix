@@ -78,13 +78,6 @@ MainDisplayState mainDisplayState(&stateManager, &inputDisplayState, &mainDispla
 void setup() {
 #ifdef ARDUINO
     M5.begin();
-    setDrawRectImpl(M5RectImpl);
-    setDrawStringImpl(M5StringImpl);
-    setFillProgressBarImpl(M5ProgressBarImpl);
-    setFontImpl(M5SetFontImpl);
-    setTextDatumImpl(M5SetTextDatumImpl);
-    setFillRectImpl(M5FillRectImpl);
-    setFillProgressBarSpriteImpl(M5FillProgressBarSpriteImpl);
     M5.Lcd.setTextColor(AMBER_COLOR, TFT_BLACK);
 
     // アラームリスト初期化
