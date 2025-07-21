@@ -80,4 +80,50 @@ for (const auto& cmd : handleEvent(event)) {
 - コマンド/イベント型の拡張は標準設計方針とし、全ての副作用をこの方式で管理
 - Effect/Command Dispatcherによる副作用一元管理も必須とする
 
---- 
+---
+
+## StateManager（状態遷移管理クラス）の導入
+
+### 目的
+- 画面（Display）やロジック（Logic）を「状態」として一元管理し、ボタン操作やイベントに応じて状態遷移・画面遷移を制御する。
+- UIレイヤの状態遷移の責務を明確化し、拡張性・テスト容易性を高める。
+
+### 基本設計
+- StateManagerは「現在の状態（画面/ロジック）」を保持し、状態遷移APIを提供する。
+- 各Display/Logicは「状態」としてStateManagerに登録される。
+- ボタン操作やコマンドイベントに応じて、StateManagerが状態遷移を実行する。
+- 状態ごとに描画・入力処理を委譲する（例：draw(), onButtonA(), onButtonCLongPress() など）。
+
+### インターフェース例（C++擬似コード）
+```cpp
+class IState {
+public:
+    virtual void onEnter() = 0;
+    virtual void onExit() = 0;
+    virtual void onDraw() = 0;
+    virtual void onButtonA() = 0;
+    virtual void onButtonB() = 0;
+    virtual void onButtonC() = 0;
+    virtual void onButtonALongPress() = 0;
+    virtual void onButtonCLongPress() = 0;
+    // ... 必要に応じて拡張
+};
+
+class StateManager {
+public:
+    void setState(IState* state);
+    IState* getCurrentState();
+    void handleButtonA();
+    void handleButtonCLongPress();
+    // ...
+};
+```
+
+### 実装・拡張方針
+- 各Display/LogicはIStateを実装し、StateManagerに登録する。
+- 画面遷移・状態遷移のテストもStateManager経由で行う。
+- 今後のAlarmDisplay, SettingsDisplay等も同様に拡張可能。
+
+---
+
+（2025/01/xx 3-0-4対応 追記） 

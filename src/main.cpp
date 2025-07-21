@@ -1,4 +1,8 @@
 #include "main_display.h"
+#include "StateManager.h"
+#include "MainDisplayState.h"
+#include "InputDisplayState.h"
+#include "InputLogic.h"
 #ifdef ARDUINO
 #include <M5Stack.h>
 #include <vector>
@@ -18,12 +22,11 @@ void M5StringImpl(const char* str, int x, int y) {
     M5.Lcd.drawString(str, x, y);
 }
 void M5ProgressBarImpl(int x, int y, int w, int h, int percent) {
-    // x, y, w, hはそのまま四隅を表す
-    M5.Lcd.drawRect(x, y, w, h, AMBER_COLOR); // 枠
-    M5.Lcd.fillRect(x + 1, y + 1, w - 2, h - 2, TFT_BLACK); // 背景
+    M5.Lcd.drawRect(x, y, w, h, AMBER_COLOR);
+    M5.Lcd.fillRect(x + 1, y + 1, w - 2, h - 2, TFT_BLACK);
     int fillW = (w - 2) * percent / 100;
     if (fillW > 0) {
-        M5.Lcd.fillRect(x + 1, y + 1, fillW, h - 2, AMBER_COLOR); // 進捗
+        M5.Lcd.fillRect(x + 1, y + 1, fillW, h - 2, AMBER_COLOR);
     }
 }
 void M5SetFontImpl(int font) {
@@ -56,6 +59,12 @@ void M5FillProgressBarSpriteImpl(int x, int y, int w, int h, int percent) {
 #include <ctime>
 std::vector<time_t> alarmTimes;
 
+// --- 状態管理クラスのグローバル生成 ---
+StateManager stateManager;
+InputLogic inputLogic;
+InputDisplayState inputDisplayState(&inputLogic);
+MainDisplayState mainDisplayState(&stateManager, &inputDisplayState);
+
 void setup() {
 #ifdef ARDUINO
     M5.begin();
@@ -73,13 +82,21 @@ void setup() {
     time_t now = time(nullptr);
     AlarmLogic::initAlarms(alarmTimes, now);
 #endif
-    // drawGridLines(); // デバッグ用グリッド線
-    drawMainDisplay();
+    // 状態遷移の初期状態をMainDisplayに
+    stateManager.setState(&mainDisplayState);
 }
 
 void loop() {
 #ifdef ARDUINO
-    drawMainDisplay();
-    delay(200); // 200msごとに画面更新
+    M5.update();
+    // ボタンイベント伝播
+    if (M5.BtnA.wasPressed()) stateManager.handleButtonA();
+    if (M5.BtnB.wasPressed()) stateManager.handleButtonB();
+    if (M5.BtnC.wasPressed()) stateManager.handleButtonC();
+    // 長押し等も必要に応じて追加
+    // 現在の状態の描画
+    IState* current = stateManager.getCurrentState();
+    if (current) current->onDraw();
+    delay(50);
 #endif
 } 

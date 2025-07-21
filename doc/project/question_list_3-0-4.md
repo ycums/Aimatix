@@ -49,6 +49,7 @@
     - 各種コマンド
       - native テスト実行: `pio test -e native` 
         - フィルタするときは  `pio test -e native -f pure/test_xxxx_pure`
+      - カバレッジ確認: `python scripts/test_coverage.py --quick`
       - ビルド: `pio run`
       - 実機転送: `pio run -t upload` 
 
