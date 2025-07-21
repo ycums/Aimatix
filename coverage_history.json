@@ -5,5 +5,19 @@
     "pure_coverage": 100.0,
     "m5stack_coverage": 0.0,
     "quality_gate": true
+  },
+  {
+    "timestamp": "2025-07-21T11:20:06.374780",
+    "coverage": 100.0,
+    "pure_coverage": 100.0,
+    "m5stack_coverage": 0.0,
+    "quality_gate": true
+  },
+  {
+    "timestamp": "2025-07-21T12:50:24.783247",
+    "coverage": 100.0,
+    "pure_coverage": 100.0,
+    "m5stack_coverage": 0.0,
+    "quality_gate": true
   }
 ]
