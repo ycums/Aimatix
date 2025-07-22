@@ -19,20 +19,40 @@ public:
     }
     void onExit() override {}
     void onDraw() override {
+        if (inputLogic && view) {
+            view->showValue(inputLogic->getDigits(), inputLogic->getEntered());
+        }
+        // プレビュー表示
         int value = inputLogic ? inputLogic->getValue() : InputLogic::EMPTY_VALUE;
-        if (view && value != lastValue) {
-            view->showValue(value);
-            lastValue = value;
+        if (view) {
+            char preview[16] = "";
+            if (value != InputLogic::EMPTY_VALUE) {
+                snprintf(preview, sizeof(preview), "プレビュー: %02d:%02d", value/100, value%100);
+            }
+            view->showPreview(preview);
         }
 #ifndef ARDUINO
         // テスト用: 標準出力に値を出すだけ
         printf("[InputDisplay] value=%d\n", value);
 #endif
     }
-    void onButtonA() override {}
+    void onButtonA() override {
+        if (inputLogic) {
+            inputLogic->incrementAtCursor(1);
+        }
+        onDraw();
+    }
     void onButtonB() override {}
     void onButtonC() override {}
-    void onButtonALongPress() override {}
+    void onButtonALongPress() override {
+        if (inputLogic) {
+            inputLogic->incrementAtCursor(5);
+        }
+        onDraw();
+    }
+    void onButtonBLongPress() override {
+        // 必要ならリセット等の処理をここに
+    }
     void onButtonCLongPress() override {
         if (manager && mainDisplayState) {
             manager->setState(mainDisplayState);

@@ -86,7 +86,9 @@ void loop() {
     if (M5.BtnA.wasPressed()) stateManager.handleButtonA();
     if (M5.BtnB.wasPressed()) stateManager.handleButtonB();
     if (M5.BtnC.wasPressed()) stateManager.handleButtonC();
-    // --- Cボタン長押しイベントも伝搬 ---
+    // --- 各ボタン長押しイベントも伝搬 ---
+    if (M5.BtnA.pressedFor(500)) stateManager.handleButtonALongPress();
+    if (M5.BtnB.pressedFor(500)) stateManager.handleButtonBLongPress();
     if (M5.BtnC.pressedFor(500)) stateManager.handleButtonCLongPress();
     // 現在の状態の描画
     IState* current = stateManager.getCurrentState();

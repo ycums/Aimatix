@@ -26,4 +26,7 @@ void StateManager::handleButtonALongPress() {
 }
 void StateManager::handleButtonCLongPress() {
     if (currentState) currentState->onButtonCLongPress();
+}
+void StateManager::handleButtonBLongPress() {
+    if (currentState) currentState->onButtonBLongPress();
 } 

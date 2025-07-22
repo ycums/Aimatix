@@ -66,6 +66,7 @@ public:
     void onButtonC() override {}
     void onButtonALongPress() override {}
     void onButtonCLongPress() override {}
+    void onButtonBLongPress() override {}
     void setView(IMainDisplayView* v) { view = v; }
     void setTimeLogic(TimeLogic* t) { timeLogic = t; }
     void setAlarmLogic(AlarmLogic* a) { alarmLogic = a; }

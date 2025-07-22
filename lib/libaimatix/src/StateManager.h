@@ -10,6 +10,7 @@ public:
     virtual void onButtonB() = 0;
     virtual void onButtonC() = 0;
     virtual void onButtonALongPress() = 0;
+    virtual void onButtonBLongPress() = 0;
     virtual void onButtonCLongPress() = 0;
 };
 
@@ -22,6 +23,7 @@ public:
     void handleButtonB();
     void handleButtonC();
     void handleButtonALongPress();
+    void handleButtonBLongPress();
     void handleButtonCLongPress();
 private:
     IState* currentState;
