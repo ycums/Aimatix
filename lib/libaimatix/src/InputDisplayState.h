@@ -9,16 +9,17 @@ public:
     InputDisplayState(InputLogic* logic = nullptr, IInputDisplayView* view = nullptr)
         : inputLogic(logic), view(view), lastValue(-1), manager(nullptr), mainDisplayState(nullptr) {}
     void onEnter() override {
+        if (inputLogic) inputLogic->reset();
         if (view) {
             view->clear();
             view->showTitle("INPUT", 42, false);
             view->showHints("OK", "", "CANCEL");
-            lastValue = -1;
+            lastValue = InputLogic::LAST_VALUE_INIT;
         }
     }
     void onExit() override {}
     void onDraw() override {
-        int value = inputLogic ? inputLogic->getValue() : 0;
+        int value = inputLogic ? inputLogic->getValue() : InputLogic::EMPTY_VALUE;
         if (view && value != lastValue) {
             view->showValue(value);
             lastValue = value;
