@@ -15,7 +15,7 @@ public:
         int colonW = 16;
         int fontH = 48;
         int y0 = GRID_Y(4) + GRID_HEIGHT/2;
-        int underlineY = GRID_Y(6);
+        int underlineY = GRID_Y(6) - 8;
         int x0 = SCREEN_WIDTH/2 - (2*digitW + colonW/2);
         int x;
         if (index < 2) {
