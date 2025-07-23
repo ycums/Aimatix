@@ -7,22 +7,32 @@
 class InputDisplayState : public IState {
 public:
     InputDisplayState(InputLogic* logic = nullptr, IInputDisplayView* view = nullptr)
-        : inputLogic(logic), view(view), lastValue(-1), manager(nullptr), mainDisplayState(nullptr) {}
+        : inputLogic(logic), view(view), manager(nullptr), mainDisplayState(nullptr) {
+        for (int i = 0; i < 4; ++i) { lastDigits[i] = -1; lastEntered[i] = false; }
+    }
     void onEnter() override {
         if (inputLogic) inputLogic->reset();
         if (view) {
             view->clear();
             view->showTitle("INPUT", 42, false);
             view->showHints("OK", "", "CANCEL");
-            lastValue = InputLogic::LAST_VALUE_INIT;
+            for (int i = 0; i < 4; ++i) { lastDigits[i] = -1; lastEntered[i] = false; }
         }
     }
     void onExit() override {}
     void onDraw() override {
         if (inputLogic && view) {
-            view->showValue(inputLogic->getDigits(), inputLogic->getEntered());
+            const int* digits = inputLogic->getDigits();
+            const bool* entered = inputLogic->getEntered();
+            for (int i = 0; i < 4; ++i) {
+                if (digits[i] != lastDigits[i] || entered[i] != lastEntered[i]) {
+                    view->showDigit(i, digits[i], entered[i]);
+                    lastDigits[i] = digits[i];
+                    lastEntered[i] = entered[i];
+                }
+            }
         }
-        // プレビュー表示
+        // プレビュー表示などはそのまま
         int value = inputLogic ? inputLogic->getValue() : InputLogic::EMPTY_VALUE;
         if (view) {
             char preview[16] = "";
@@ -32,7 +42,6 @@ public:
             view->showPreview(preview);
         }
 #ifndef ARDUINO
-        // テスト用: 標準出力に値を出すだけ
         printf("[InputDisplay] value=%d\n", value);
 #endif
     }
@@ -65,7 +74,8 @@ public:
 private:
     InputLogic* inputLogic;
     IInputDisplayView* view;
-    int lastValue;
+    int lastDigits[4] = {-1,-1,-1,-1};
+    bool lastEntered[4] = {false,false,false,false};
     StateManager* manager;
     IState* mainDisplayState;
 }; 

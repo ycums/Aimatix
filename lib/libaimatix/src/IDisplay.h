@@ -11,5 +11,6 @@ public:
     virtual void setTextDatum(int datum) = 0;
     virtual void setTextFont(int font) = 0;
     virtual void fillProgressBarSprite(int x, int y, int w, int h, int percent) = 0;
+    virtual void drawLine(int x0, int y0, int x1, int y1, uint32_t color) = 0;
     // 必要に応じて追加
 }; 

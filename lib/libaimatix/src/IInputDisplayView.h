@@ -7,4 +7,5 @@ public:
     virtual void showHints(const char* btnA, const char* btnB, const char* btnC) = 0;
     virtual void showPreview(const char* preview) = 0;
     virtual void clear() = 0;
+    virtual void showDigit(int index, int value, bool entered) = 0;
 }; 

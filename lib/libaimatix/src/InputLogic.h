@@ -17,10 +17,10 @@ public:
     }
     virtual void incrementAtCursor(int amount) {
         if (!entered[cursor]) {
-            digits[cursor] = amount;
+            digits[cursor] = amount % 10;
             entered[cursor] = true;
         } else {
-            digits[cursor] += amount;
+            digits[cursor] = (digits[cursor] + amount) % 10;
         }
         // 桁ごとの上限
         if (cursor==0 && digits[0]>2) digits[0]=2;

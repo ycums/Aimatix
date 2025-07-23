@@ -17,10 +17,12 @@ public:
 private:
     struct BtnState {
         bool pressed = false;
+        uint32_t pressStart = 0;
         uint32_t lastChange = 0;
         bool shortFired = false;
         bool longFired = false;
+        bool fired = false;
     } btnStates[3];
-    static constexpr uint32_t LONG_PRESS_MS = 800;
+    static constexpr uint32_t LONG_PRESS_MS = 500;
     static constexpr uint32_t DEBOUNCE_MS = 50;
 }; 

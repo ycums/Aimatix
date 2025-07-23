@@ -54,4 +54,9 @@ public:
         sprite.deleteSprite();
 #endif
     }
+    void drawLine(int x0, int y0, int x1, int y1, uint32_t color) override {
+#ifdef ARDUINO
+        M5.Lcd.drawLine(x0, y0, x1, y1, color);
+#endif
+    }
 }; 

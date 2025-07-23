@@ -32,7 +32,8 @@ public:
     void clear() override { clearCount++; }
     void showTitle(const char*, int, bool) override { showTitleCount++; }
     void showHints(const char*, const char*, const char*) override { showHintsCount++; }
-    void showValue(int) override { showValueCount++; }
+    void showValue(const int* digits, const bool* entered) override { showValueCount++; }
+    void showPreview(const char*) override {}
 };
 class MockLogic : public InputLogic {
 public:
