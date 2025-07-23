@@ -87,6 +87,16 @@ public:
             disp->drawText(SCREEN_WIDTH/2, y, preview, FONT_AUXILIARY);
         }
     }
+    void showColon() override {
+        int fontH = 48;
+        int y0 = GRID_Y(4) + GRID_HEIGHT/2;
+        int x0 = SCREEN_WIDTH/2;
+        int prevDatum = disp->getTextDatum();
+        disp->setTextDatum(MC_DATUM);
+        disp->setTextColor(AMBER_COLOR, TFT_BLACK);
+        disp->drawText(x0, y0, ":", FONT_IMPORTANT);
+        disp->setTextDatum(prevDatum);
+    }
     void clear() override {
         disp->clear();
     }

@@ -59,4 +59,11 @@ public:
         M5.Lcd.drawLine(x0, y0, x1, y1, color);
 #endif
     }
+    int getTextDatum() const override {
+#ifdef ARDUINO
+        return M5.Lcd.getTextDatum();
+#else
+        return 0;
+#endif
+    }
 }; 

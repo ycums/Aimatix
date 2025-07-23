@@ -40,6 +40,7 @@ public:
                 snprintf(preview, sizeof(preview), "プレビュー: %02d:%02d", value/100, value%100);
             }
             view->showPreview(preview);
+            view->showColon();
         }
 #ifndef ARDUINO
         printf("[InputDisplay] value=%d\n", value);

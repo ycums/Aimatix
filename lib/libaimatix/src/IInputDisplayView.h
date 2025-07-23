@@ -8,4 +8,5 @@ public:
     virtual void showPreview(const char* preview) = 0;
     virtual void clear() = 0;
     virtual void showDigit(int index, int value, bool entered) = 0;
+    virtual void showColon() = 0;
 }; 
