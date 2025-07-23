@@ -15,6 +15,7 @@
 #include <M5Display.h>
 #endif
 #include "AlarmLogic.h"
+#include "ButtonManager.h"
 extern void setFillRectImpl(void (*impl)(int, int, int, int, int));
 extern void setFillProgressBarSpriteImpl(void (*impl)(int, int, int, int, int));
 
@@ -61,6 +62,7 @@ TimeLogic timeLogic;
 AlarmLogic alarmLogic;
 InputDisplayState inputDisplayState(&inputLogic, &inputDisplayViewImpl);
 MainDisplayState mainDisplayState(&stateManager, &inputDisplayState, &mainDisplayViewImpl, &timeLogic, &alarmLogic);
+ButtonManager buttonManager; // 追加
 
 void setup() {
 #ifdef ARDUINO
@@ -82,14 +84,17 @@ void setup() {
 void loop() {
 #ifdef ARDUINO
     M5.update();
-    // ボタンイベント伝播
-    if (M5.BtnA.wasPressed()) stateManager.handleButtonA();
-    if (M5.BtnB.wasPressed()) stateManager.handleButtonB();
-    if (M5.BtnC.wasPressed()) stateManager.handleButtonC();
-    // --- 各ボタン長押しイベントも伝搬 ---
-    if (M5.BtnA.pressedFor(500)) stateManager.handleButtonALongPress();
-    if (M5.BtnB.pressedFor(500)) stateManager.handleButtonBLongPress();
-    if (M5.BtnC.pressedFor(500)) stateManager.handleButtonCLongPress();
+    // 物理ボタン状態をButtonManagerに渡す
+    buttonManager.update(ButtonManager::BtnA, M5.BtnA.isPressed(), millis());
+    buttonManager.update(ButtonManager::BtnB, M5.BtnB.isPressed(), millis());
+    buttonManager.update(ButtonManager::BtnC, M5.BtnC.isPressed(), millis());
+    // 論理イベントでStateManagerに伝搬
+    if (buttonManager.isShortPress(ButtonManager::BtnA)) stateManager.handleButtonA();
+    if (buttonManager.isShortPress(ButtonManager::BtnB)) stateManager.handleButtonB();
+    if (buttonManager.isShortPress(ButtonManager::BtnC)) stateManager.handleButtonC();
+    if (buttonManager.isLongPress(ButtonManager::BtnA)) stateManager.handleButtonALongPress();
+    if (buttonManager.isLongPress(ButtonManager::BtnB)) stateManager.handleButtonBLongPress();
+    if (buttonManager.isLongPress(ButtonManager::BtnC)) stateManager.handleButtonCLongPress();
     // 現在の状態の描画
     IState* current = stateManager.getCurrentState();
     if (current) current->onDraw();

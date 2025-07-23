@@ -3,7 +3,7 @@
 
 class ButtonManager {
 public:
-    enum ButtonType { BUTTON_A, BUTTON_B, BUTTON_C };
+    enum ButtonType { BtnA, BtnB, BtnC };
     enum ButtonAction { NONE, SHORT_PRESS, LONG_PRESS };
 
     // ボタン状態を更新（押下/離上/時刻）
@@ -23,6 +23,6 @@ private:
         bool longFired = false;
         bool fired = false;
     } btnStates[3];
-    static constexpr uint32_t LONG_PRESS_MS = 500;
-    static constexpr uint32_t DEBOUNCE_MS = 50;
+    static constexpr uint32_t BM_LONG_PRESS_MS = 500;
+    static constexpr uint32_t BM_DEBOUNCE_MS = 50;
 }; 

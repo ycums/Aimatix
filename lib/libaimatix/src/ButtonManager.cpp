@@ -4,7 +4,7 @@ void ButtonManager::update(ButtonType btn, bool pressed, uint32_t now_ms) {
     BtnState& s = btnStates[btn];
     // デバウンス処理
     if (pressed != s.pressed) {
-        if ((now_ms - s.lastChange) <= DEBOUNCE_MS) {
+        if ((now_ms - s.lastChange) <= BM_DEBOUNCE_MS) {
             return;
         }
         s.pressed = pressed;
@@ -17,7 +17,7 @@ void ButtonManager::update(ButtonType btn, bool pressed, uint32_t now_ms) {
             s.fired = false;
         } else {
             // 離上
-            if (!s.fired && (now_ms - s.pressStart) < LONG_PRESS_MS) {
+            if (!s.fired && (now_ms - s.pressStart) < BM_LONG_PRESS_MS) {
                 s.shortFired = true;
                 s.fired = true;
             }
@@ -26,7 +26,7 @@ void ButtonManager::update(ButtonType btn, bool pressed, uint32_t now_ms) {
     // fired==trueなら何もしない
     if (s.fired) return;
     // 長押し判定（押下中に閾値を超えた瞬間のみ1回）
-    if (s.pressed && (now_ms - s.pressStart) >= LONG_PRESS_MS) {
+    if (s.pressed && (now_ms - s.pressStart) >= BM_LONG_PRESS_MS) {
         s.longFired = true;
         s.fired = true;
     }
