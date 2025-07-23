@@ -28,11 +28,12 @@ void test_transition_to_input_display_on_a_button_press() {
 // モックView/Logic
 class MockView : public IInputDisplayView {
 public:
-    int clearCount=0, showTitleCount=0, showHintsCount=0, showValueCount=0;
+    int clearCount=0, showTitleCount=0, showHintsCount=0, showDigitCount=0, showColonCount=0;
     void clear() override { clearCount++; }
     void showTitle(const char*, int, bool) override { showTitleCount++; }
     void showHints(const char*, const char*, const char*) override { showHintsCount++; }
-    void showValue(const int* digits, const bool* entered) override { showValueCount++; }
+    void showDigit(int, int, bool) override { showDigitCount++; }
+    void showColon() override { showColonCount++; }
     void showPreview(const char*) override {}
 };
 class MockLogic : public InputLogic {
@@ -54,10 +55,10 @@ void test_input_display_state_methods() {
     // onDraw: value変化時のみshowValue
     logic.value = 42;
     state.onDraw();
-    TEST_ASSERT_EQUAL(1, view.showValueCount);
+    TEST_ASSERT_EQUAL(4, view.showDigitCount); // 4回が正
     // 同じ値なら呼ばれない
     state.onDraw();
-    TEST_ASSERT_EQUAL(1, view.showValueCount);
+    TEST_ASSERT_EQUAL(4, view.showDigitCount);
     // 値が変われば呼ばれる
     logic.value = 43;
     state.onDraw();

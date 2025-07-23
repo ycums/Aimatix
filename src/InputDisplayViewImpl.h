@@ -10,44 +10,6 @@ public:
     void showTitle(const char* title, int batteryLevel, bool isCharging) override {
         drawTitleBar(disp, title, batteryLevel, isCharging);
     }
-    void showValue(const int* digits, const bool* entered) override {
-        int digitW = 32;
-        int colonW = 16;
-        int y0 = SCREEN_HEIGHT/2 - 24; // 数字のY座標（仮）
-        int underlineY = GRID_Y(6); // アンダーラインのY座標を固定
-        int x0 = SCREEN_WIDTH/2 - (2*digitW + colonW/2);
-        // 左2桁
-        for (int i = 0; i < 2; ++i) {
-            int x = x0 + i * digitW + digitW/2;
-            if (entered[i]) {
-                char d[2];
-                d[0] = static_cast<char>('0' + (digits[i] % 10));
-                d[1] = '\0';
-                disp->setTextColor(AMBER_COLOR, TFT_BLACK);
-                disp->drawText(x, y0, d, FONT_IMPORTANT);
-            } else {
-                disp->drawLine(x - digitW/2 + 4, underlineY, x + digitW/2 - 4, underlineY, AMBER_COLOR);
-            }
-        }
-        // コロン
-        
-        int colonX = x0 + 2 * digitW + colonW/2;
-        disp->setTextColor(AMBER_COLOR, TFT_BLACK);
-        disp->drawText(colonX, y0, ":", FONT_IMPORTANT);
-        // 右2桁
-        for (int i = 2; i < 4; ++i) {
-            int x = x0 + 2 * digitW + colonW + (i-2) * digitW + digitW/2;
-            if (entered[i]) {
-                char d[2];
-                d[0] = static_cast<char>('0' + (digits[i] % 10));
-                d[1] = '\0';
-                disp->setTextColor(AMBER_COLOR, TFT_BLACK);
-                disp->drawText(x, y0, d, FONT_IMPORTANT);
-            } else {
-                disp->drawLine(x - digitW/2 + 4, underlineY, x + digitW/2 - 4, underlineY, AMBER_COLOR);
-            }
-        }
-    }
     void showDigit(int index, int value, bool entered) override {
         int digitW = 32;
         int colonW = 16;

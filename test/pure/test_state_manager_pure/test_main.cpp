@@ -20,6 +20,7 @@ public:
     void onButtonC() override { buttonCCount++; }
     void onButtonALongPress() override { buttonALongCount++; }
     void onButtonCLongPress() override { buttonCLongCount++; }
+    void onButtonBLongPress() override {}
 };
 
 void setUp(void) {}

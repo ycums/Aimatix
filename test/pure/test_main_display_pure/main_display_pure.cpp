@@ -38,6 +38,8 @@ public:
         snprintf(buf, sizeof(buf), "fillProgressBarSprite(%d,%d,%d,%d,%d)", x, y, w, h, percent);
         log.push_back(buf);
     }
+    void drawLine(int, int, int, int, uint32_t) override {}
+    int getTextDatum() const override { return 0; }
 };
 
 void setUp(void) {}

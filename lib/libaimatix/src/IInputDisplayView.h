@@ -3,7 +3,6 @@ class IInputDisplayView {
 public:
     virtual ~IInputDisplayView() {}
     virtual void showTitle(const char* title, int batteryLevel, bool isCharging) = 0;
-    virtual void showValue(const int* digits, const bool* entered) = 0;
     virtual void showHints(const char* btnA, const char* btnB, const char* btnC) = 0;
     virtual void showPreview(const char* preview) = 0;
     virtual void clear() = 0;
