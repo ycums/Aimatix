@@ -3,6 +3,9 @@
 #include "InputLogic.h"
 #include "IInputDisplayView.h"
 #include <stdio.h>
+#include <vector>
+#include <ctime>
+#include "AlarmLogic.h"
 
 class InputDisplayState : public IState {
 public:
@@ -53,7 +56,24 @@ public:
         onDraw();
     }
     void onButtonB() override {}
-    void onButtonC() override {}
+    void onButtonC() override {
+        if (!inputLogic || !view) return;
+        int value = inputLogic->getValue();
+        extern std::vector<time_t> alarmTimes;
+        time_t now = time(nullptr);
+        AlarmLogic::AddAlarmResult result;
+        std::string msg;
+        bool ok = AlarmLogic::addAlarm(alarmTimes, now, value, result, msg);
+        if (ok) {
+            if (manager && mainDisplayState) {
+                manager->setState(mainDisplayState);
+            }
+        } else {
+            // エラーメッセージを英語でプレビュー表示
+            view->showPreview(msg.c_str());
+            // TODO: 効果音/バイブ（ハード依存部で実装）
+        }
+    }
     void onButtonALongPress() override {
         if (inputLogic) {
             inputLogic->incrementAtCursor(5);

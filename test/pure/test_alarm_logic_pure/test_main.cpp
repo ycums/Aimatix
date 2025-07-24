@@ -74,6 +74,40 @@ void test_alarmlogic_edge_and_error_cases() {
     TEST_ASSERT_EQUAL(0, strs.size());
 }
 
+void test_alarmlogic_add_alarm() {
+    std::vector<time_t> alarms;
+    time_t now = 1000;
+    AlarmLogic::AddAlarmResult result;
+    std::string msg;
+    // 正常系: 新規追加
+    bool ok = AlarmLogic::addAlarm(alarms, now, now+60, result, msg);
+    TEST_ASSERT_TRUE(ok);
+    TEST_ASSERT_EQUAL((int)AlarmLogic::AddAlarmResult::Success, (int)result);
+    TEST_ASSERT_EQUAL(1, alarms.size());
+    // 異常系: 未入力（__:__）
+    ok = AlarmLogic::addAlarm(alarms, now, -1, result, msg);
+    TEST_ASSERT_FALSE(ok);
+    TEST_ASSERT_EQUAL((int)AlarmLogic::AddAlarmResult::ErrorEmptyInput, (int)result);
+    // 異常系: 重複
+    ok = AlarmLogic::addAlarm(alarms, now, now+60, result, msg);
+    TEST_ASSERT_FALSE(ok);
+    TEST_ASSERT_EQUAL((int)AlarmLogic::AddAlarmResult::ErrorDuplicate, (int)result);
+    // 異常系: 上限超過
+    alarms = {now+10, now+20, now+30, now+40, now+50};
+    ok = AlarmLogic::addAlarm(alarms, now, now+60, result, msg);
+    TEST_ASSERT_FALSE(ok);
+    TEST_ASSERT_EQUAL((int)AlarmLogic::AddAlarmResult::ErrorMaxReached, (int)result);
+    // 正常系: 過去時刻→翌日扱い
+    alarms.clear();
+    ok = AlarmLogic::addAlarm(alarms, now, now-10, result, msg);
+    TEST_ASSERT_TRUE(ok);
+    TEST_ASSERT_EQUAL((int)AlarmLogic::AddAlarmResult::Success, (int)result);
+    // 異常系: 不正値
+    ok = AlarmLogic::addAlarm(alarms, now, -99999, result, msg);
+    TEST_ASSERT_FALSE(ok);
+    TEST_ASSERT_EQUAL((int)AlarmLogic::AddAlarmResult::ErrorInvalid, (int)result);
+}
+
 void setUp(void) {}
 void tearDown(void) {}
 
@@ -83,6 +117,7 @@ int main(int argc, char **argv) {
     RUN_TEST(test_alarmlogic_remain_and_progress);
     RUN_TEST(test_alarmlogic_time_strings);
     RUN_TEST(test_alarmlogic_edge_and_error_cases);
+    RUN_TEST(test_alarmlogic_add_alarm);
     UNITY_END();
     return 0;
 } 

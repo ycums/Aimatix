@@ -15,4 +15,14 @@ public:
     static int getRemainPercent(int remainSec, int totalSec);
     // アラームリストの時刻文字列を取得
     static void getAlarmTimeStrings(const std::vector<time_t>& alarms, std::vector<std::string>& out);
+
+    enum class AddAlarmResult {
+        Success,
+        ErrorEmptyInput,
+        ErrorMaxReached,
+        ErrorDuplicate,
+        ErrorInvalid,
+    };
+    // 入力値（時刻: time_t）をアラームとして追加。エラー時はresult, errorMsgに理由を格納。
+    static bool addAlarm(std::vector<time_t>& alarms, time_t now, time_t input, AddAlarmResult& result, std::string& errorMsg);
 }; 

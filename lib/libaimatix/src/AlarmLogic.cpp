@@ -40,4 +40,52 @@ void AlarmLogic::getAlarmTimeStrings(const std::vector<time_t>& alarms, std::vec
             << std::setw(2) << tm_alarm->tm_min;
         out.push_back(oss.str());
     }
+}
+
+// addAlarm: 入力値をアラームとして追加。エラー時はresult, errorMsgに理由を格納。
+bool AlarmLogic::addAlarm(std::vector<time_t>& alarms, time_t now, time_t input, AddAlarmResult& result, std::string& errorMsg) {
+    // 未入力（__:__）
+    if (input == -1) {
+        result = AddAlarmResult::ErrorEmptyInput;
+        errorMsg = "Input is empty.";
+        return false;
+    }
+    // 不正値（負値や異常値）
+    if (input < 0 || input > 24*60*60) { // 24時間超は不正
+        result = AddAlarmResult::ErrorInvalid;
+        errorMsg = "Invalid time value.";
+        return false;
+    }
+    // 上限超過
+    if (alarms.size() >= 5) {
+        result = AddAlarmResult::ErrorMaxReached;
+        errorMsg = "Maximum number of alarms reached.";
+        return false;
+    }
+    // 重複チェック
+    for (const auto& t : alarms) {
+        if (t == input) {
+            result = AddAlarmResult::ErrorDuplicate;
+            errorMsg = "Alarm already exists.";
+            return false;
+        }
+    }
+    // 過去時刻は翌日扱い
+    time_t alarmTime = input;
+    if (input <= now) {
+        alarmTime = input + 24*60*60; // 翌日
+    }
+    // 再度重複チェック（翌日化で重複する場合）
+    for (const auto& t : alarms) {
+        if (t == alarmTime) {
+            result = AddAlarmResult::ErrorDuplicate;
+            errorMsg = "Alarm already exists.";
+            return false;
+        }
+    }
+    alarms.push_back(alarmTime);
+    std::sort(alarms.begin(), alarms.end());
+    result = AddAlarmResult::Success;
+    errorMsg = "";
+    return true;
 } 
