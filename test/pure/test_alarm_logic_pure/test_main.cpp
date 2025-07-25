@@ -102,10 +102,123 @@ void test_alarmlogic_add_alarm() {
     ok = AlarmLogic::addAlarm(alarms, now, now-10, result, msg);
     TEST_ASSERT_TRUE(ok);
     TEST_ASSERT_EQUAL((int)AlarmLogic::AddAlarmResult::Success, (int)result);
-    // 異常系: 不正値
+    // 正常系: 不正値→補正
     ok = AlarmLogic::addAlarm(alarms, now, -99999, result, msg);
-    TEST_ASSERT_FALSE(ok);
-    TEST_ASSERT_EQUAL((int)AlarmLogic::AddAlarmResult::ErrorInvalid, (int)result);
+    TEST_ASSERT_TRUE(ok);
+    TEST_ASSERT_EQUAL((int)AlarmLogic::AddAlarmResult::Success, (int)result);
+}
+
+void test_alarm_correction_minute_only_1() {
+    std::vector<time_t> alarms;
+    time_t now;
+    AlarmLogic::AddAlarmResult result;
+    std::string msg;
+    struct tm base_tm = {};
+    base_tm.tm_year = 124; base_tm.tm_mon = 0; base_tm.tm_mday = 1; base_tm.tm_hour = 14; base_tm.tm_min = 35; base_tm.tm_sec = 0;
+    now = mktime(&base_tm);
+    int input = 1;
+    alarms.clear();
+    AlarmLogic::addAlarm(alarms, now, input, result, msg);
+    struct tm* tm1 = localtime(&alarms[0]);
+    TEST_ASSERT_EQUAL(15, tm1->tm_hour);
+    TEST_ASSERT_EQUAL(1, tm1->tm_min);
+}
+void test_alarm_correction_minute_only_10() {
+    std::vector<time_t> alarms;
+    time_t now;
+    AlarmLogic::AddAlarmResult result;
+    std::string msg;
+    struct tm base_tm = {};
+    base_tm.tm_year = 124; base_tm.tm_mon = 0; base_tm.tm_mday = 1; base_tm.tm_hour = 14; base_tm.tm_min = 35; base_tm.tm_sec = 0;
+    now = mktime(&base_tm);
+    int input = 10;
+    alarms.clear();
+    AlarmLogic::addAlarm(alarms, now, input, result, msg);
+    struct tm* tm2 = localtime(&alarms[0]);
+    TEST_ASSERT_EQUAL(15, tm2->tm_hour);
+    TEST_ASSERT_EQUAL(10, tm2->tm_min);
+}
+void test_alarm_correction_minute_only_12() {
+    std::vector<time_t> alarms;
+    time_t now;
+    AlarmLogic::AddAlarmResult result;
+    std::string msg;
+    struct tm base_tm = {};
+    base_tm.tm_year = 124; base_tm.tm_mon = 0; base_tm.tm_mday = 1; base_tm.tm_hour = 14; base_tm.tm_min = 35; base_tm.tm_sec = 0;
+    now = mktime(&base_tm);
+    int input = 12;
+    alarms.clear();
+    AlarmLogic::addAlarm(alarms, now, input, result, msg);
+    struct tm* tm3 = localtime(&alarms[0]);
+    TEST_ASSERT_EQUAL(15, tm3->tm_hour);
+    TEST_ASSERT_EQUAL(12, tm3->tm_min);
+}
+void test_alarm_correction_minute_only_99() {
+    std::vector<time_t> alarms;
+    time_t now;
+    AlarmLogic::AddAlarmResult result;
+    std::string msg;
+    struct tm base_tm = {};
+    base_tm.tm_year = 124; base_tm.tm_mon = 0; base_tm.tm_mday = 1; base_tm.tm_hour = 14; base_tm.tm_min = 35; base_tm.tm_sec = 0;
+    now = mktime(&base_tm);
+    int input = 99; // = 1:39
+    alarms.clear();
+    AlarmLogic::addAlarm(alarms, now, input, result, msg);
+    struct tm* tm4 = localtime(&alarms[0]);
+    TEST_ASSERT_EQUAL(15, tm4->tm_hour);
+    TEST_ASSERT_EQUAL(39, tm4->tm_min);
+}
+void test_alarm_correction_hour_minute_990() {
+    std::vector<time_t> alarms;
+    time_t now;
+    AlarmLogic::AddAlarmResult result;
+    std::string msg;
+    struct tm base_tm = {};
+    base_tm.tm_year = 124; base_tm.tm_mon = 0; base_tm.tm_mday = 1; base_tm.tm_hour = 14; base_tm.tm_min = 35; base_tm.tm_sec = 0;
+    now = mktime(&base_tm);
+    int input = 990;
+    alarms.clear();
+    AlarmLogic::addAlarm(alarms, now, input, result, msg);
+    struct tm* tm5 = localtime(&alarms[0]);
+    TEST_ASSERT_EQUAL(10, tm5->tm_hour);
+    TEST_ASSERT_EQUAL(30, tm5->tm_min);
+    TEST_ASSERT_EQUAL(2, tm5->tm_mday);
+}
+void test_alarm_correction_hour_minute_9999() {
+    // 現在時刻: 2024年1月1日 14:35
+    // 入力: 9999（99:99）
+    // 期待値: 2024年1月1日99:99 → 2024年1月5日04:39
+    std::vector<time_t> alarms;
+    time_t now;
+    AlarmLogic::AddAlarmResult result;
+    std::string msg;
+    struct tm base_tm = {};
+    base_tm.tm_year = 124; base_tm.tm_mon = 0; base_tm.tm_mday = 1; base_tm.tm_hour = 14; base_tm.tm_min = 35; base_tm.tm_sec = 0;
+    now = mktime(&base_tm);
+    int input = 9999;
+    alarms.clear();
+    AlarmLogic::addAlarm(alarms, now, input, result, msg);
+    struct tm* tm6 = localtime(&alarms[0]);
+    
+    TEST_ASSERT_EQUAL(4, tm6->tm_hour);
+    TEST_ASSERT_EQUAL(39, tm6->tm_min);
+    TEST_ASSERT_EQUAL(5, tm6->tm_mday);
+}
+void test_alarm_correction_past_hour_minute() {
+    std::vector<time_t> alarms;
+    time_t now;
+    AlarmLogic::AddAlarmResult result;
+    std::string msg;
+    struct tm base_tm = {};
+    base_tm.tm_year = 124; base_tm.tm_mon = 0; base_tm.tm_mday = 1; base_tm.tm_hour = 14; base_tm.tm_min = 0; base_tm.tm_sec = 0;
+    now = mktime(&base_tm);
+    int input = 1300;
+    alarms.clear();
+    AlarmLogic::addAlarm(alarms, now, input, result, msg);
+    struct tm* tm7 = localtime(&alarms[0]);
+    TEST_ASSERT_EQUAL(13, tm7->tm_hour);
+    TEST_ASSERT_EQUAL(0, tm7->tm_min);
+    TEST_ASSERT_EQUAL(2, tm7->tm_mday);
 }
 
 void setUp(void) {}
@@ -118,6 +231,13 @@ int main(int argc, char **argv) {
     RUN_TEST(test_alarmlogic_time_strings);
     RUN_TEST(test_alarmlogic_edge_and_error_cases);
     RUN_TEST(test_alarmlogic_add_alarm);
+    RUN_TEST(test_alarm_correction_minute_only_1);
+    RUN_TEST(test_alarm_correction_minute_only_10);
+    RUN_TEST(test_alarm_correction_minute_only_12);
+    RUN_TEST(test_alarm_correction_minute_only_99);
+    RUN_TEST(test_alarm_correction_hour_minute_990);
+    RUN_TEST(test_alarm_correction_hour_minute_9999);
+    RUN_TEST(test_alarm_correction_past_hour_minute);
     UNITY_END();
     return 0;
 } 

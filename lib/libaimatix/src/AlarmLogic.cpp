@@ -44,38 +44,72 @@ void AlarmLogic::getAlarmTimeStrings(const std::vector<time_t>& alarms, std::vec
 
 // addAlarm: 入力値をアラームとして追加。エラー時はresult, errorMsgに理由を格納。
 bool AlarmLogic::addAlarm(std::vector<time_t>& alarms, time_t now, time_t input, AddAlarmResult& result, std::string& errorMsg) {
-    // 未入力（__:__）
     if (input == -1) {
         result = AddAlarmResult::ErrorEmptyInput;
         errorMsg = "Input is empty.";
         return false;
     }
-    // 不正値（負値や異常値）
-    if (input < 0 || input > 24*60*60) { // 24時間超は不正
-        result = AddAlarmResult::ErrorInvalid;
-        errorMsg = "Invalid time value.";
-        return false;
+    struct tm* now_tm = localtime(&now);
+    struct tm alarm_tm = *now_tm;
+    alarm_tm.tm_sec = 0;
+    alarm_tm.tm_isdst = -1;
+    int h, m, add_day = 0;
+    if (input < 100) {
+        // 分のみ指定
+        m = input % 60;
+        h = input / 60;
+        if (h > 0) {
+            // 分が60以上の場合、時分に正規化
+            m = input % 60;
+            h = input / 60;
+        } else {
+            // 分のみの場合
+            m = input;
+            h = 0;
+        }
+        // 現在時刻の次のその時刻を計算
+        if (h > 0 || m > now_tm->tm_min) {
+            // 時が指定されているか、分が現在分より大きい場合
+            if (h == 0) {
+                h = now_tm->tm_hour;
+                if (m <= now_tm->tm_min) {
+                    h += 1;
+                }
+            } else {
+                h += now_tm->tm_hour;
+            }
+        } else {
+            h = now_tm->tm_hour + 1;
+        }
+        // 繰り上げ
+        if (h >= 24) { h -= 24; add_day = 1; }
+        alarm_tm.tm_hour = h;
+        alarm_tm.tm_min = m;
+        alarm_tm.tm_mday += add_day;
+    } else {
+        // 時分指定
+        h = input / 100;
+        m = input % 100;
+        // 分繰り上げ
+        if (m >= 60) { h += m / 60; m = m % 60; }
+        // 時繰り上げ
+        add_day = h / 24;
+        h = h % 24;
+        alarm_tm.tm_hour = h;
+        alarm_tm.tm_min = m;
+        alarm_tm.tm_mday += add_day;
+        time_t candidate = mktime(&alarm_tm);
+        if (candidate <= now) {
+            // 現在時刻より前なら翌日
+            alarm_tm.tm_mday += 1;
+        }
     }
-    // 上限超過
+    time_t alarmTime = mktime(&alarm_tm);
     if (alarms.size() >= 5) {
         result = AddAlarmResult::ErrorMaxReached;
         errorMsg = "Maximum number of alarms reached.";
         return false;
     }
-    // 重複チェック
-    for (const auto& t : alarms) {
-        if (t == input) {
-            result = AddAlarmResult::ErrorDuplicate;
-            errorMsg = "Alarm already exists.";
-            return false;
-        }
-    }
-    // 過去時刻は翌日扱い
-    time_t alarmTime = input;
-    if (input <= now) {
-        alarmTime = input + 24*60*60; // 翌日
-    }
-    // 再度重複チェック（翌日化で重複する場合）
     for (const auto& t : alarms) {
         if (t == alarmTime) {
             result = AddAlarmResult::ErrorDuplicate;
