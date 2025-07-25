@@ -59,12 +59,16 @@
 - [ ] 3-0-8: 入力画面C短押しでアラーム追加（AlarmLogicのaddAlarm実装、内部状態コミット・画面反映の背骨完成）
     - [ ] アラーム追加時の不正値（例: 99:99, 15:99, 9:90 など）はspec.md準拠で「最も近い未来の正しい時刻」に補正して追加すること。
 - [ ] 3-0-9: 入力画面で桁送りができる（InputLogic/UIの編集操作拡張）
-- [ ] 3-0-10: アラーム管理画面（AlarmDisplay）雛形追加・遷移（AlarmLogic連携、リスト表示・選択）
-- [ ] 3-0-11: 設定画面（SettingsDisplay）雛形追加・遷移（SettingsLogic stub、設定値の表示・編集雛形）
-- [ ] 3-0-12: 項目選択・アラーム削除（AlarmLogic/AlarmDisplayの機能拡張、副作用コマンド一元管理）
-- [ ] 3-0-13: 設定保存・復元・バリデーション（SettingsLogic本実装＋MockEEPROMAdapter連携、設定保存/復元/バリデーションのUI・副作用コマンド）
-- [ ] 3-0-14: 警告・エラー表示、副作用コマンド拡張（ShowWarningコマンド、エラー時のUI反映）
-- [ ] 3-0-15: すべての主要コンポーネント・全仕様網羅（MainDisplay, InputDisplay, AlarmDisplay, SettingsDisplay, TimeLogic, AlarmLogic, InputLogic, SettingsLogic, ButtonManager, DebounceManager, 各Adapter/Hardware層）
+- [ ] 3-0-10: 相対値入力ができる
+  - [ ] 相対値入力画面に移行できる
+  - [ ] 相対値計算が正しくできる
+  - [ ] アラームが設定できる
+- [ ] 3-0-11: アラーム管理画面（AlarmDisplay）雛形追加・遷移（AlarmLogic連携、リスト表示・選択）
+- [ ] 3-0-12: 設定画面（SettingsDisplay）雛形追加・遷移（SettingsLogic stub、設定値の表示・編集雛形）
+- [ ] 3-0-13: 項目選択・アラーム削除（AlarmLogic/AlarmDisplayの機能拡張、副作用コマンド一元管理）
+- [ ] 3-0-14: 設定保存・復元・バリデーション（SettingsLogic本実装＋MockEEPROMAdapter連携、設定保存/復元/バリデーションのUI・副作用コマンド）
+- [ ] 3-0-15: 警告・エラー表示、副作用コマンド拡張（ShowWarningコマンド、エラー時のUI反映）
+- [ ] 3-0-16: すべての主要コンポーネント・全仕様網羅（MainDisplay, InputDisplay, AlarmDisplay, SettingsDisplay, TimeLogic, AlarmLogic, InputLogic, SettingsLogic, ButtonManager, DebounceManager, 各Adapter/Hardware層）
     - [ ] すべての画面・機能・副作用コマンドが連携し、全仕様を満たす
 
 ---
