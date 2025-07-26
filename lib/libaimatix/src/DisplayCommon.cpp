@@ -21,7 +21,8 @@ void drawTitleBar(IDisplay* disp, const char* modeName, int batteryLevel, bool i
     disp->setTextColor(AMBER_COLOR, TFT_BLACK);
     disp->setTextDatum(TL_DATUM);
     disp->drawText(TITLE_OFFSET_X, TITLE_OFFSET_Y, modeName, FONT_AUXILIARY);
-    char batteryStr[16];
+    constexpr int BATTERY_STR_SIZE = 16;
+    char batteryStr[BATTERY_STR_SIZE];
     snprintf(batteryStr, sizeof(batteryStr), "%s %d%%", isCharging ? "CHG" : "BAT", batteryLevel);
     disp->drawText(SCREEN_WIDTH - BATTERY_OFFSET_X, TITLE_OFFSET_Y, batteryStr, FONT_AUXILIARY);
 }
@@ -44,11 +45,11 @@ void drawButtonHintsGrid(IDisplay* disp, const char* btnA, const char* btnB, con
 
 void drawGridLines(IDisplay* disp) {
     for (int i = 0; i <= GRID_LINES_X; ++i) {
-        int pos_x = i * GRID_WIDTH;
+        const int pos_x = i * GRID_WIDTH;
         disp->drawRect(pos_x, 0, 1, SCREEN_HEIGHT, AMBER_COLOR);
     }
     for (int i = 0; i <= GRID_LINES_Y; ++i) {
-        int pos_y = TITLE_HEIGHT + i * GRID_HEIGHT;
+        const int pos_y = TITLE_HEIGHT + i * GRID_HEIGHT;
         disp->drawRect(0, pos_y, SCREEN_WIDTH, 1, AMBER_COLOR);
     }
 } 

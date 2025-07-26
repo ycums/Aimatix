@@ -93,12 +93,12 @@ void loop() {
     button_manager.update(ButtonManager::BtnB, M5.BtnB.isPressed(), millis());
     button_manager.update(ButtonManager::BtnC, M5.BtnC.isPressed(), millis());
     // 論理イベントでStateManagerに伝搬
-    if (button_manager.isShortPress(ButtonManager::BtnA)) state_manager.handleButtonA();
-    if (button_manager.isShortPress(ButtonManager::BtnB)) state_manager.handleButtonB();
-    if (button_manager.isShortPress(ButtonManager::BtnC)) state_manager.handleButtonC();
-    if (button_manager.isLongPress(ButtonManager::BtnA)) state_manager.handleButtonALongPress();
-    if (button_manager.isLongPress(ButtonManager::BtnB)) state_manager.handleButtonBLongPress();
-    if (button_manager.isLongPress(ButtonManager::BtnC)) state_manager.handleButtonCLongPress();
+    if (button_manager.isShortPress(ButtonManager::BtnA)) { state_manager.handleButtonA(); }
+    if (button_manager.isShortPress(ButtonManager::BtnB)) { state_manager.handleButtonB(); }
+    if (button_manager.isShortPress(ButtonManager::BtnC)) { state_manager.handleButtonC(); }
+    if (button_manager.isLongPress(ButtonManager::BtnA)) { state_manager.handleButtonALongPress(); }
+    if (button_manager.isLongPress(ButtonManager::BtnB)) { state_manager.handleButtonBLongPress(); }
+    if (button_manager.isLongPress(ButtonManager::BtnC)) { state_manager.handleButtonCLongPress(); }
     // 現在の状態の描画
     IState* current = state_manager.getCurrentState();
     if (current != nullptr) {
