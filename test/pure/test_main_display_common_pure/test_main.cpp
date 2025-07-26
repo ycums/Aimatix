@@ -8,7 +8,7 @@
 #include <vector>
 #include <ctime>
 
-std::vector<time_t> alarmTimes;
+std::vector<time_t> alarm_times;
 
 void setUp(void) {}
 void tearDown(void) {}

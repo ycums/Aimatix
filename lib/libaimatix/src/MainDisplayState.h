@@ -59,10 +59,18 @@ public:
     }
     void onButtonA() override {
         if (manager && inputDisplayState) {
+            // 絶対時刻入力モードで遷移
+            inputDisplayState->setRelativeMode(false);
             manager->setState(inputDisplayState);
         }
     }
-    void onButtonB() override {}
+    void onButtonB() override {
+        if (manager && inputDisplayState) {
+            // 相対値入力モードで遷移
+            inputDisplayState->setRelativeMode(true);
+            manager->setState(inputDisplayState);
+        }
+    }
     void onButtonC() override {}
     void onButtonALongPress() override {}
     void onButtonCLongPress() override {}

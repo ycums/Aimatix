@@ -10,14 +10,16 @@
 class InputDisplayState : public IState {
 public:
     InputDisplayState(InputLogic* logic = nullptr, IInputDisplayView* view = nullptr)
-        : inputLogic(logic), view(view), manager(nullptr), mainDisplayState(nullptr) {
+        : inputLogic(logic), view(view), manager(nullptr), mainDisplayState(nullptr), isRelativeMode(false) {
         for (int i = 0; i < 4; ++i) { lastDigits[i] = -1; lastEntered[i] = false; }
     }
     void onEnter() override {
         if (inputLogic) inputLogic->reset();
         if (view) {
             view->clear();
-            view->showTitle("INPUT", 42, false);
+            // 相対値入力モードの場合はタイトルを変更
+            const char* title = isRelativeMode ? "REL+" : "INPUT";
+            view->showTitle(title, 42, false);
             view->showHints("INC", "NEXT", "SET");
             for (int i = 0; i < 4; ++i) { lastDigits[i] = -1; lastEntered[i] = false; }
         }
@@ -35,18 +37,24 @@ public:
                 }
             }
         }
-        // プレビュー表示などはそのまま
+        // プレビュー表示
         int value = inputLogic ? inputLogic->getValue() : InputLogic::EMPTY_VALUE;
         if (view) {
-            char preview[16] = "";
+            char preview[32] = "";
             if (value != InputLogic::EMPTY_VALUE) {
-                snprintf(preview, sizeof(preview), "プレビュー: %02d:%02d", value/100, value%100);
+                if (isRelativeMode) {
+                    // 相対値入力モードの場合は相対値計算結果を表示
+                    calculateRelativeTimePreview(value, preview, sizeof(preview));
+                } else {
+                    // 絶対時刻入力モードの場合は従来通り
+                    snprintf(preview, sizeof(preview), "プレビュー: %02d:%02d", value/100, value%100);
+                }
             }
             view->showPreview(preview);
             view->showColon();
         }
 #ifndef ARDUINO
-        printf("[InputDisplay] value=%d\n", value);
+        printf("[InputDisplay] value=%d, relativeMode=%s\n", value, isRelativeMode ? "true" : "false");
 #endif
     }
     void onButtonA() override {
@@ -111,8 +119,16 @@ public:
         AlarmLogic::AddAlarmResult result;
         std::string msg;
         
-        // 新しいAPIを使用して部分的な入力状態からアラーム追加
-        bool ok = AlarmLogic::addAlarmFromPartialInput(alarm_times, now, digits, entered, result, msg);
+        // 相対値入力モードの場合は相対値計算結果をアラームとして追加
+        bool ok;
+        if (isRelativeMode) {
+            extern std::vector<time_t> alarm_times;
+            ok = addRelativeAlarm(digits, entered, alarm_times, result, msg);
+        } else {
+            // 絶対時刻入力モードの場合は従来通り
+            extern std::vector<time_t> alarm_times;
+            ok = AlarmLogic::addAlarmFromPartialInput(alarm_times, now, digits, entered, result, msg);
+        }
         
         if (ok) {
             if (manager && mainDisplayState) {
@@ -146,6 +162,11 @@ public:
     // StateManager, MainDisplayStateのsetterを追加
     void setManager(StateManager* m) { manager = m; }
     void setMainDisplayState(IState* mainState) { mainDisplayState = mainState; }
+    
+    // 相対値入力モードの設定
+    void setRelativeMode(bool relative) { isRelativeMode = relative; }
+    bool getRelativeMode() const { return isRelativeMode; }
+    
 private:
     InputLogic* inputLogic;
     IInputDisplayView* view;
@@ -153,4 +174,117 @@ private:
     bool lastEntered[4] = {false,false,false,false};
     StateManager* manager;
     IState* mainDisplayState;
+    bool isRelativeMode;
+    
+    // 相対値計算のプレビュー表示
+    void calculateRelativeTimePreview(int inputValue, char* preview, size_t previewSize) {
+        // 現在時刻取得
+        time_t now = time(nullptr);
+        struct tm* tm_now = localtime(&now);
+        
+        // 入力値を時分に分解
+        int inputHour = inputValue / 100;
+        int inputMinute = inputValue % 100;
+        
+        // 現在時刻 + 入力値
+        int resultHour = tm_now->tm_hour + inputHour;
+        int resultMinute = tm_now->tm_min + inputMinute;
+        
+        // 繰り上げ処理
+        if (resultMinute >= 60) {
+            resultHour += resultMinute / 60;
+            resultMinute %= 60;
+        }
+        
+        // 日付跨ぎ処理
+        bool nextDay = false;
+        if (resultHour >= 24) {
+            resultHour -= 24;
+            nextDay = true;
+        }
+        
+        // プレビュー文字列生成
+        if (nextDay) {
+            snprintf(preview, previewSize, "+1d %02d:%02d", resultHour, resultMinute);
+        } else {
+            snprintf(preview, previewSize, "%02d:%02d", resultHour, resultMinute);
+        }
+    }
+    
+    // 相対値アラーム追加
+    bool addRelativeAlarm(const int* digits, const bool* entered, std::vector<time_t>& alarm_times, AlarmLogic::AddAlarmResult& result, std::string& msg) {
+        // 入力値チェック
+        if (!digits || !entered) {
+            result = AlarmLogic::AddAlarmResult::ErrorInvalid;
+            msg = "Invalid input data";
+            return false;
+        }
+        
+        // 部分的な入力状態を完全な時分に変換
+        int hour = 0, minute = 0;
+        
+        // 時の解釈（digits[0], digits[1]）
+        if (entered[0] && entered[1]) {
+            // 両方入力済み
+            hour = digits[0] * 10 + digits[1];
+        } else if (entered[0] && !entered[1]) {
+            // 時十桁のみ入力済み → 時一桁を0として補完
+            hour = digits[0] * 10 + 0;
+        } else if (!entered[0] && entered[1]) {
+            // 時一桁のみ入力済み → 時十桁を0として補完
+            hour = 0 * 10 + digits[1];
+        } else {
+            // 時が未入力
+            hour = 0;
+        }
+        
+        // 分の解釈（digits[2], digits[3]）
+        if (entered[2] && entered[3]) {
+            // 両方入力済み
+            minute = digits[2] * 10 + digits[3];
+        } else if (entered[2] && !entered[3]) {
+            // 分十桁のみ入力済み → 分一桁を0として補完
+            minute = digits[2] * 10 + 0;
+        } else if (!entered[2] && entered[3]) {
+            // 分一桁のみ入力済み → 分十桁を0として補完
+            minute = 0 * 10 + digits[3];
+        } else {
+            // 分が未入力
+            minute = 0;
+        }
+        
+        // 未入力チェック
+        if (hour == 0 && minute == 0) {
+            result = AlarmLogic::AddAlarmResult::ErrorEmptyInput;
+            msg = "Input is empty.";
+            return false;
+        }
+        
+        // 相対値計算（現在時刻 + 入力値）
+        time_t now = time(nullptr);
+        struct tm* tm_now = localtime(&now);
+        struct tm alarm_tm = *tm_now;
+        alarm_tm.tm_sec = 0;
+        alarm_tm.tm_isdst = -1;
+        
+        // 分繰り上げ
+        if (minute >= 60) { 
+            hour += minute / 60; 
+            minute = minute % 60; 
+        }
+        // 時繰り上げ
+        int add_day = hour / 24;
+        hour = hour % 24;
+        
+        // 現在時刻に加算
+        alarm_tm.tm_hour += hour;
+        alarm_tm.tm_min += minute;
+        alarm_tm.tm_mday += add_day;
+        
+        // 時刻正規化
+        time_t alarm_time = mktime(&alarm_tm);
+        
+        // アラーム追加
+        return AlarmLogic::addAlarm(alarm_times, now, alarm_time, result, msg);
+    }
 }; 

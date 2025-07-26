@@ -413,7 +413,7 @@ Component            HIGH    MEDIUM    LOW
 lib\libaimatix\src    0        78       0
 src                   0        22       0
 
-Total                 0       100       0  # ← 100件以下で合格
+Total                 0       100       0  # ← 90件以下で合格
 ```
 
 ### 8.3 コードレビュー
