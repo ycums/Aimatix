@@ -59,6 +59,15 @@
 - [x] 3-0-8: 入力画面C短押しでアラーム追加（AlarmLogicのaddAlarm実装、内部状態コミット・画面反映の背骨完成）
     - [x] アラーム追加時の不正値（例: 99:99, 15:99, 9:90 など）はspec.md準拠で「最も近い未来の正しい時刻」に補正して追加すること。
 - [ ] 3-0-9: 入力画面で桁送りができる（InputLogic/UIの編集操作拡張）
+    - [ ] InputLogicにmoveCursor()メソッドを追加（純粋ロジック）
+    - [ ] 桁送り方向: 右から左（3→2→1→0）
+    - [ ] 全桁入力済み時（99:99）は拒絶
+    - [ ] 失敗時は何もしない（音・視覚的フィードバックなし）
+    - [ ] InputDisplayStateのonButtonB()で桁送り処理を実装
+    - [ ] ボタンヒント: A: "+1/+5" B: "Next/Reset" C: "Set/Cancel"
+    - [ ] 桁送り機能のUnit Testを追加
+    - [ ] 境界値テスト（全桁入力済み、部分入力等）
+    - [ ] カバレッジ品質ゲートを上回る
 - [ ] 3-0-10: 相対値入力ができる
   - [ ] 相対値入力画面に移行できる
   - [ ] 相対値計算が正しくできる
@@ -68,6 +77,7 @@
 - [ ] 3-0-13: 項目選択・アラーム削除（AlarmLogic/AlarmDisplayの機能拡張、副作用コマンド一元管理）
 - [ ] 3-0-14: 設定保存・復元・バリデーション（SettingsLogic本実装＋MockEEPROMAdapter連携、設定保存/復元/バリデーションのUI・副作用コマンド）
 - [ ] 3-0-15: 警告・エラー表示、副作用コマンド拡張（ShowWarningコマンド、エラー時のUI反映）
+  - [ ] 入力画面の桁送り失敗時に何らかのリアクションを追加する。
 - [ ] 3-0-16: すべての主要コンポーネント・全仕様網羅（MainDisplay, InputDisplay, AlarmDisplay, SettingsDisplay, TimeLogic, AlarmLogic, InputLogic, SettingsLogic, ButtonManager, DebounceManager, 各Adapter/Hardware層）
     - [ ] すべての画面・機能・副作用コマンドが連携し、全仕様を満たす
 

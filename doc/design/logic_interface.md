@@ -71,12 +71,15 @@ public:
     virtual void getInput(int& hour, int& minute) const = 0;
     virtual bool validateInput() const = 0;
     virtual void clearInput() = 0;
+    virtual bool moveCursor() = 0;  // 桁送り機能
+    virtual int getCursor() const = 0;  // カーソル位置取得
     // 必要に応じて拡張
 };
 ```
 
 ### 設計意図
-- 入力値の検証・編集をUIから分離し、テスト容易性・再利用性を確保
+- 入力値の検証・編集・カーソル移動をUIから分離し、テスト容易性・再利用性を確保
+- 桁送り機能は純粋ロジックとして実装し、成功/失敗を戻り値で返す
 
 ---
 
