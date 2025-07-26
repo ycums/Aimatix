@@ -1,0 +1,52 @@
+# Aimatix Chat引き継ぎ用 context.yml
+
+project:
+  name: Aimatix
+  description: |
+    M5Stack Fireベースのアラーム/タイマー/設定管理デバイス。純粋ロジック層とハード依存層を明確に分離し、TDD・高テスト容易性・高保守性を重視。
+
+principles:
+  - 純粋ロジック層(lib/libaimatix/src/)はハード依存禁止。現在時刻等も必ずDIで注入。
+  - UI層(src/)は画面遷移・描画・副作用管理のみ担当。ロジック層の詳細は知らない。
+  - DI/インターフェース設計を徹底。@/design/architecture.md, logic_interface.md, interface_design.md参照。
+  - テスト容易性・再現性重視。テスト時はモック・固定時刻注入。
+  - TDD推奨。まずテストを書く。
+  - Magic number禁止。定数化。
+  - platformio.iniは絶対に編集禁止。
+  - モックはtest/mock/に集約。
+  - 実装・テスト・静的解析・カバレッジは逐次コミット・検証。
+
+progress:
+  - 3-0-10: 相対値入力機能まで実装・テスト済み。バグ修正中。
+  - 直近はInputLogicのDI化（現在時刻インジェクト）を設計原則に従い実装。
+  - テストはtest/pure/配下でnative環境で実行。
+  - coverage, clang-tidy, checklistはdoc/project/参照。
+
+technical:
+  - InputLogic/AlarmLogic/SettingsLogic/TimeLogicはlib/libaimatix/src/。
+  - UI状態管理はStateManager, InputDisplayState, MainDisplayState等。
+  - 現在時刻はINowProviderインターフェース経由でDI。テスト時は任意の時刻を返すモック可。
+  - 相対値入力はInputLogicで絶対時刻に変換し、AlarmLogicは絶対時刻のみ扱う。
+  - コマンド/イベント駆動設計。
+  - clang-tidy警告は90以下を目標。
+
+user_preferences:
+  - テスト・カバレッジ・静的解析・ビルドは逐次実行し、失敗時は即修正。
+  - テスト失敗時は必ず原因を調査し、再現性のあるテストを書く。
+  - メッセージ・エラーは英語（実機フォント制約）。
+  - Magic number禁止、定数化。
+  - 設計原則逸脱は即指摘・修正。
+  - TDD・DI・責務分離・インターフェース設計重視。
+
+files:
+  - lib/libaimatix/src/ : 純粋ロジック
+  - src/ : UI・ハード依存
+  - test/pure/ : 純粋ロジックのnativeテスト
+  - test/mock/ : モック実装
+  - doc/design/ : 設計ドキュメント
+  - doc/project/ : チェックリスト・バグレポート・質問票
+
+# 直近の課題例
+# - InputLogicのDI化（現在時刻インジェクト）
+# - 相対値入力のテスト容易性・再現性確保
+# - UI/ロジック責務分離の徹底 

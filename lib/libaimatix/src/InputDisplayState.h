@@ -4,13 +4,15 @@
 #include "IInputDisplayView.h"
 #include <stdio.h>
 #include <vector>
-#include <ctime>
 #include "AlarmLogic.h"
+#include <cstring>
 
 class InputDisplayState : public IState {
 public:
+    // InputDisplayStateのコンストラクタ
     InputDisplayState(InputLogic* logic = nullptr, IInputDisplayView* view = nullptr)
-        : inputLogic(logic), view(view), manager(nullptr), mainDisplayState(nullptr), isRelativeMode(false) {
+        : inputLogic(logic), view(view), manager(nullptr), mainDisplayState(nullptr), isRelativeMode(false), 
+          errorMessage(""), showError(false), errorStartTime(0) {
         for (int i = 0; i < 4; ++i) { lastDigits[i] = -1; lastEntered[i] = false; }
     }
     void onEnter() override {
@@ -23,31 +25,121 @@ public:
             view->showHints("INC", "NEXT", "SET");
             for (int i = 0; i < 4; ++i) { lastDigits[i] = -1; lastEntered[i] = false; }
         }
+        // エラー状態をリセット
+        showError = false;
+        errorMessage = "";
+        errorStartTime = 0;
     }
     void onExit() override {}
     void onDraw() override {
         if (inputLogic && view) {
             const int* digits = inputLogic->getDigits();
             const bool* entered = inputLogic->getEntered();
+            bool needsUpdate = false;
+            
+            // 入力値の変化をチェック
             for (int i = 0; i < 4; ++i) {
                 if (digits[i] != lastDigits[i] || entered[i] != lastEntered[i]) {
+                    needsUpdate = true;
+                    break;
+                }
+            }
+            
+            // 入力値が変化した場合のみ更新
+            if (needsUpdate) {
+                for (int i = 0; i < 4; ++i) {
                     view->showDigit(i, digits[i], entered[i]);
                     lastDigits[i] = digits[i];
                     lastEntered[i] = entered[i];
                 }
             }
         }
-        // プレビュー表示
+        
+        // プレビュー表示 - 入力値が変更されたら即座に更新
         int value = inputLogic ? inputLogic->getValue() : InputLogic::EMPTY_VALUE;
         if (view) {
             char preview[32] = "";
-            if (value != InputLogic::EMPTY_VALUE) {
+            
+            // エラーメッセージ表示の管理
+            if (showError) {
+                // エラーメッセージを3秒間表示
+                time_t currentTime = time(nullptr);
+                if (currentTime - errorStartTime >= 3) {
+                    showError = false;
+                    errorMessage = "";
+                } else {
+                    strncpy(preview, errorMessage.c_str(), sizeof(preview) - 1);
+                    preview[sizeof(preview) - 1] = '\0';
+                }
+            } else if (value != InputLogic::EMPTY_VALUE) {
                 if (isRelativeMode) {
                     // 相対値入力モードの場合は相対値計算結果を表示
-                    calculateRelativeTimePreview(value, preview, sizeof(preview));
+                    time_t relativeTime = inputLogic->getRelativeValue();
+                    if (relativeTime != -1) {
+                        struct tm result_tm;
+                        struct tm now_tm;
+                        struct tm* result_tm_ptr = localtime(&relativeTime);
+                        result_tm = *result_tm_ptr;
+                        time_t now = time(nullptr);
+                        struct tm* now_tm_ptr = localtime(&now);
+                        now_tm = *now_tm_ptr;
+                        
+                        // 日付跨ぎ判定
+                        bool nextDay = (result_tm.tm_mday != now_tm.tm_mday);
+                        
+                        // プレビュー文字列生成
+                        if (nextDay) {
+                            snprintf(preview, sizeof(preview), "+1d %02d:%02d", result_tm.tm_hour, result_tm.tm_min);
+                        } else {
+                            snprintf(preview, sizeof(preview), "%02d:%02d", result_tm.tm_hour, result_tm.tm_min);
+                        }
+                    }
                 } else {
                     // 絶対時刻入力モードの場合は従来通り
                     snprintf(preview, sizeof(preview), "プレビュー: %02d:%02d", value/100, value%100);
+                }
+            } else {
+                // 部分入力時のプレビュー表示
+                const int* digits = inputLogic ? inputLogic->getDigits() : nullptr;
+                const bool* entered = inputLogic ? inputLogic->getEntered() : nullptr;
+                if (digits && entered) {
+                    // 入力済みの桁から値を構築
+                    int partialValue = 0;
+                    bool hasInput = false;
+                    for (int i = 0; i < 4; ++i) {
+                        if (entered[i]) {
+                            partialValue = partialValue * 10 + digits[i];
+                            hasInput = true;
+                        }
+                    }
+                    if (hasInput) {
+                        if (isRelativeMode) {
+                            // 相対値入力モードの場合は相対値計算結果を表示
+                            time_t relativeTime = inputLogic->getRelativeValue();
+                            if (relativeTime != -1) {
+                                struct tm result_tm;
+                                struct tm now_tm;
+                                struct tm* result_tm_ptr = localtime(&relativeTime);
+                                result_tm = *result_tm_ptr;
+                                time_t now = time(nullptr);
+                                struct tm* now_tm_ptr = localtime(&now);
+                                now_tm = *now_tm_ptr;
+                                
+                                // 日付跨ぎ判定
+                                bool nextDay = (result_tm.tm_mday != now_tm.tm_mday);
+                                
+                                // プレビュー文字列生成
+                                if (nextDay) {
+                                    snprintf(preview, sizeof(preview), "+1d %02d:%02d", result_tm.tm_hour, result_tm.tm_min);
+                                } else {
+                                    snprintf(preview, sizeof(preview), "%02d:%02d", result_tm.tm_hour, result_tm.tm_min);
+                                }
+                            }
+                        } else {
+                            // 絶対時刻入力モードの場合は部分入力を表示
+                            snprintf(preview, sizeof(preview), "プレビュー: %02d:%02d", partialValue/100, partialValue%100);
+                        }
+                    }
                 }
             }
             view->showPreview(preview);
@@ -108,36 +200,59 @@ public:
         }
     }
     void onButtonC() override {
-        if (!inputLogic || !view) return;
+        if (!inputLogic) return;
         
-        // 部分的な入力状態を直接取得
-        const int* digits = inputLogic->getDigits();
-        const bool* entered = inputLogic->getEntered();
+        bool success = false;
+        bool error = false;
         
-        extern std::vector<time_t> alarm_times;
-        time_t now = time(nullptr);
-        AlarmLogic::AddAlarmResult result;
-        std::string msg;
-        
-        // 相対値入力モードの場合は相対値計算結果をアラームとして追加
-        bool ok;
         if (isRelativeMode) {
-            extern std::vector<time_t> alarm_times;
-            ok = addRelativeAlarm(digits, entered, alarm_times, result, msg);
+            // 相対値入力モード: InputLogicから相対値を取得してアラーム追加
+            time_t relativeTime = inputLogic->getRelativeValue();
+            if (relativeTime != -1) {
+                extern std::vector<time_t> alarm_times;
+                time_t now = time(nullptr);
+                AlarmLogic::AddAlarmResult result;
+                std::string msg;
+                
+                // 絶対時刻としてアラーム追加
+                success = AlarmLogic::addAlarm(alarm_times, now, relativeTime, result, msg);
+                if (!success) {
+                    error = true;
+                    showError = true;
+                    errorMessage = msg;
+                    errorStartTime = time(nullptr);
+                }
+            } else {
+                error = true;
+                showError = true;
+                errorMessage = "Input is empty.";
+                errorStartTime = time(nullptr);
+            }
         } else {
-            // 絶対時刻入力モードの場合は従来通り
+            // 絶対時刻入力モード: 既存のロジックを使用
             extern std::vector<time_t> alarm_times;
-            ok = AlarmLogic::addAlarmFromPartialInput(alarm_times, now, digits, entered, result, msg);
+            const int* digits = inputLogic->getDigits();
+            const bool* entered = inputLogic->getEntered();
+            if (digits && entered) {
+                time_t now = time(nullptr);
+                AlarmLogic::AddAlarmResult result;
+                std::string msg;
+                bool ok = AlarmLogic::addAlarmFromPartialInput(alarm_times, now, digits, entered, result, msg);
+                if (ok) {
+                    success = true;
+                } else {
+                    error = true;
+                    showError = true;
+                    errorMessage = msg;
+                    errorStartTime = time(nullptr);
+                }
+            }
         }
         
-        if (ok) {
+        if (success && !error) {
             if (manager && mainDisplayState) {
                 manager->setState(mainDisplayState);
             }
-        } else {
-            // エラーメッセージを英語でプレビュー表示
-            view->showPreview(msg.c_str());
-            // TODO: 効果音/バイブ（ハード依存部で実装）
         }
     }
     void onButtonALongPress() override {
@@ -176,115 +291,10 @@ private:
     IState* mainDisplayState;
     bool isRelativeMode;
     
-    // 相対値計算のプレビュー表示
-    void calculateRelativeTimePreview(int inputValue, char* preview, size_t previewSize) {
-        // 現在時刻取得
-        time_t now = time(nullptr);
-        struct tm* tm_now = localtime(&now);
-        
-        // 入力値を時分に分解
-        int inputHour = inputValue / 100;
-        int inputMinute = inputValue % 100;
-        
-        // 現在時刻 + 入力値
-        int resultHour = tm_now->tm_hour + inputHour;
-        int resultMinute = tm_now->tm_min + inputMinute;
-        
-        // 繰り上げ処理
-        if (resultMinute >= 60) {
-            resultHour += resultMinute / 60;
-            resultMinute %= 60;
-        }
-        
-        // 日付跨ぎ処理
-        bool nextDay = false;
-        if (resultHour >= 24) {
-            resultHour -= 24;
-            nextDay = true;
-        }
-        
-        // プレビュー文字列生成
-        if (nextDay) {
-            snprintf(preview, previewSize, "+1d %02d:%02d", resultHour, resultMinute);
-        } else {
-            snprintf(preview, previewSize, "%02d:%02d", resultHour, resultMinute);
-        }
-    }
+    // エラーメッセージ表示管理
+    std::string errorMessage;
+    bool showError;
+    time_t errorStartTime;
     
-    // 相対値アラーム追加
-    bool addRelativeAlarm(const int* digits, const bool* entered, std::vector<time_t>& alarm_times, AlarmLogic::AddAlarmResult& result, std::string& msg) {
-        // 入力値チェック
-        if (!digits || !entered) {
-            result = AlarmLogic::AddAlarmResult::ErrorInvalid;
-            msg = "Invalid input data";
-            return false;
-        }
-        
-        // 部分的な入力状態を完全な時分に変換
-        int hour = 0, minute = 0;
-        
-        // 時の解釈（digits[0], digits[1]）
-        if (entered[0] && entered[1]) {
-            // 両方入力済み
-            hour = digits[0] * 10 + digits[1];
-        } else if (entered[0] && !entered[1]) {
-            // 時十桁のみ入力済み → 時一桁を0として補完
-            hour = digits[0] * 10 + 0;
-        } else if (!entered[0] && entered[1]) {
-            // 時一桁のみ入力済み → 時十桁を0として補完
-            hour = 0 * 10 + digits[1];
-        } else {
-            // 時が未入力
-            hour = 0;
-        }
-        
-        // 分の解釈（digits[2], digits[3]）
-        if (entered[2] && entered[3]) {
-            // 両方入力済み
-            minute = digits[2] * 10 + digits[3];
-        } else if (entered[2] && !entered[3]) {
-            // 分十桁のみ入力済み → 分一桁を0として補完
-            minute = digits[2] * 10 + 0;
-        } else if (!entered[2] && entered[3]) {
-            // 分一桁のみ入力済み → 分十桁を0として補完
-            minute = 0 * 10 + digits[3];
-        } else {
-            // 分が未入力
-            minute = 0;
-        }
-        
-        // 未入力チェック
-        if (hour == 0 && minute == 0) {
-            result = AlarmLogic::AddAlarmResult::ErrorEmptyInput;
-            msg = "Input is empty.";
-            return false;
-        }
-        
-        // 相対値計算（現在時刻 + 入力値）
-        time_t now = time(nullptr);
-        struct tm* tm_now = localtime(&now);
-        struct tm alarm_tm = *tm_now;
-        alarm_tm.tm_sec = 0;
-        alarm_tm.tm_isdst = -1;
-        
-        // 分繰り上げ
-        if (minute >= 60) { 
-            hour += minute / 60; 
-            minute = minute % 60; 
-        }
-        // 時繰り上げ
-        int add_day = hour / 24;
-        hour = hour % 24;
-        
-        // 現在時刻に加算
-        alarm_tm.tm_hour += hour;
-        alarm_tm.tm_min += minute;
-        alarm_tm.tm_mday += add_day;
-        
-        // 時刻正規化
-        time_t alarm_time = mktime(&alarm_tm);
-        
-        // アラーム追加
-        return AlarmLogic::addAlarm(alarm_times, now, alarm_time, result, msg);
-    }
+
 }; 
