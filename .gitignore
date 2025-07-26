@@ -1,10 +1,11 @@
+.cache/clangd/index/*
 .pio
-*.gcov
 *.exe
 *.gcda
 *.gcno
-*.log
-coverage_reports/*
+*.gcov
 *.gcov.json.gz
+*.log
 coverage_report.functions.html
 coverage_report.html
+coverage_reports/*
