@@ -15,37 +15,41 @@
 #include <M5Display.h>
 #endif
 #include "ButtonManager.h"
+
+// 定数定義
+constexpr int LOOP_DELAY_MS = 50;
+
 extern void setFillRectImpl(void (*impl)(int, int, int, int, int));
 extern void setFillProgressBarSpriteImpl(void (*impl)(int, int, int, int, int));
 
 #ifdef ARDUINO
 // --- M5Stack用描画関数 ---
-void m5_rect_impl(int x, int y, int w, int h) {
-    M5.Lcd.drawRect(x, y, w, h, AMBER_COLOR);
+void m5_rect_impl(int pos_x, int pos_y, int width, int height) {
+    M5.Lcd.drawRect(pos_x, pos_y, width, height, AMBER_COLOR);
 }
-void m5_string_impl(const char* str, int x, int y) {
-    M5.Lcd.drawString(str, x, y);
+void m5_string_impl(const char* str, int pos_x, int pos_y) {
+    M5.Lcd.drawString(str, pos_x, pos_y);
 }
-void m5_progress_bar_impl(int x, int y, int w, int h, int percent) {
+void m5_progress_bar_impl(int pos_x, int pos_y, int width, int height, int percent) {
     const int BORDER_WIDTH = 1;
     const int PERCENT_DENOMINATOR = 100;
     
-    M5.Lcd.drawRect(x, y, w, h, AMBER_COLOR);
-    M5.Lcd.fillRect(x + BORDER_WIDTH, y + BORDER_WIDTH, w - 2 * BORDER_WIDTH, h - 2 * BORDER_WIDTH, TFT_BLACK);
-    int fillW = (w - 2 * BORDER_WIDTH) * percent / PERCENT_DENOMINATOR;
+    M5.Lcd.drawRect(pos_x, pos_y, width, height, AMBER_COLOR);
+    M5.Lcd.fillRect(pos_x + BORDER_WIDTH, pos_y + BORDER_WIDTH, width - 2 * BORDER_WIDTH, height - 2 * BORDER_WIDTH, TFT_BLACK);
+    const int fillW = (width - 2 * BORDER_WIDTH) * percent / PERCENT_DENOMINATOR;
     if (fillW > 0) {
-        M5.Lcd.fillRect(x + BORDER_WIDTH, y + BORDER_WIDTH, fillW, h - 2 * BORDER_WIDTH, AMBER_COLOR);
+        M5.Lcd.fillRect(pos_x + BORDER_WIDTH, pos_y + BORDER_WIDTH, fillW, height - 2 * BORDER_WIDTH, AMBER_COLOR);
     }
 }
-void m5_set_font_impl(int font) {
-    M5.Lcd.setTextFont(font);
+void m5_set_font_impl(int font_size) {
+    M5.Lcd.setTextFont(font_size);
     M5.Lcd.setTextColor(AMBER_COLOR, TFT_BLACK);
 }
-void m5_set_text_datum_impl(int datum) {
-    M5.Lcd.setTextDatum(datum);
+void m5_set_text_datum_impl(int text_datum) {
+    M5.Lcd.setTextDatum(text_datum);
 }
-void m5_fill_rect_impl(int x, int y, int w, int h, int color) {
-    M5.Lcd.fillRect(x, y, w, h, color);
+void m5_fill_rect_impl(int pos_x, int pos_y, int width, int height, int color) {
+    M5.Lcd.fillRect(pos_x, pos_y, width, height, color);
 }
 #endif
 
@@ -97,7 +101,9 @@ void loop() {
     if (buttonManager.isLongPress(ButtonManager::BtnC)) stateManager.handleButtonCLongPress();
     // 現在の状態の描画
     IState* current = stateManager.getCurrentState();
-    if (current) current->onDraw();
-    delay(50);
+    if (current != nullptr) {
+        current->onDraw();
+    }
+    delay(LOOP_DELAY_MS);
 #endif
 } 
