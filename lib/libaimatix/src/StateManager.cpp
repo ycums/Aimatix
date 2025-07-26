@@ -3,9 +3,13 @@
 StateManager::StateManager() : currentState(nullptr) {}
 
 void StateManager::setState(IState* state) {
-    if (currentState) currentState->onExit();
+    if (currentState != nullptr) {
+        currentState->onExit();
+    }
     currentState = state;
-    if (currentState) currentState->onEnter();
+    if (currentState != nullptr) {
+        currentState->onEnter();
+    }
 }
 
 IState* StateManager::getCurrentState() const {
@@ -13,20 +17,32 @@ IState* StateManager::getCurrentState() const {
 }
 
 void StateManager::handleButtonA() {
-    if (currentState) currentState->onButtonA();
+    if (currentState != nullptr) {
+        currentState->onButtonA();
+    }
 }
 void StateManager::handleButtonB() {
-    if (currentState) currentState->onButtonB();
+    if (currentState != nullptr) {
+        currentState->onButtonB();
+    }
 }
 void StateManager::handleButtonC() {
-    if (currentState) currentState->onButtonC();
+    if (currentState != nullptr) {
+        currentState->onButtonC();
+    }
 }
 void StateManager::handleButtonALongPress() {
-    if (currentState) currentState->onButtonALongPress();
+    if (currentState != nullptr) {
+        currentState->onButtonALongPress();
+    }
 }
 void StateManager::handleButtonCLongPress() {
-    if (currentState) currentState->onButtonCLongPress();
+    if (currentState != nullptr) {
+        currentState->onButtonCLongPress();
+    }
 }
 void StateManager::handleButtonBLongPress() {
-    if (currentState) currentState->onButtonBLongPress();
+    if (currentState != nullptr) {
+        currentState->onButtonBLongPress();
+    }
 } 

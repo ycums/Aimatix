@@ -4,18 +4,28 @@
 #include <sstream>
 #include <cstdio> // For printf
 
+// 定数定義
+constexpr int SECONDS_10 = 10;
+constexpr int SECONDS_30 = 30;
+constexpr int SECONDS_60 = 60;
+constexpr int SECONDS_120 = 120;
+constexpr int HOURS_24 = 24;
+constexpr int MINUTES_60 = 60;
+constexpr int PERCENT_100 = 100;
+constexpr int HOURS_100 = 100;
+
 void AlarmLogic::initAlarms(std::vector<time_t>& alarms, time_t now) {
     alarms.clear();
-    alarms.push_back(now + 10);    // +10秒
-    alarms.push_back(now + 30);    // +30秒
-    alarms.push_back(now + 60);    // +1分
-    alarms.push_back(now + 120);   // +2分
+    alarms.push_back(now + SECONDS_10);    // +10秒
+    alarms.push_back(now + SECONDS_30);    // +30秒
+    alarms.push_back(now + SECONDS_60);    // +1分
+    alarms.push_back(now + SECONDS_120);   // +2分
 }
 
 void AlarmLogic::removePastAlarms(std::vector<time_t>& alarms, time_t now) {
     alarms.erase(
         alarms.begin(),
-        std::find_if(alarms.begin(), alarms.end(), [now](time_t t) { return t > now; })
+        std::find_if(alarms.begin(), alarms.end(), [now](time_t time_value) { return time_value > now; })
     );
 }
 
@@ -26,9 +36,9 @@ int AlarmLogic::getRemainSec(const std::vector<time_t>& alarms, time_t now) {
 
 int AlarmLogic::getRemainPercent(int remainSec, int totalSec) {
     if (totalSec <= 0) return 0;
-    int percent = (remainSec * 100) / totalSec;
+    int percent = (remainSec * PERCENT_100) / totalSec;
     if (percent < 0) percent = 0;
-    if (percent > 100) percent = 100;
+    if (percent > PERCENT_100) percent = PERCENT_100;
     return percent;
 }
 
@@ -54,38 +64,38 @@ bool AlarmLogic::addAlarm(std::vector<time_t>& alarms, time_t now, time_t input,
     struct tm alarm_tm = *now_tm;
     alarm_tm.tm_sec = 0;
     alarm_tm.tm_isdst = -1;
-    int h, m, add_day = 0;
-    if (input < 100) {
+    int hour, minute, add_day = 0;
+    if (input < HOURS_100) {
         // 分のみ指定
-        m = input % 60;
-        h = input / 60;
-        if (h > 0) {
+        minute = input % MINUTES_60;
+        hour = input / MINUTES_60;
+        if (hour > 0) {
             // 分が60以上の場合、時分に正規化
-            m = input % 60;
-            h = input / 60;
+            minute = input % MINUTES_60;
+            hour = input / MINUTES_60;
         } else {
             // 分のみの場合
-            m = input;
-            h = 0;
+            minute = input;
+            hour = 0;
         }
         // 現在時刻の次のその時刻を計算
-        if (h > 0 || m > now_tm->tm_min) {
+        if (hour > 0 || minute > now_tm->tm_min) {
             // 時が指定されているか、分が現在分より大きい場合
-            if (h == 0) {
-                h = now_tm->tm_hour;
-                if (m <= now_tm->tm_min) {
-                    h += 1;
+            if (hour == 0) {
+                hour = now_tm->tm_hour;
+                if (minute <= now_tm->tm_min) {
+                    hour += 1;
                 }
             } else {
-                h += now_tm->tm_hour;
+                hour += now_tm->tm_hour;
             }
         } else {
-            h = now_tm->tm_hour + 1;
+            hour = now_tm->tm_hour + 1;
         }
         // 繰り上げ
-        if (h >= 24) { h -= 24; add_day = 1; }
-        alarm_tm.tm_hour = h;
-        alarm_tm.tm_min = m;
+        if (hour >= HOURS_24) { hour -= HOURS_24; add_day = 1; }
+        alarm_tm.tm_hour = hour;
+        alarm_tm.tm_min = minute;
         alarm_tm.tm_mday += add_day;
         
         // 過去時刻チェック（分のみ指定の場合も）
@@ -96,15 +106,15 @@ bool AlarmLogic::addAlarm(std::vector<time_t>& alarms, time_t now, time_t input,
         }
     } else {
         // 時分指定
-        h = input / 100;
-        m = input % 100;
+        hour = input / HOURS_100;
+        minute = input % HOURS_100;
         // 分繰り上げ
-        if (m >= 60) { h += m / 60; m = m % 60; }
+        if (minute >= MINUTES_60) { hour += minute / MINUTES_60; minute = minute % MINUTES_60; }
         // 時繰り上げ
-        add_day = h / 24;
-        h = h % 24;
-        alarm_tm.tm_hour = h;
-        alarm_tm.tm_min = m;
+        add_day = hour / HOURS_24;
+        hour = hour % HOURS_24;
+        alarm_tm.tm_hour = hour;
+        alarm_tm.tm_min = minute;
         alarm_tm.tm_mday += add_day;
         time_t candidate = mktime(&alarm_tm);
         if (candidate <= now) {
@@ -115,7 +125,8 @@ bool AlarmLogic::addAlarm(std::vector<time_t>& alarms, time_t now, time_t input,
     time_t alarmTime = mktime(&alarm_tm);
     
     // 最大数チェック
-    if (alarms.size() >= 5) {
+    constexpr int MAX_ALARMS = 5;
+    if (alarms.size() >= MAX_ALARMS) {
         result = AddAlarmResult::ErrorMaxReached;
         errorMsg = "Max alarms reached (5)";
         return false;
