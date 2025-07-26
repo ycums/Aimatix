@@ -210,15 +210,118 @@ void test_alarm_correction_past_hour_minute() {
     AlarmLogic::AddAlarmResult result;
     std::string msg;
     struct tm base_tm = {};
-    base_tm.tm_year = 124; base_tm.tm_mon = 0; base_tm.tm_mday = 1; base_tm.tm_hour = 14; base_tm.tm_min = 0; base_tm.tm_sec = 0;
+    base_tm.tm_year = 124; base_tm.tm_mon = 0; base_tm.tm_mday = 1; base_tm.tm_hour = 14; base_tm.tm_min = 35; base_tm.tm_sec = 0;
     now = mktime(&base_tm);
-    int input = 1300;
+    int input = 1200; // 12:00（過去時刻）
     alarms.clear();
     AlarmLogic::addAlarm(alarms, now, input, result, msg);
     struct tm* tm7 = localtime(&alarms[0]);
-    TEST_ASSERT_EQUAL(13, tm7->tm_hour);
+    TEST_ASSERT_EQUAL(2, tm7->tm_mday); // 翌日
+    TEST_ASSERT_EQUAL(12, tm7->tm_hour);
     TEST_ASSERT_EQUAL(0, tm7->tm_min);
-    TEST_ASSERT_EQUAL(2, tm7->tm_mday);
+}
+
+// === ここからTDD: 部分的な入力状態の解釈テスト ===
+void test_partial_input_hour_only() {
+    std::vector<time_t> alarms;
+    time_t now;
+    AlarmLogic::AddAlarmResult result;
+    std::string msg;
+    struct tm base_tm = {};
+    base_tm.tm_year = 124; base_tm.tm_mon = 0; base_tm.tm_mday = 1; base_tm.tm_hour = 14; base_tm.tm_min = 35; base_tm.tm_sec = 0;
+    now = mktime(&base_tm);
+    
+    // _0:__ → 00:00（過去時刻なので翌日）
+    int digits[4] = {0, 0, 0, 0};
+    bool entered[4] = {false, false, false, false};
+    digits[0] = 0; entered[0] = true; // 時十桁のみ入力
+    
+    alarms.clear();
+    bool ok = AlarmLogic::addAlarmFromPartialInput(alarms, now, digits, entered, result, msg);
+    TEST_ASSERT_TRUE(ok);
+    TEST_ASSERT_EQUAL((int)AlarmLogic::AddAlarmResult::Success, (int)result);
+    
+    struct tm* tm = localtime(&alarms[0]);
+    TEST_ASSERT_EQUAL(2, tm->tm_mday); // 翌日
+    TEST_ASSERT_EQUAL(0, tm->tm_hour);
+    TEST_ASSERT_EQUAL(0, tm->tm_min);
+}
+
+void test_partial_input_minute_only() {
+    std::vector<time_t> alarms;
+    time_t now;
+    AlarmLogic::AddAlarmResult result;
+    std::string msg;
+    struct tm base_tm = {};
+    base_tm.tm_year = 124; base_tm.tm_mon = 0; base_tm.tm_mday = 1; base_tm.tm_hour = 14; base_tm.tm_min = 35; base_tm.tm_sec = 0;
+    now = mktime(&base_tm);
+    
+    // __:01 → 00:01（過去時刻なので翌日）
+    int digits[4] = {0, 0, 0, 0};
+    bool entered[4] = {false, false, false, false};
+    digits[3] = 1; entered[3] = true; // 分一桁のみ入力
+    
+    alarms.clear();
+    bool ok = AlarmLogic::addAlarmFromPartialInput(alarms, now, digits, entered, result, msg);
+    TEST_ASSERT_TRUE(ok);
+    TEST_ASSERT_EQUAL((int)AlarmLogic::AddAlarmResult::Success, (int)result);
+    
+    struct tm* tm = localtime(&alarms[0]);
+    TEST_ASSERT_EQUAL(2, tm->tm_mday); // 翌日
+    TEST_ASSERT_EQUAL(0, tm->tm_hour);
+    TEST_ASSERT_EQUAL(1, tm->tm_min);
+}
+
+void test_partial_input_hour_minute_partial() {
+    std::vector<time_t> alarms;
+    time_t now;
+    AlarmLogic::AddAlarmResult result;
+    std::string msg;
+    struct tm base_tm = {};
+    base_tm.tm_year = 124; base_tm.tm_mon = 0; base_tm.tm_mday = 1; base_tm.tm_hour = 14; base_tm.tm_min = 35; base_tm.tm_sec = 0;
+    now = mktime(&base_tm);
+    
+    // _0:1_ → 00:10（過去時刻なので翌日）
+    int digits[4] = {0, 0, 0, 0};
+    bool entered[4] = {false, false, false, false};
+    digits[0] = 0; entered[0] = true; // 時十桁入力
+    digits[2] = 1; entered[2] = true; // 分十桁入力
+    
+    alarms.clear();
+    bool ok = AlarmLogic::addAlarmFromPartialInput(alarms, now, digits, entered, result, msg);
+    TEST_ASSERT_TRUE(ok);
+    TEST_ASSERT_EQUAL((int)AlarmLogic::AddAlarmResult::Success, (int)result);
+    
+    struct tm* tm = localtime(&alarms[0]);
+    TEST_ASSERT_EQUAL(2, tm->tm_mday); // 翌日
+    TEST_ASSERT_EQUAL(0, tm->tm_hour);
+    TEST_ASSERT_EQUAL(10, tm->tm_min);
+}
+
+void test_partial_input_future_time() {
+    std::vector<time_t> alarms;
+    time_t now;
+    AlarmLogic::AddAlarmResult result;
+    std::string msg;
+    struct tm base_tm = {};
+    base_tm.tm_year = 124; base_tm.tm_mon = 0; base_tm.tm_mday = 1; base_tm.tm_hour = 14; base_tm.tm_min = 35; base_tm.tm_sec = 0;
+    now = mktime(&base_tm);
+    
+    // 15:__ → 15:00（未来時刻なので当日）
+    int digits[4] = {0, 0, 0, 0};
+    bool entered[4] = {false, false, false, false};
+    digits[0] = 1; entered[0] = true; // 時十桁入力
+    digits[1] = 5; entered[1] = true; // 時一桁入力
+    
+    alarms.clear();
+    bool ok = AlarmLogic::addAlarmFromPartialInput(alarms, now, digits, entered, result, msg);
+    TEST_ASSERT_TRUE(ok);
+    TEST_ASSERT_EQUAL((int)AlarmLogic::AddAlarmResult::Success, (int)result);
+    
+    struct tm* tm = localtime(&alarms[0]);
+    TEST_ASSERT_EQUAL(1, tm->tm_mday); // 当日
+    TEST_ASSERT_EQUAL(15, tm->tm_hour);
+    TEST_ASSERT_EQUAL(0, tm->tm_min);
 }
 
 void setUp(void) {}
@@ -238,6 +341,10 @@ int main(int argc, char **argv) {
     RUN_TEST(test_alarm_correction_hour_minute_990);
     RUN_TEST(test_alarm_correction_hour_minute_9999);
     RUN_TEST(test_alarm_correction_past_hour_minute);
+    RUN_TEST(test_partial_input_hour_only);
+    RUN_TEST(test_partial_input_minute_only);
+    RUN_TEST(test_partial_input_hour_minute_partial);
+    RUN_TEST(test_partial_input_future_time);
     UNITY_END();
     return 0;
 } 

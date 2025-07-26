@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <iomanip>
 #include <sstream>
+#include <cstdio> // For printf
 
 void AlarmLogic::initAlarms(std::vector<time_t>& alarms, time_t now) {
     alarms.clear();
@@ -40,7 +41,7 @@ void AlarmLogic::getAlarmTimeStrings(const std::vector<time_t>& alarms, std::vec
             << std::setw(2) << tm_alarm->tm_min;
         out.push_back(oss.str());
     }
-}
+} 
 
 // addAlarm: 入力値をアラームとして追加。エラー時はresult, errorMsgに理由を格納。
 bool AlarmLogic::addAlarm(std::vector<time_t>& alarms, time_t now, time_t input, AddAlarmResult& result, std::string& errorMsg) {
@@ -86,6 +87,13 @@ bool AlarmLogic::addAlarm(std::vector<time_t>& alarms, time_t now, time_t input,
         alarm_tm.tm_hour = h;
         alarm_tm.tm_min = m;
         alarm_tm.tm_mday += add_day;
+        
+        // 過去時刻チェック（分のみ指定の場合も）
+        time_t candidate = mktime(&alarm_tm);
+        if (candidate <= now) {
+            // 現在時刻より前なら翌日
+            alarm_tm.tm_mday += 1;
+        }
     } else {
         // 時分指定
         h = input / 100;
@@ -105,21 +113,120 @@ bool AlarmLogic::addAlarm(std::vector<time_t>& alarms, time_t now, time_t input,
         }
     }
     time_t alarmTime = mktime(&alarm_tm);
+    
+    // 最大数チェック
     if (alarms.size() >= 5) {
         result = AddAlarmResult::ErrorMaxReached;
-        errorMsg = "Maximum number of alarms reached.";
+        errorMsg = "Max alarms reached (5)";
         return false;
     }
-    for (const auto& t : alarms) {
-        if (t == alarmTime) {
+    
+    // 重複チェック
+    for (auto existing : alarms) {
+        if (existing == alarmTime) {
             result = AddAlarmResult::ErrorDuplicate;
-            errorMsg = "Alarm already exists.";
+            errorMsg = "Duplicate alarm time";
             return false;
         }
     }
+    
     alarms.push_back(alarmTime);
     std::sort(alarms.begin(), alarms.end());
     result = AddAlarmResult::Success;
-    errorMsg = "";
+    return true;
+}
+
+// 部分的な入力状態（digits[4], entered[4]）からアラームを追加
+bool AlarmLogic::addAlarmFromPartialInput(
+    std::vector<time_t>& alarms, 
+    time_t now, 
+    const int* digits, 
+    const bool* entered, 
+    AddAlarmResult& result, 
+    std::string& errorMsg
+) {
+    // 入力チェック
+    if (!digits || !entered) {
+        result = AddAlarmResult::ErrorInvalid;
+        errorMsg = "Invalid input data";
+        return false;
+    }
+    
+    // 部分的な入力状態を完全な時分に変換
+    int hour = 0, minute = 0;
+    
+    // 時の解釈（digits[0], digits[1]）
+    if (entered[0] && entered[1]) {
+        // 両方入力済み
+        hour = digits[0] * 10 + digits[1];
+    } else if (entered[0] && !entered[1]) {
+        // 時十桁のみ入力済み → 時一桁を0として補完
+        hour = digits[0] * 10 + 0;
+    } else if (!entered[0] && entered[1]) {
+        // 時一桁のみ入力済み → 時十桁を0として補完
+        hour = 0 * 10 + digits[1];
+    } else {
+        // 時が未入力
+        hour = 0;
+    }
+    
+    // 分の解釈（digits[2], digits[3]）
+    if (entered[2] && entered[3]) {
+        // 両方入力済み
+        minute = digits[2] * 10 + digits[3];
+    } else if (entered[2] && !entered[3]) {
+        // 分十桁のみ入力済み → 分一桁を0として補完
+        minute = digits[2] * 10 + 0;
+    } else if (!entered[2] && entered[3]) {
+        // 分一桁のみ入力済み → 分十桁を0として補完
+        minute = 0 * 10 + digits[3];
+    } else {
+        // 分が未入力
+        minute = 0;
+    }
+    
+    // 時分を直接指定してアラーム追加（既存のaddAlarm関数を拡張して使用）
+    struct tm* now_tm = localtime(&now);
+    struct tm alarm_tm = *now_tm;
+    alarm_tm.tm_sec = 0;
+    alarm_tm.tm_isdst = -1;
+    
+    // 分繰り上げ
+    if (minute >= 60) { hour += minute / 60; minute = minute % 60; }
+    // 時繰り上げ
+    int add_day = hour / 24;
+    hour = hour % 24;
+    
+    alarm_tm.tm_hour = hour;
+    alarm_tm.tm_min = minute;
+    alarm_tm.tm_mday += add_day;
+    
+    time_t candidate = mktime(&alarm_tm);
+    if (candidate <= now) {
+        // 現在時刻より前なら翌日
+        alarm_tm.tm_mday += 1;
+    }
+    
+    time_t alarmTime = mktime(&alarm_tm);
+    
+    // 最大数チェック
+    if (alarms.size() >= 5) {
+        result = AddAlarmResult::ErrorMaxReached;
+        errorMsg = "Max alarms reached (5)";
+        return false;
+    }
+    
+    // 重複チェック
+    for (auto existing : alarms) {
+        if (existing == alarmTime) {
+            result = AddAlarmResult::ErrorDuplicate;
+            errorMsg = "Duplicate alarm time";
+            return false;
+        }
+    }
+    
+    alarms.push_back(alarmTime);
+    std::sort(alarms.begin(), alarms.end());
+    result = AddAlarmResult::Success;
     return true;
 } 

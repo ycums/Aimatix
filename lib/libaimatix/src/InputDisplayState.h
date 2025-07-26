@@ -58,12 +58,19 @@ public:
     void onButtonB() override {}
     void onButtonC() override {
         if (!inputLogic || !view) return;
-        int value = inputLogic->getValue();
+        
+        // 部分的な入力状態を直接取得
+        const int* digits = inputLogic->getDigits();
+        const bool* entered = inputLogic->getEntered();
+        
         extern std::vector<time_t> alarmTimes;
         time_t now = time(nullptr);
         AlarmLogic::AddAlarmResult result;
         std::string msg;
-        bool ok = AlarmLogic::addAlarm(alarmTimes, now, value, result, msg);
+        
+        // 新しいAPIを使用して部分的な入力状態からアラーム追加
+        bool ok = AlarmLogic::addAlarmFromPartialInput(alarmTimes, now, digits, entered, result, msg);
+        
         if (ok) {
             if (manager && mainDisplayState) {
                 manager->setState(mainDisplayState);

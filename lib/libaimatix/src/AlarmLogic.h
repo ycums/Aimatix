@@ -25,4 +25,14 @@ public:
     };
     // 入力値（時刻: time_t）をアラームとして追加。エラー時はresult, errorMsgに理由を格納。
     static bool addAlarm(std::vector<time_t>& alarms, time_t now, time_t input, AddAlarmResult& result, std::string& errorMsg);
+    
+    // 部分的な入力状態（digits[4], entered[4]）からアラームを追加
+    static bool addAlarmFromPartialInput(
+        std::vector<time_t>& alarms, 
+        time_t now, 
+        const int* digits, 
+        const bool* entered, 
+        AddAlarmResult& result, 
+        std::string& errorMsg
+    );
 }; 
