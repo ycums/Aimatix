@@ -42,11 +42,13 @@
 - [x] 3-0-1: 実機で「でたらめな」メイン画面が表示される（MainDisplay雛形＋TimeLogic stub）
     - [x] 実機転送・画面表示確認
     - [x] 最低限のビルド・テスト・カバレッジ確認
+    - [x] 静的解析実行（Clang-Tidy）
 - [x] 3-0-2: メイン画面の体裁が整う（MainDisplay UIレイアウト・描画拡張、TimeLogic「現在時刻」仮実装）
     - [x] 実機での見た目確認
 - [x] 3-0-3: 決め打ちで2分カウントダウンが走る（TimeLogic/AlarmLogic stub/仮実装、コマンド/イベント駆動の背骨完成）
     - [x] カウントダウン動作確認
     - [x] テスト・カバレッジ確認
+    - [x] 静的解析実行（Clang-Tidy）
 - [x] 3-0-4: 入力画面（InputDisplay）雛形追加・画面遷移（InputLogic stub、状態遷移/nextMode）
     - [x] StateManager（状態遷移管理クラス）雛形追加・画面/ロジック状態の一元管理
     - [x] MainDisplay, InputDisplay, InputLogic等をStateManagerに登録し、状態遷移APIで画面遷移を制御
@@ -68,19 +70,27 @@
     - [x] 桁送り機能のUnit Testを追加
     - [x] 境界値テスト（全桁入力済み、部分入力等）
     - [x] カバレッジ品質ゲートを上回る（84.3%）
+    - [x] 静的解析実行（Clang-Tidy）
     - [x] 実機テスト合格（入力と同時に桁送り問題解決）
 - [ ] 3-0-10: 相対値入力ができる
   - [ ] 相対値入力画面に移行できる
   - [ ] 相対値計算が正しくできる
   - [ ] アラームが設定できる
+  - [ ] 静的解析実行（Clang-Tidy）
 - [ ] 3-0-11: アラーム管理画面（AlarmDisplay）雛形追加・遷移（AlarmLogic連携、リスト表示・選択）
+  - [ ] 静的解析実行（Clang-Tidy）
 - [ ] 3-0-12: 設定画面（SettingsDisplay）雛形追加・遷移（SettingsLogic stub、設定値の表示・編集雛形）
+  - [ ] 静的解析実行（Clang-Tidy）
 - [ ] 3-0-13: 項目選択・アラーム削除（AlarmLogic/AlarmDisplayの機能拡張、副作用コマンド一元管理）
+  - [ ] 静的解析実行（Clang-Tidy）
 - [ ] 3-0-14: 設定保存・復元・バリデーション（SettingsLogic本実装＋MockEEPROMAdapter連携、設定保存/復元/バリデーションのUI・副作用コマンド）
+  - [ ] 静的解析実行（Clang-Tidy）
 - [ ] 3-0-15: 警告・エラー表示、副作用コマンド拡張（ShowWarningコマンド、エラー時のUI反映）
   - [ ] 入力画面の桁送り失敗時に何らかのリアクションを追加する。
+  - [ ] 静的解析実行（Clang-Tidy）
 - [ ] 3-0-16: すべての主要コンポーネント・全仕様網羅（MainDisplay, InputDisplay, AlarmDisplay, SettingsDisplay, TimeLogic, AlarmLogic, InputLogic, SettingsLogic, ButtonManager, DebounceManager, 各Adapter/Hardware層）
     - [ ] すべての画面・機能・副作用コマンドが連携し、全仕様を満たす
+    - [ ] 静的解析実行（Clang-Tidy）
 
 ---
 
@@ -124,8 +134,9 @@
 
 ### 4-2: カバレッジ・品質管理
 - [ ] 4-2-1: カバレッジ計測（scripts/test_coverage.py等、`doc/spec/coverage_measurement_spec.md`参照）
-- [ ] 4-2-2: 品質指標（要件定義5.2, 5.3）充足の確認
-- [ ] 4-2-3: 成果物レビュー・要件充足確認
+- [ ] 4-2-2: 静的解析実行（Clang-Tidy、`doc/operation/clang_tidy_guide.md`参照）
+- [ ] 4-2-3: 品質指標（要件定義5.2, 5.3）充足の確認
+- [ ] 4-2-4: 成果物レビュー・要件充足確認
 
 ---
 

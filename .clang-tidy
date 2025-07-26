@@ -1,0 +1,317 @@
+---
+Checks: >
+  -*,
+  bugprone-*,
+  cert-*,
+  clang-analyzer-*,
+  cppcoreguidelines-*,
+  modernize-*,
+  performance-*,
+  portability-*,
+  readability-*
+  
+# 特定のチェックを無効化
+CheckOptions:
+  - key: bugprone-argument-comment
+    value: 'false'
+  - key: bugprone-branch-clone
+    value: 'false'
+  - key: bugprone-macro-parentheses
+    value: 'false'
+  - key: bugprone-misplaced-widening-cast
+    value: 'false'
+  - key: bugprone-sizeof-expression
+    value: 'false'
+  - key: bugprone-suspicious-missing-comma
+    value: 'false'
+  - key: bugprone-unused-raii
+    value: 'false'
+  - key: bugprone-unused-return-value
+    value: 'false'
+  - key: cert-err58-cpp
+    value: 'false'
+  - key: cert-msc50-cpp
+    value: 'false'
+  - key: cert-msc51-cpp
+    value: 'false'
+  - key: clang-analyzer-core.CallAndMessage
+    value: 'false'
+  - key: clang-analyzer-core.DivideZero
+    value: 'false'
+  - key: clang-analyzer-core.NonNullParamChecker
+    value: 'false'
+  - key: clang-analyzer-core.NullDereference
+    value: 'false'
+  - key: clang-analyzer-core.StackAddressEscape
+    value: 'false'
+  - key: clang-analyzer-core.UndefinedBinaryOperatorResult
+    value: 'false'
+  - key: clang-analyzer-core.uninitialized.ArraySubscript
+    value: 'false'
+  - key: clang-analyzer-core.uninitialized.Assign
+    value: 'false'
+  - key: clang-analyzer-core.uninitialized.Branch
+    value: 'false'
+  - key: clang-analyzer-core.uninitialized.CapturedBlockVariable
+    value: 'false'
+  - key: clang-analyzer-core.uninitialized.UndefReturn
+    value: 'false'
+  - key: clang-analyzer-cplusplus.InvalidatedIterator
+    value: 'false'
+  - key: clang-analyzer-cplusplus.MisusedMovedObject
+    value: 'false'
+  - key: clang-analyzer-deadcode.DeadStores
+    value: 'false'
+  - key: clang-analyzer-nullability.NullPassedToNonnull
+    value: 'false'
+  - key: clang-analyzer-nullability.NullReturnedFromNonnull
+    value: 'false'
+  - key: clang-analyzer-optin.cplusplus.VirtualCall
+    value: 'false'
+  - key: clang-analyzer-optin.mpi.MPI-Checker
+    value: 'false'
+  - key: clang-analyzer-optin.osx.cocoa.localizability.EmptyLocalizationContextChecker
+    value: 'false'
+  - key: clang-analyzer-optin.osx.cocoa.localizability.NonLocalizedStringChecker
+    value: 'false'
+  - key: clang-analyzer-optin.performance.Padding
+    value: 'false'
+  - key: clang-analyzer-optin.portability.UnixAPI
+    value: 'false'
+  - key: clang-analyzer-security.insecureAPI.UncheckedReturn
+    value: 'false'
+  - key: clang-analyzer-security.insecureAPI.getpw
+    value: 'false'
+  - key: clang-analyzer-security.insecureAPI.gets
+    value: 'false'
+  - key: clang-analyzer-security.insecureAPI.mkstemp
+    value: 'false'
+  - key: clang-analyzer-security.insecureAPI.mktemp
+    value: 'false'
+  - key: clang-analyzer-security.insecureAPI.vfork
+    value: 'false'
+  - key: clang-analyzer-unix.API
+    value: 'false'
+  - key: clang-analyzer-unix.Malloc
+    value: 'false'
+  - key: clang-analyzer-unix.MallocSizeof
+    value: 'false'
+  - key: clang-analyzer-unix.MismatchedDeallocator
+    value: 'false'
+  - key: clang-analyzer-unix.StdCLibraryFunctions
+    value: 'false'
+  - key: clang-analyzer-unix.cstring.BadSizeArg
+    value: 'false'
+  - key: clang-analyzer-unix.cstring.NullArg
+    value: 'false'
+  - key: cppcoreguidelines-avoid-c-arrays
+    value: 'false'
+  - key: cppcoreguidelines-avoid-goto
+    value: 'false'
+  - key: cppcoreguidelines-avoid-magic-numbers
+    value: 'false'
+  - key: cppcoreguidelines-avoid-non-const-global-variables
+    value: 'false'
+  - key: cppcoreguidelines-c-copy-assignment-signature
+    value: 'false'
+  - key: cppcoreguidelines-interfaces-global-init
+    value: 'false'
+  - key: cppcoreguidelines-macro-usage
+    value: 'false'
+  - key: cppcoreguidelines-narrowing-conversions
+    value: 'false'
+  - key: cppcoreguidelines-no-malloc
+    value: 'false'
+  - key: cppcoreguidelines-owning-memory
+    value: 'false'
+  - key: cppcoreguidelines-prefer-member-initializer
+    value: 'false'
+  - key: cppcoreguidelines-pro-bounds-array-to-pointer-decay
+    value: 'false'
+  - key: cppcoreguidelines-pro-bounds-constant-array-index
+    value: 'false'
+  - key: cppcoreguidelines-pro-bounds-pointer-arithmetic
+    value: 'false'
+  - key: cppcoreguidelines-pro-type-cstyle-cast
+    value: 'false'
+  - key: cppcoreguidelines-pro-type-union-access
+    value: 'false'
+  - key: cppcoreguidelines-pro-type-vararg
+    value: 'false'
+  - key: cppcoreguidelines-slicing
+    value: 'false'
+  - key: cppcoreguidelines-special-member-functions
+    value: 'false'
+  - key: modernize-avoid-bind
+    value: 'false'
+  - key: modernize-avoid-c-arrays
+    value: 'false'
+  - key: modernize-concat-nested-namespaces
+    value: 'false'
+  - key: modernize-deprecated-headers
+    value: 'false'
+  - key: modernize-deprecated-ios-base-aliases
+    value: 'false'
+  - key: modernize-loop-convert
+    value: 'false'
+  - key: modernize-make-shared
+    value: 'false'
+  - key: modernize-make-unique
+    value: 'false'
+  - key: modernize-pass-by-value
+    value: 'false'
+  - key: modernize-raw-string-literal
+    value: 'false'
+  - key: modernize-redundant-void-arg
+    value: 'false'
+  - key: modernize-replace-auto-ptr
+    value: 'false'
+  - key: modernize-replace-disallow-copy-and-assign-macro
+    value: 'false'
+  - key: modernize-replace-random-shuffle
+    value: 'false'
+  - key: modernize-return-braced-init-list
+    value: 'false'
+  - key: modernize-shrink-to-fit
+    value: 'false'
+  - key: modernize-unary-static-assert
+    value: 'false'
+  - key: modernize-use-auto
+    value: 'false'
+  - key: modernize-use-bool-literals
+    value: 'false'
+  - key: modernize-use-default-member-init
+    value: 'false'
+  - key: modernize-use-emplace
+    value: 'false'
+  - key: modernize-use-equals-default
+    value: 'false'
+  - key: modernize-use-equals-delete
+    value: 'false'
+  - key: modernize-use-nullptr
+    value: 'false'
+  - key: modernize-use-override
+    value: 'false'
+  - key: modernize-use-transparent-functors
+    value: 'false'
+  - key: modernize-use-uncaught-exceptions
+    value: 'false'
+  - key: modernize-use-using
+    value: 'false'
+  - key: performance-for-range-copy
+    value: 'false'
+  - key: performance-implicit-conversion-in-loop
+    value: 'false'
+  - key: performance-inefficient-algorithm
+    value: 'false'
+  - key: performance-inefficient-string-concatenation
+    value: 'false'
+  - key: performance-inefficient-vector-operation
+    value: 'false'
+  - key: performance-move-const-arg
+    value: 'false'
+  - key: performance-move-constructor-init
+    value: 'false'
+  - key: performance-no-automatic-move
+    value: 'false'
+  - key: performance-noexcept-move-constructor
+    value: 'false'
+  - key: performance-trivially-destructible
+    value: 'false'
+  - key: performance-type-promotion-in-math-fn
+    value: 'false'
+  - key: performance-unnecessary-copy-initialization
+    value: 'false'
+  - key: performance-unnecessary-value-param
+    value: 'false'
+  - key: portability-restrict-system-includes
+    value: 'false'
+  - key: portability-simd-intrinsics
+    value: 'false'
+  - key: readability-avoid-const-params-in-decls
+    value: 'false'
+  - key: readability-braces-around-statements
+    value: 'false'
+  - key: readability-const-return-type
+    value: 'false'
+  - key: readability-container-data-pointer
+    value: 'false'
+  - key: readability-container-size-empty
+    value: 'false'
+  - key: readability-convert-member-functions-to-static
+    value: 'false'
+  - key: readability-delete-null-pointer
+    value: 'false'
+  - key: readability-else-after-return
+    value: 'false'
+  - key: readability-function-size
+    value: 'false'
+  - key: readability-identifier-naming
+    value: 'false'
+  - key: readability-implicit-bool-conversion
+    value: 'false'
+  - key: readability-inconsistent-declaration-parameter-name
+    value: 'false'
+  - key: readability-isolate-declaration
+    value: 'false'
+  - key: readability-magic-numbers
+    value: 'false'
+  - key: readability-make-member-function-const
+    value: 'false'
+  - key: readability-non-const-parameter
+    value: 'false'
+  - key: readability-qualified-auto
+    value: 'false'
+  - key: readability-redundant-access-specifiers
+    value: 'false'
+  - key: readability-redundant-control-flow
+    value: 'false'
+  - key: readability-redundant-declaration
+    value: 'false'
+  - key: readability-redundant-function-ptr-dereference
+    value: 'false'
+  - key: readability-redundant-member-init
+    value: 'false'
+  - key: readability-redundant-preprocessor
+    value: 'false'
+  - key: readability-redundant-smartptr-get
+    value: 'false'
+  - key: readability-redundant-string-cstr
+    value: 'false'
+  - key: readability-redundant-string-init
+    value: 'false'
+  - key: readability-simplify-boolean-expr
+    value: 'false'
+  - key: readability-simplify-subscript-expr
+    value: 'false'
+  - key: readability-static-accessed-through-instance
+    value: 'false'
+  - key: readability-static-definition-in-anonymous-namespace
+    value: 'false'
+  - key: readability-string-compare
+    value: 'false'
+  - key: readability-uniqueptr-delete-release
+    value: 'false'
+  - key: readability-uppercase-literal-suffix
+    value: 'false'
+  - key: readability-use-anyofallof
+    value: 'false'
+
+# 警告レベル設定
+WarningsAsErrors: ''
+HeaderFilterRegex: ''
+AnalyzeTemporaryDtors: false
+FormatStyle: none
+CheckOptions:
+  - key: readability-identifier-naming.ClassCase
+    value: CamelCase
+  - key: readability-identifier-naming.FunctionCase
+    value: lower_case
+  - key: readability-identifier-naming.VariableCase
+    value: lower_case
+  - key: readability-identifier-naming.ParameterCase
+    value: lower_case
+  - key: readability-identifier-naming.ConstantCase
+    value: UPPER_CASE
+  - key: readability-identifier-naming.MacroDefinitionCase
+    value: UPPER_CASE 
