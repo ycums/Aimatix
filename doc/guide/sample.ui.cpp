@@ -274,7 +274,7 @@ void drawNTPSync() {
 void drawInputMode(const DigitEditTimeInputState& state) {
   sprite.fillSprite(TFT_BLACK);
   drawTitleBar("INPUT MODE");
-  drawButtonHintsGrid("+1/+5", "NEXT/CLEAR", "SET/CANCEL");
+  drawButtonHintsGrid("INC", "NEXT", "SET");
 
   sprite.setTextFont(7);
   sprite.setTextColor(AMBER_COLOR, TFT_BLACK);
@@ -309,7 +309,7 @@ void drawInputMode(const DigitEditTimeInputState& state) {
 void drawSettingsMenu(const Settings& settings) {
   sprite.fillSprite(TFT_BLACK);
   drawTitleBar("SETTINGS");
-  drawButtonHintsGrid("PREV", "NEXT", "SELECT/BACK");
+  drawButtonHintsGrid("PREV", "NEXT", "SELECT");
 
   // 設定値を表示するメニュー項目
   char soundStr[32];
@@ -409,7 +409,7 @@ void drawWarningColorTest() {
 void drawAlarmManagement() {
   sprite.fillSprite(TFT_BLACK);
   drawTitleBar("ALARM MGMT");
-  drawButtonHintsGrid("PREV", "NEXT", "DELETE");
+  drawButtonHintsGrid("DEL", "NEXT", "PREV");
   
   // --- アラームリストの表示（グリッドセル(0,1)-(15,9)） ---
   sprite.setTextFont(4); // Font4に戻す

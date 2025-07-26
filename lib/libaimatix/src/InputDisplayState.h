@@ -18,7 +18,7 @@ public:
         if (view) {
             view->clear();
             view->showTitle("INPUT", 42, false);
-            view->showHints("+1/+5", "Next/Reset", "Set/Cancel");
+            view->showHints("INC", "NEXT", "SET");
             for (int i = 0; i < 4; ++i) { lastDigits[i] = -1; lastEntered[i] = false; }
         }
     }

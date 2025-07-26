@@ -64,7 +64,7 @@
     - [x] 全桁入力済み時は拒絶
     - [x] 失敗時は何もしない（音・視覚的フィードバックなし）
     - [x] InputDisplayStateのonButtonB()で桁送り処理を実装
-    - [x] ボタンヒント: A: "+1/+5" B: "Next/Reset" C: "Set/Cancel"
+    - [x] ボタンヒント: A: "INC" B: "NEXT" C: "SET"
     - [x] 桁送り機能のUnit Testを追加
     - [x] 境界値テスト（全桁入力済み、部分入力等）
     - [x] カバレッジ品質ゲートを上回る（84.3%）

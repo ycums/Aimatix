@@ -39,7 +39,7 @@
 - A: "+1/+5" B: "Next/Reset" C: "Set/Cancel"
 
 **spec.md**:
-- A: "+1/+5" B: "Next/Reset" C: "Set"
+- A: "INC" B: "NEXT" C: "SET"
 
 **現在の実装（InputDisplayState.h）**:
 - showHints("OK", "", "CANCEL")
@@ -78,13 +78,13 @@
 
 | 項目 | 質問票3-0-9.md | spec.md | 現在の実装 | 正しい仕様 |
 |------|----------------|---------|-----------|-----------|
-| Aボタン | "+1/+5" | "+1/+5" | "OK" | 【選択】 |
-| Bボタン | "Next/Reset" | "Next/Reset" | "" | 【選択】 |
-| Cボタン | "Set/Cancel" | "Set" | "CANCEL" | 【選択】 |
+| Aボタン | "+1/+5" | "INC" | "OK" | 【選択】 |
+| Bボタン | "Next/Reset" | "NEXT" | "" | 【選択】 |
+| Cボタン | "Set/Cancel" | "SET" | "CANCEL" | 【選択】 |
 
 **正しい仕様の選択:**
-- [x] 質問票3-0-9.mdの仕様を採用
-- [ ] spec.mdの仕様を採用
+- [ ] 質問票3-0-9.mdの仕様を採用
+- [x] spec.mdの仕様を採用（Amber CRTテーマ統一）
 - [ ] 現在の実装を採用
 - [ ] その他（【自由記述】）
 
