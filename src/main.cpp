@@ -74,33 +74,33 @@ void setup() {
     M5.Lcd.setTextColor(AMBER_COLOR, TFT_BLACK);
 
     // アラームリスト初期化
-    alarmTimes.clear();
+    alarm_times.clear();
     time_t now = time(nullptr);
-    AlarmLogic::initAlarms(alarmTimes, now);
+    AlarmLogic::initAlarms(alarm_times, now);
 #endif
     // --- 状態遷移の依存注入（@/design/ui_state_management.md準拠） ---
-    inputDisplayState.setManager(&stateManager);
-    inputDisplayState.setMainDisplayState(&mainDisplayState);
+    input_display_state.setManager(&state_manager);
+    input_display_state.setMainDisplayState(&main_display_state);
     // 状態遷移の初期状態をMainDisplayに
-    stateManager.setState(&mainDisplayState);
+    state_manager.setState(&main_display_state);
 }
 
 void loop() {
 #ifdef ARDUINO
     M5.update();
     // 物理ボタン状態をButtonManagerに渡す
-    buttonManager.update(ButtonManager::BtnA, M5.BtnA.isPressed(), millis());
-    buttonManager.update(ButtonManager::BtnB, M5.BtnB.isPressed(), millis());
-    buttonManager.update(ButtonManager::BtnC, M5.BtnC.isPressed(), millis());
+    button_manager.update(ButtonManager::BtnA, M5.BtnA.isPressed(), millis());
+    button_manager.update(ButtonManager::BtnB, M5.BtnB.isPressed(), millis());
+    button_manager.update(ButtonManager::BtnC, M5.BtnC.isPressed(), millis());
     // 論理イベントでStateManagerに伝搬
-    if (buttonManager.isShortPress(ButtonManager::BtnA)) stateManager.handleButtonA();
-    if (buttonManager.isShortPress(ButtonManager::BtnB)) stateManager.handleButtonB();
-    if (buttonManager.isShortPress(ButtonManager::BtnC)) stateManager.handleButtonC();
-    if (buttonManager.isLongPress(ButtonManager::BtnA)) stateManager.handleButtonALongPress();
-    if (buttonManager.isLongPress(ButtonManager::BtnB)) stateManager.handleButtonBLongPress();
-    if (buttonManager.isLongPress(ButtonManager::BtnC)) stateManager.handleButtonCLongPress();
+    if (button_manager.isShortPress(ButtonManager::BtnA)) state_manager.handleButtonA();
+    if (button_manager.isShortPress(ButtonManager::BtnB)) state_manager.handleButtonB();
+    if (button_manager.isShortPress(ButtonManager::BtnC)) state_manager.handleButtonC();
+    if (button_manager.isLongPress(ButtonManager::BtnA)) state_manager.handleButtonALongPress();
+    if (button_manager.isLongPress(ButtonManager::BtnB)) state_manager.handleButtonBLongPress();
+    if (button_manager.isLongPress(ButtonManager::BtnC)) state_manager.handleButtonCLongPress();
     // 現在の状態の描画
-    IState* current = stateManager.getCurrentState();
+    IState* current = state_manager.getCurrentState();
     if (current != nullptr) {
         current->onDraw();
     }

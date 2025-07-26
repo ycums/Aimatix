@@ -29,14 +29,14 @@ public:
         snprintf(currentTime, sizeof(currentTime), "%02d:%02d", tm_now->tm_hour, tm_now->tm_min);
         view->showTime(currentTime);
         // --- アラームリストの消化 ---
-        extern std::vector<time_t> alarmTimes;
-        AlarmLogic::removePastAlarms(alarmTimes, now);
+        extern std::vector<time_t> alarm_times;
+        AlarmLogic::removePastAlarms(alarm_times, now);
         // --- 残り時間・進捗計算 ---
-        int remainSec = AlarmLogic::getRemainSec(alarmTimes, now);
+        int remainSec = AlarmLogic::getRemainSec(alarm_times, now);
         static time_t lastAlarmStart = 0;
         static int lastAlarmTotalSec = 0;
         static time_t prevNextAlarm = 0;
-        time_t nextAlarm = (!alarmTimes.empty()) ? alarmTimes.front() : 0;
+        time_t nextAlarm = (!alarm_times.empty()) ? alarm_times.front() : 0;
         if (nextAlarm != prevNextAlarm) {
             lastAlarmStart = now;
             lastAlarmTotalSec = remainSec;
@@ -46,7 +46,7 @@ public:
         int progressPercent = AlarmLogic::getRemainPercent(remainSec, totalSec);
         char remainTime[16];
         snprintf(remainTime, sizeof(remainTime), "%02d:%02d:%02d", remainSec/3600, (remainSec/60)%60, remainSec%60);
-        if (alarmTimes.empty()) {
+        if (alarm_times.empty()) {
             snprintf(remainTime, sizeof(remainTime), "00:00:00");
             progressPercent = 0;
         }
@@ -54,7 +54,7 @@ public:
         view->showProgress(progressPercent);
         // --- アラームリスト ---
         std::vector<std::string> alarmStrs;
-        AlarmLogic::getAlarmTimeStrings(alarmTimes, alarmStrs);
+        AlarmLogic::getAlarmTimeStrings(alarm_times, alarmStrs);
         view->showAlarmList(alarmStrs);
     }
     void onButtonA() override {

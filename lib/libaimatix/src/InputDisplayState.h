@@ -106,13 +106,13 @@ public:
         const int* digits = inputLogic->getDigits();
         const bool* entered = inputLogic->getEntered();
         
-        extern std::vector<time_t> alarmTimes;
+        extern std::vector<time_t> alarm_times;
         time_t now = time(nullptr);
         AlarmLogic::AddAlarmResult result;
         std::string msg;
         
         // 新しいAPIを使用して部分的な入力状態からアラーム追加
-        bool ok = AlarmLogic::addAlarmFromPartialInput(alarmTimes, now, digits, entered, result, msg);
+        bool ok = AlarmLogic::addAlarmFromPartialInput(alarm_times, now, digits, entered, result, msg);
         
         if (ok) {
             if (manager && mainDisplayState) {
