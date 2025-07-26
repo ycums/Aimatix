@@ -42,6 +42,24 @@ pio check
 pio check --src-filter="+<src/main.cpp>"
 ```
 
+### 自動修正機能
+
+Clang-Tidyには自動修正機能があります。このプロジェクトでは既定で有効にしてあります。
+
+明示的に指定する場合は下記のようにします：
+
+```bash
+# 自動修正可能な警告を修正
+pio check -e native --flags "clangtidy: --config-file=.clang-tidy --fix"
+
+# 詳細な修正内容を確認
+pio check -e native --flags "clangtidy: --config-file=.clang-tidy --fix" --verbose
+```
+
+**注意**: 
+- 自動修正は慎重に行う必要があります。修正前にバックアップを取ることを推奨します。
+- `platformio.ini`の`check_flags`は`.clang-tidy`ファイルの設定を上書きするため、詳細な設定は`.clang-tidy`ファイルで行うことを推奨します。
+
 ### 解析結果の確認
 
 ```bash

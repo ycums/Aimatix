@@ -14,55 +14,55 @@
 #include <ctime>
 #include <M5Display.h>
 #endif
-#include "AlarmLogic.h"
 #include "ButtonManager.h"
 extern void setFillRectImpl(void (*impl)(int, int, int, int, int));
 extern void setFillProgressBarSpriteImpl(void (*impl)(int, int, int, int, int));
 
 #ifdef ARDUINO
 // --- M5Stack用描画関数 ---
-void M5RectImpl(int x, int y, int w, int h) {
+void m5_rect_impl(int x, int y, int w, int h) {
     M5.Lcd.drawRect(x, y, w, h, AMBER_COLOR);
 }
-void M5StringImpl(const char* str, int x, int y) {
+void m5_string_impl(const char* str, int x, int y) {
     M5.Lcd.drawString(str, x, y);
 }
-void M5ProgressBarImpl(int x, int y, int w, int h, int percent) {
+void m5_progress_bar_impl(int x, int y, int w, int h, int percent) {
+    const int BORDER_WIDTH = 1;
+    const int PERCENT_DENOMINATOR = 100;
+    
     M5.Lcd.drawRect(x, y, w, h, AMBER_COLOR);
-    M5.Lcd.fillRect(x + 1, y + 1, w - 2, h - 2, TFT_BLACK);
-    int fillW = (w - 2) * percent / 100;
+    M5.Lcd.fillRect(x + BORDER_WIDTH, y + BORDER_WIDTH, w - 2 * BORDER_WIDTH, h - 2 * BORDER_WIDTH, TFT_BLACK);
+    int fillW = (w - 2 * BORDER_WIDTH) * percent / PERCENT_DENOMINATOR;
     if (fillW > 0) {
-        M5.Lcd.fillRect(x + 1, y + 1, fillW, h - 2, AMBER_COLOR);
+        M5.Lcd.fillRect(x + BORDER_WIDTH, y + BORDER_WIDTH, fillW, h - 2 * BORDER_WIDTH, AMBER_COLOR);
     }
 }
-void M5SetFontImpl(int font) {
+void m5_set_font_impl(int font) {
     M5.Lcd.setTextFont(font);
     M5.Lcd.setTextColor(AMBER_COLOR, TFT_BLACK);
 }
-void M5SetTextDatumImpl(int datum) {
+void m5_set_text_datum_impl(int datum) {
     M5.Lcd.setTextDatum(datum);
 }
-void M5FillRectImpl(int x, int y, int w, int h, int color) {
+void m5_fill_rect_impl(int x, int y, int w, int h, int color) {
     M5.Lcd.fillRect(x, y, w, h, color);
 }
 #endif
 
 // --- アラームリスト ---
-#include <vector>
-#include <ctime>
-std::vector<time_t> alarmTimes;
+std::vector<time_t> alarm_times;
 
 // --- 状態管理クラスのグローバル生成 ---
-StateManager stateManager;
-InputLogic inputLogic;
-DisplayAdapter displayAdapter;
-InputDisplayViewImpl inputDisplayViewImpl(&displayAdapter);
-MainDisplayViewImpl mainDisplayViewImpl(&displayAdapter);
-TimeLogic timeLogic;
-AlarmLogic alarmLogic;
-InputDisplayState inputDisplayState(&inputLogic, &inputDisplayViewImpl);
-MainDisplayState mainDisplayState(&stateManager, &inputDisplayState, &mainDisplayViewImpl, &timeLogic, &alarmLogic);
-ButtonManager buttonManager; // 追加
+StateManager state_manager;
+InputLogic input_logic;
+DisplayAdapter display_adapter;
+InputDisplayViewImpl input_display_view_impl(&display_adapter);
+MainDisplayViewImpl main_display_view_impl(&display_adapter);
+TimeLogic time_logic;
+AlarmLogic alarm_logic;
+InputDisplayState input_display_state(&input_logic, &input_display_view_impl);
+MainDisplayState main_display_state(&state_manager, &input_display_state, &main_display_view_impl, &time_logic, &alarm_logic);
+ButtonManager button_manager; // 追加
 
 void setup() {
 #ifdef ARDUINO

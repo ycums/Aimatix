@@ -30,7 +30,7 @@ void initUI() {
 
 // グリッドシステム関連の関数実装
 
-void drawTitleBar(const char* modeName) {
+void draw_title_bar(const char* modeName) {
   // タイトルバー背景を黒で塗りつぶし
   sprite.fillRect(0, 0, SCREEN_WIDTH, TITLE_HEIGHT, TFT_BLACK);
   
@@ -63,7 +63,7 @@ void drawTitleBar(const char* modeName) {
   sprite.drawString(batteryStr, SCREEN_WIDTH - 5, 2);
 }
 
-void drawButtonHintsGrid(const char* btnA, const char* btnB, const char* btnC) {
+void draw_button_hints_grid(const char* btnA, const char* btnB, const char* btnC) {
   // ボタンヒント領域背景を黒で塗りつぶし
   sprite.fillRect(0, SCREEN_HEIGHT - HINT_HEIGHT, SCREEN_WIDTH, HINT_HEIGHT, TFT_BLACK);
   
@@ -80,12 +80,12 @@ void drawButtonHintsGrid(const char* btnA, const char* btnB, const char* btnC) {
   if (btnC) sprite.drawString(btnC, SCREEN_WIDTH - 40, SCREEN_HEIGHT - HINT_HEIGHT/2);
 }
 
-void drawCommonUI(const char* modeName) {
-  drawTitleBar(modeName);
+void draw_common_ui(const char* modeName) {
+  draw_title_bar(modeName);
   // ボタンヒントは各画面で個別に呼び出す（内容が異なるため）
 }
 
-void drawGridLines() {
+void draw_grid_lines() {
   // グリッド線を描画（デバッグ用）
   sprite.setTextColor(DARKGREY, TFT_BLACK);
   
@@ -103,14 +103,14 @@ void drawGridLines() {
 }
 
 // 時刻文字列の取得
-std::string getTimeString(time_t t) {
+std::string get_time_string(time_t t) {
   char buffer[9];
   TimeLogic::formatTimeString(t, buffer, sizeof(buffer));
   return std::string(buffer);
 }
 
 // 日付文字列の取得
-std::string getDateString(time_t t) {
+std::string get_date_string(time_t t) {
   struct tm *timeinfo = localtime(&t);
   char buffer[32];
   const char* weekdays[] = {"日", "月", "火", "水", "木", "金", "土"};
@@ -123,7 +123,7 @@ std::string getDateString(time_t t) {
 }
 
 // 残り時間文字列の取得
-std::string getRemainTimeString(time_t now, time_t target) {
+std::string get_remain_time_string(time_t now, time_t target) {
   time_t diff = target - now;
   if (diff < 0) return "00:00:00";
   
@@ -136,14 +136,14 @@ std::string getRemainTimeString(time_t now, time_t target) {
   return std::string(buffer);
 }
 
-void drawProgressBar(int x, int y, int width, int height, float progress) {
+void draw_progress_bar(int x, int y, int width, int height, float progress) {
   sprite.drawRect(x, y, width, height, AMBER_COLOR);
   int progressWidth = (width - 2) * progress;
   sprite.fillRect(x + 1, y + 1, width - 2, height - 2, DARKGREY);
   sprite.fillRect(x + 1, y + 1, progressWidth, height - 2, AMBER_COLOR);
 }
 
-void drawInvertedText(const char* text, int x, int y, int font) {
+void draw_inverted_text(const char* text, int x, int y, int font) {
   sprite.setTextFont(font);
   // 現在のDATUMを保存
   uint8_t currentDatum = sprite.getTextDatum();
@@ -158,7 +158,7 @@ void drawInvertedText(const char* text, int x, int y, int font) {
 }
 
 // 共通のYES/NO確認画面を表示する関数
-bool showYesNoDialog(const char* title, const char* detail) {
+bool show_yes_no_dialog(const char* title, const char* detail) {
   sprite.fillSprite(TFT_BLACK);
   sprite.setTextDatum(MC_DATUM);
   sprite.setTextColor(FLASH_ORANGE, TFT_BLACK);
@@ -195,11 +195,11 @@ bool showYesNoDialog(const char* title, const char* detail) {
 // - 進捗バー
 // - NEXT時刻
 // - 鳴動時刻リスト
-void drawMainDisplay(const Settings& settings) {
+void draw_main_display(const Settings& settings) {
   removePastAlarms(); // アラーム一覧を最新化
   sprite.fillSprite(TFT_BLACK);
-  drawTitleBar("MAIN");
-  drawButtonHintsGrid("ABS", "REL+", "MGMT");
+  draw_title_bar("MAIN");
+  draw_button_hints_grid("ABS", "REL+", "MGMT");
   time_t now = TimeLogic::getCurrentTime();
   
   // --- 現在時刻表示 ---
@@ -217,7 +217,7 @@ void drawMainDisplay(const Settings& settings) {
   sprite.setTextFont(7);
   sprite.setTextColor(AMBER_COLOR, TFT_BLACK);
   if (nextAlarm) {
-    sprite.drawString(getRemainTimeString(now, nextAlarm).c_str(), SCREEN_WIDTH/2, GRID_Y(3) + GRID_HEIGHT * 1.5);
+    sprite.drawString(get_remain_time_string(now, nextAlarm).c_str(), SCREEN_WIDTH/2, GRID_Y(3) + GRID_HEIGHT * 1.5);
   } else {
     sprite.drawString("00:00:00", SCREEN_WIDTH/2, GRID_Y(3) + GRID_HEIGHT * 1.5);
   }
@@ -255,26 +255,26 @@ void drawMainDisplay(const Settings& settings) {
   for (time_t t : alarmTimes) {
     if (count >= 5) break;
     int x = GRID_X(1) + count * (14 * GRID_WIDTH / 5); // X=1から開始、5等分して配置
-    sprite.drawString(getTimeString(t).c_str(), x, GRID_Y(8) + GRID_HEIGHT/2);
+    sprite.drawString(get_time_string(t).c_str(), x, GRID_Y(8) + GRID_HEIGHT/2);
     count++;
   }
   
   sprite.pushSprite(0, 0);
 }
 
-void drawNTPSync() {
+void draw_ntp_sync() {
   sprite.fillSprite(TFT_BLACK);
-  drawTitleBar("NTP SYNC");
-  drawButtonHintsGrid(NULL, NULL, "SKIP");
+  draw_title_bar("NTP SYNC");
+  draw_button_hints_grid(NULL, NULL, "SKIP");
   sprite.setTextDatum(MC_DATUM);
   sprite.setTextColor(AMBER_COLOR);
   sprite.drawString("Syncing Time...", 160, 120);
 }
 
-void drawInputMode(const DigitEditTimeInputState& state) {
+void draw_input_mode(const DigitEditTimeInputState& state) {
   sprite.fillSprite(TFT_BLACK);
-  drawTitleBar("INPUT MODE");
-  drawButtonHintsGrid("INC", "NEXT", "SET");
+  draw_title_bar("INPUT MODE");
+  draw_button_hints_grid("INC", "NEXT", "SET");
 
   sprite.setTextFont(7);
   sprite.setTextColor(AMBER_COLOR, TFT_BLACK);
@@ -306,10 +306,10 @@ void drawInputMode(const DigitEditTimeInputState& state) {
 
 
 
-void drawSettingsMenu(const Settings& settings) {
+void draw_settings_menu(const Settings& settings) {
   sprite.fillSprite(TFT_BLACK);
-  drawTitleBar("SETTINGS");
-  drawButtonHintsGrid("PREV", "NEXT", "SELECT");
+  draw_title_bar("SETTINGS");
+  draw_button_hints_grid("PREV", "NEXT", "SELECT");
 
   // 設定値を表示するメニュー項目
   char soundStr[32];
@@ -326,14 +326,14 @@ void drawSettingsMenu(const Settings& settings) {
   };
   settingsMenu.itemCount = sizeof(items) / sizeof(items[0]);
 
-  drawMenuItems(items, settingsMenu.itemCount, settingsMenu.selectedItem, 0, 2, 1);
+  draw_menu_items(items, settingsMenu.itemCount, settingsMenu.selectedItem, 0, 2, 1);
   sprite.pushSprite(0, 0);
 }
 
-void drawInfoDisplay() {
+void draw_info_display() {
   sprite.fillSprite(TFT_BLACK);
-  drawTitleBar("INFO");
-  drawButtonHintsGrid(NULL, NULL, "BACK");
+  draw_title_bar("INFO");
+  draw_button_hints_grid(NULL, NULL, "BACK");
   sprite.setTextDatum(TL_DATUM);
   sprite.setTextColor(AMBER_COLOR);
   sprite.drawString("M5Stack Timer", 40, 60);
@@ -343,15 +343,15 @@ void drawInfoDisplay() {
 }
 
 // 後方互換性のための関数（既存コードとの互換性を保つ）
-void drawStatusBar(const char* mode) {
-  drawTitleBar(mode);
+void draw_status_bar(const char* mode) {
+  draw_title_bar(mode);
 }
 
-void drawButtonHints(const char* btnA, const char* btnB, const char* btnC) {
-  drawButtonHintsGrid(btnA, btnB, btnC);
+void draw_button_hints(const char* btnA, const char* btnB, const char* btnC) {
+  draw_button_hints_grid(btnA, btnB, btnC);
 }
 
-void drawMenuItems(const char** items, int itemCount, int selectedItem, int startGridRow, int endGridRow, int marginTop) {
+void draw_menu_items(const char** items, int itemCount, int selectedItem, int startGridRow, int endGridRow, int marginTop) {
   sprite.setTextDatum(TL_DATUM);
   sprite.setTextColor(AMBER_COLOR);
   
@@ -365,7 +365,7 @@ void drawMenuItems(const char** items, int itemCount, int selectedItem, int star
     const char* itemStr = items[i];
     int y = centerY + i * itemHeight;
     if (i == selectedItem) {
-      drawInvertedText(itemStr, GRID_X(1), y, 2); // 選択項目を反転
+      draw_inverted_text(itemStr, GRID_X(1), y, 2); // 選択項目を反転
     } else {
       sprite.setTextFont(2);
       sprite.drawString(itemStr, GRID_X(1), y);
@@ -373,7 +373,7 @@ void drawMenuItems(const char** items, int itemCount, int selectedItem, int star
   }
 }
 
-void drawWarningColorTest() {
+void draw_warning_color_test() {
   static bool flash = false;
   static unsigned long lastFlash = 0;
   
@@ -400,16 +400,16 @@ void drawWarningColorTest() {
     sprite.drawString("R=31, G=0, B=0", GRID_X(4), GRID_Y(3) + 20);
   }
   
-  drawTitleBar("WARNING TEST");
-  drawButtonHintsGrid(NULL, NULL, "BACK");
+  draw_title_bar("WARNING TEST");
+  draw_button_hints_grid(NULL, NULL, "BACK");
   
   sprite.pushSprite(0, 0);
 }
 
-void drawAlarmManagement() {
+void draw_alarm_management() {
   sprite.fillSprite(TFT_BLACK);
-  drawTitleBar("ALARM MGMT");
-  drawButtonHintsGrid("DEL", "NEXT", "PREV");
+  draw_title_bar("ALARM MGMT");
+  draw_button_hints_grid("DEL", "NEXT", "PREV");
   
   // --- アラームリストの表示（グリッドセル(0,1)-(15,9)） ---
   sprite.setTextFont(4); // Font4に戻す
@@ -433,11 +433,11 @@ void drawAlarmManagement() {
       int backgroundY = y - fontHeight/2; // 文字の中心から上端までの距離
       sprite.fillRect(0, backgroundY, 320, fontHeight, AMBER_COLOR);
       sprite.setTextColor(TFT_BLACK, AMBER_COLOR);
-      sprite.drawString(getTimeString(alarmTimes[i]).c_str(), x, y);
+      sprite.drawString(get_time_string(alarmTimes[i]).c_str(), x, y);
       sprite.setTextColor(AMBER_COLOR, TFT_BLACK);
     } else {
       sprite.setTextFont(4); // 非選択項目も同じフォントサイズを使用
-      sprite.drawString(getTimeString(alarmTimes[i]).c_str(), x, y);
+      sprite.drawString(get_time_string(alarmTimes[i]).c_str(), x, y);
     }
   }
   
@@ -452,7 +452,7 @@ void drawAlarmManagement() {
   sprite.pushSprite(0, 0);
 }
 
-void drawAlarmActive() {
+void draw_alarm_active() {
   static bool flash = false;
   static unsigned long lastFlash = 0;
   static unsigned long alarmStart = 0;
@@ -508,7 +508,7 @@ static unsigned long warningStartTime = 0;
 static char currentWarningMessage[64] = "";
 static bool warningActive = false;
 
-void showWarningMessage(const char* message, unsigned long duration) {
+void show_warning_message(const char* message, unsigned long duration) {
   strncpy(currentWarningMessage, message, sizeof(currentWarningMessage) - 1);
   currentWarningMessage[sizeof(currentWarningMessage) - 1] = '\0';
   warningStartTime = millis();
@@ -526,7 +526,7 @@ void showWarningMessage(const char* message, unsigned long duration) {
   Serial.println(message);
 }
 
-bool isWarningMessageDisplayed(const char* message) {
+bool is_warning_message_displayed(const char* message) {
   if (!warningActive) return false;
   
   // 指定されたメッセージと一致するかチェック
@@ -541,7 +541,7 @@ bool isWarningMessageDisplayed(const char* message) {
   return false;
 }
 
-void clearWarningMessage() {
+void clear_warning_message() {
   warningActive = false;
   currentWarningMessage[0] = '\0';
   Serial.println("Warning message cleared");

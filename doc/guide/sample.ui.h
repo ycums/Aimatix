@@ -11,30 +11,30 @@
 #include <string>
 
 // カラーパレット定義
-#define AMBER_COLOR 0xFB20  // アンバー色 (RGB565: R=31, G=22, B=0) - 確定
-#define FLASH_ORANGE 0xF000  // 警告色 (RGB565: R=31, G=0, B=0) - 確定
-#define TFT_BLACK 0x0000
+const uint16_t AMBER_COLOR = 0xFB20;  // アンバー色 (RGB565: R=31, G=22, B=0) - 確定
+const uint16_t FLASH_ORANGE = 0xF000;  // 警告色 (RGB565: R=31, G=0, B=0) - 確定
+const uint16_t TFT_BLACK = 0x0000;
 
 // フォント定義
-#define FONT_AUXILIARY 2 // Font2 (Height 16)
-#define FONT_IMPORTANT 4 // Font4 (Height 26)
-#define FONT_MAIN      7 // Font7 (Height 48)
+const uint8_t FONT_AUXILIARY = 2; // Font2 (Height 16)
+const uint8_t FONT_IMPORTANT = 4; // Font4 (Height 26)
+const uint8_t FONT_MAIN = 7; // Font7 (Height 48)
 
 // グリッドシステム定義
-#define SCREEN_WIDTH 320
-#define SCREEN_HEIGHT 240
+const int SCREEN_WIDTH = 320;
+const int SCREEN_HEIGHT = 240;
 
 // 共通UI要素の高さ
-#define TITLE_HEIGHT 20 // タイトルバー高さ
-#define HINT_HEIGHT 20  // ボタンヒント高さ
+const int TITLE_HEIGHT = 20; // タイトルバー高さ
+const int HINT_HEIGHT = 20;  // ボタンヒント高さ
 
 // コンテンツ領域（タイトルバーとボタンヒントを除いた部分）
-#define CONTENT_WIDTH 320
-#define CONTENT_HEIGHT 200  // 240 - 20 - 20
+const int CONTENT_WIDTH = 320;
+const int CONTENT_HEIGHT = 200;  // 240 - 20 - 20
 
 // グリッド定義（全体を16x12グリッドに分割）
-#define GRID_WIDTH 20   // 320/16
-#define GRID_HEIGHT 20  // 240/12
+const int GRID_WIDTH = 20;   // 320/16
+const int GRID_HEIGHT = 20;  // 240/12
 
 // グリッド座標からピクセル座標への変換ヘルパー（条件付きコンパイル）
 #ifndef GRID_X
@@ -52,41 +52,41 @@ extern std::vector<time_t> alarmTimes; // Declare alarmTimes as extern
 
 // Function declarations
 void initUI();
-void drawTitleBar(const char* modeName);
-void drawButtonHintsGrid(const char* btnA, const char* btnB, const char* btnC);
-void drawCommonUI(const char* modeName);
-void drawGridLines();
-std::string getTimeString(time_t t);
-std::string getDateString(time_t t);
-std::string getRemainTimeString(time_t now, time_t target);
-void drawProgressBar(int x, int y, int width, int height, float progress);
-void drawInvertedText(const char* text, int x, int y, int font);
-bool showYesNoDialog(const char* title, const char* detail);
+void draw_title_bar(const char* modeName);
+void draw_button_hints_grid(const char* btnA, const char* btnB, const char* btnC);
+void draw_common_ui(const char* modeName);
+void draw_grid_lines();
+std::string get_time_string(time_t t);
+std::string get_date_string(time_t t);
+std::string get_remain_time_string(time_t now, time_t target);
+void draw_progress_bar(int x, int y, int width, int height, float progress);
+void draw_inverted_text(const char* text, int x, int y, int font);
+bool show_yes_no_dialog(const char* title, const char* detail);
 
 // 警告メッセージ表示機能
-void showWarningMessage(const char* message, unsigned long duration = 3000);
-bool isWarningMessageDisplayed(const char* message);
-void clearWarningMessage();
+void show_warning_message(const char* message, unsigned long duration = 3000);
+bool is_warning_message_displayed(const char* message);
+void clear_warning_message();
 
 // Screen drawing functions
-void drawMainDisplay(const Settings& settings);
-void drawNTPSync();
-void drawInputMode(const DigitEditTimeInputState& state);
-void drawAlarmManagement(); // アラーム管理画面を追加
-void drawAlarmActive();
-void drawSettingsMenu(const Settings& settings);
-void drawInfoDisplay();
-void drawWarningColorTest();
+void draw_main_display(const Settings& settings);
+void draw_ntp_sync();
+void draw_input_mode(const DigitEditTimeInputState& state);
+void draw_alarm_management(); // アラーム管理画面を追加
+void draw_alarm_active();
+void draw_settings_menu(const Settings& settings);
+void draw_info_display();
+void draw_warning_color_test();
 
 // メニュー項目描画の共通関数
-void drawMenuItems(const char** items, int itemCount, int selectedItem, int startGridRow, int endGridRow, int marginTop);
+void draw_menu_items(const char** items, int itemCount, int selectedItem, int startGridRow, int endGridRow, int marginTop);
 
 // 各モードの描画関数プロトタイプ
-void drawMainDisplay();
-void drawNTPSync();
-void drawInputMode();
+void draw_main_display();
+void draw_ntp_sync();
+void draw_input_mode();
 
-void drawAlarmActive();
-void drawSettingsMenu();
+void draw_alarm_active();
+void draw_settings_menu();
 
 #endif // UI_H

@@ -198,25 +198,40 @@ Serial.printf("Min free heap: %d\n", ESP.getMinFreeHeap());
 ### 6.1 命名規則
 
 #### 6.1.1 関数名
-- **英語**: 動詞+名詞
-- **例**: `handleDigitEditInput`, `drawMainDisplay`
+- **英語**: スネークケース（lower_case）
+- **例**: `handle_digit_edit_input`, `draw_main_display`
 
 #### 6.1.2 変数名
-- **英語**: キャメルケース
-- **例**: `currentMode`, `lastModeChange`
+- **英語**: スネークケース（lower_case）
+- **例**: `current_mode`, `last_mode_change`
 
 #### 6.1.3 定数名
-- **英語**: 大文字+アンダースコア
+- **英語**: 大文字+アンダースコア（UPPER_CASE）
 - **例**: `LONG_PRESS_TIME`, `DEBOUNCE_TIME`
 
 #### 6.1.4 クラス名
-- **英語**: パスカルケース
+- **英語**: キャメルケース（CamelCase）
 - **例**: `ButtonManager`, `InputState`
 
 #### 6.1.5 ファイル名
 - **形式**: スネークケース
 - **説明**: クラス名はスネークケースに変換してファイル名とします。
 - **例**: `ButtonManager` クラス -> `button_manager.h`, `button_manager.cpp`
+
+#### 6.1.6 定数定義
+- **方法**: `const`変数を使用（現代的なC++方式）
+- **説明**: マジックナンバーは避け、意味のある定数名で定義します。
+- **例**: 
+  ```cpp
+  const int SCREEN_WIDTH = 320;
+  const int SCREEN_HEIGHT = 240;
+  const unsigned long DEBOUNCE_TIME = 50;
+  ```
+
+#### 6.1.7 グローバル変数
+- **原則**: グローバル変数は避ける
+- **説明**: 可能な限りローカル変数やクラスメンバーを使用し、グローバル変数は最小限に抑えます。
+- **例外**: ハードウェア依存の変数（例：`TFT_eSprite sprite`）は必要に応じて使用
 
 ### 6.2 コメント規約
 
@@ -256,6 +271,11 @@ bool displayTimeInput(time_t time, int x, int y);
 1. 標準ライブラリ
 2. 外部ライブラリ
 3. プロジェクト内
+
+#### 6.3.4 関数サイズ制限
+- **原則**: 関数は50行以内を目安とする
+- **説明**: 長い関数は分割し、単一責任の原則に従います。
+- **例外**: UI描画関数など、分割が困難な場合は適切にコメントで説明
 
 ## 7. トラブルシューティング
 
