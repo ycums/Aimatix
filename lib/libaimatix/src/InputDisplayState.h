@@ -51,14 +51,48 @@ public:
     }
     void onButtonA() override {
         if (inputLogic) {
-            inputLogic->incrementAtCursor(1);
+#ifndef ARDUINO
+            printf("[InputDisplay] A button pressed - before increment\n");
+            printf("[InputDisplay] Current state: %d%d:%d%d (entered: %d%d%d%d)\n", 
+                inputLogic->getDigit(0), inputLogic->getDigit(1), 
+                inputLogic->getDigit(2), inputLogic->getDigit(3),
+                inputLogic->isEntered(0), inputLogic->isEntered(1), 
+                inputLogic->isEntered(2), inputLogic->isEntered(3));
+#endif
+            inputLogic->incrementInput(1);
+#ifndef ARDUINO
+            printf("[InputDisplay] A button pressed - after increment\n");
+            printf("[InputDisplay] New state: %d%d:%d%d (entered: %d%d%d%d)\n", 
+                inputLogic->getDigit(0), inputLogic->getDigit(1), 
+                inputLogic->getDigit(2), inputLogic->getDigit(3),
+                inputLogic->isEntered(0), inputLogic->isEntered(1), 
+                inputLogic->isEntered(2), inputLogic->isEntered(3));
+#endif
         }
         onDraw();
     }
     void onButtonB() override {
         if (inputLogic) {
+#ifndef ARDUINO
+            printf("[InputDisplay] B button pressed - before shift\n");
+            printf("[InputDisplay] Current state: %d%d:%d%d (entered: %d%d%d%d)\n", 
+                inputLogic->getDigit(0), inputLogic->getDigit(1), 
+                inputLogic->getDigit(2), inputLogic->getDigit(3),
+                inputLogic->isEntered(0), inputLogic->isEntered(1), 
+                inputLogic->isEntered(2), inputLogic->isEntered(3));
+#endif
             // 桁送りを試行
-            bool success = inputLogic->moveCursor();
+            bool success = inputLogic->shiftDigits();
+#ifndef ARDUINO
+            printf("[InputDisplay] B button pressed - shift result: %s\n", success ? "SUCCESS" : "FAILED");
+            if (success) {
+                printf("[InputDisplay] New state: %d%d:%d%d (entered: %d%d%d%d)\n", 
+                    inputLogic->getDigit(0), inputLogic->getDigit(1), 
+                    inputLogic->getDigit(2), inputLogic->getDigit(3),
+                    inputLogic->isEntered(0), inputLogic->isEntered(1), 
+                    inputLogic->isEntered(2), inputLogic->isEntered(3));
+            }
+#endif
             // 成功時のみUI反映（失敗時は何もしない）
             if (success) {
                 onDraw();
@@ -92,12 +126,16 @@ public:
     }
     void onButtonALongPress() override {
         if (inputLogic) {
-            inputLogic->incrementAtCursor(5);
+            inputLogic->incrementInput(5);
         }
         onDraw();
     }
     void onButtonBLongPress() override {
-        // 必要ならリセット等の処理をここに
+        if (inputLogic) {
+            // リセット: 入力値を空 (__:__) に戻し、カーソル位置を3に戻す
+            inputLogic->reset();
+            onDraw();
+        }
     }
     void onButtonCLongPress() override {
         if (manager && mainDisplayState) {

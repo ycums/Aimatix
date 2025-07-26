@@ -287,7 +287,13 @@ void drawInputMode(const DigitEditTimeInputState& state) {
   sprite.drawString(timeStr, SCREEN_WIDTH/2, GRID_Y(3));
 
   // カーソル位置を強調表示（例：下線や反転など、ここでは下線を描画）
-  int cursorX = SCREEN_WIDTH/2 - 48 + state.cursor * 24;
+  // 旧: int cursorX = SCREEN_WIDTH/2 - 48 + state.cursor * 24;
+  // 新: 右端未入力桁の位置を強調
+  int highlightIdx = 3;
+  for (int i = 3; i >= 0; --i) {
+    if (!state.entered[i]) { highlightIdx = i; break; }
+  }
+  int cursorX = SCREEN_WIDTH/2 - 48 + highlightIdx * 24;
   int cursorY = GRID_Y(3) + 40;
   sprite.drawLine(cursorX, cursorY, cursorX + 20, cursorY, AMBER_COLOR);
 

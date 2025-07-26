@@ -4,58 +4,57 @@ class InputLogic {
 public:
     static constexpr int EMPTY_VALUE = -1;
     static constexpr int LAST_VALUE_INIT = -2;
-    static constexpr int CURSOR_INITIAL = 3;
     InputLogic() { reset(); }
     virtual int getValue() const {
         for(int i=0;i<4;++i) if(!entered[i]) return EMPTY_VALUE;
         return digits[0]*1000 + digits[1]*100 + digits[2]*10 + digits[3];
     }
-    virtual int getCursor() const { return cursor; }
     virtual void reset() {
         for(int i=0;i<4;++i) { digits[i]=0; entered[i]=false; }
-        cursor = CURSOR_INITIAL;
     }
-    virtual void incrementAtCursor(int amount) {
-        if (!entered[cursor]) {
-            digits[cursor] = amount % 10;
-            entered[cursor] = true;
+    // 右端（分一の位）に値を入力
+    virtual void incrementInput(int amount) {
+        if (!entered[3]) {
+            // 未入力なら値を設定
+            digits[3] = amount % 10;
+            entered[3] = true;
         } else {
-            digits[cursor] = (digits[cursor] + amount) % 10;
+            // 入力済みなら値を加算
+            digits[3] = (digits[3] + amount) % 10;
         }
-        // 桁ごとの上限
-        if (cursor==0 && digits[0]>2) digits[0]=2;
-        if (cursor==1 && (digits[0]==2 && digits[1]>3)) digits[1]=3;
-        if (cursor==1 && digits[1]>9) digits[1]=9;
-        if (cursor==2 && digits[2]>5) digits[2]=5;
-        if (cursor==3 && digits[3]>9) digits[3]=9;
-        // 23:59超えたら23:59でストップ
-        int h = digits[0]*10+digits[1];
-        int m = digits[2]*10+digits[3];
-        if (h>23) { digits[0]=2; digits[1]=3; }
-        if (m>59) { digits[2]=5; digits[3]=9; }
-        if (digits[0]*1000+digits[1]*100+digits[2]*10+digits[3]>2359) {
-            digits[0]=2; digits[1]=3; digits[2]=5; digits[3]=9;
-        }
-        entered[cursor] = true;
     }
-    
-    // 桁送り機能（右から左: 3→2→1→0）
-    virtual bool moveCursor() {
-        // 全桁入力済み（99:99）の場合は拒絶
-        if (entered[0] && entered[1] && entered[2] && entered[3]) {
-            int value = getValue();
-            if (value == 9999) { // 99:99の場合
-                return false;
+    // 桁送り機能（入力済みの値を左シフト）
+    virtual bool shiftDigits() {
+        // 全桁入力済みなら拒絶
+        bool allEntered = true;
+        for (int i = 0; i < 4; ++i) {
+            if (!entered[i]) {
+                allEntered = false;
+                break;
             }
         }
+        if (allEntered) return false;
         
-        // 右から左に移動（3→2→1→0）
-        if (cursor > 0) {
-            cursor--;
-            return true;
+        // 入力済みの値を左にシフト
+        bool hasInput = false;
+        for (int i = 0; i < 4; ++i) {
+            if (entered[i]) { hasInput = true; break; }
         }
+        if (!hasInput) return false;
         
-        return false;
+        int tempDigits[4];
+        bool tempEntered[4];
+        for (int i = 0; i < 4; ++i) {
+            tempDigits[i] = digits[i];
+            tempEntered[i] = entered[i];
+        }
+        for (int i = 0; i < 3; ++i) {
+            digits[i] = tempDigits[i + 1];
+            entered[i] = tempEntered[i + 1];
+        }
+        digits[3] = 0;
+        entered[3] = false;
+        return true;
     }
     // 各桁の値・入力済み状態を取得
     int getDigit(int idx) const { return digits[idx]; }
@@ -65,5 +64,4 @@ public:
 protected:
     int digits[4]; // 各桁の値
     bool entered[4]; // 各桁の入力済みフラグ
-    int cursor;  // 0=時十, 1=時一, 2=分十, 3=分一
 }; 
