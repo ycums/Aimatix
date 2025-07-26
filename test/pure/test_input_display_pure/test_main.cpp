@@ -178,12 +178,141 @@ void test_input_logic_reset_on_enter() {
     TEST_ASSERT_TRUE(logic.resetCalled);
 }
 
-// === ここからTDD: 3-0-7 +1/+5 入力ロジック・UI反映テスト ===
+// === ここからTDD: 3-0-9 桁送り機能テスト ===
 
-// PlusLogic系テストを削除または現行InputLogic設計に合わせてリファクタ
-// 必要なら新たにdigits/enteredベースのテストを追加
+// 桁送り機能のテスト用MockLogic
+class MoveCursorLogic : public InputLogic {
+public:
+    bool moveCursorResult = true;
+    int cursor = 3;
+    int getCursor() const override { return cursor; }
+    bool moveCursor() override { 
+        if (moveCursorResult) {
+            // 右から左（3→2→1→0）
+            if (cursor > 0) {
+                cursor--;
+                return true;
+            }
+        }
+        return false;
+    }
+};
 
-// UI反映テストは既存MockViewのshowValueCount等で十分
+// 桁送り成功時のテスト
+void test_input_logic_move_cursor_success() {
+    MoveCursorLogic logic;
+    logic.cursor = 3;
+    MockView view;
+    InputDisplayState state(&logic, &view);
+    
+    // 初期状態
+    TEST_ASSERT_EQUAL(3, logic.getCursor());
+    
+    // 桁送り成功
+    bool result = logic.moveCursor();
+    TEST_ASSERT_TRUE(result);
+    TEST_ASSERT_EQUAL(2, logic.getCursor());
+    
+    // さらに桁送り
+    result = logic.moveCursor();
+    TEST_ASSERT_TRUE(result);
+    TEST_ASSERT_EQUAL(1, logic.getCursor());
+    
+    result = logic.moveCursor();
+    TEST_ASSERT_TRUE(result);
+    TEST_ASSERT_EQUAL(0, logic.getCursor());
+}
+
+// 桁送り失敗時のテスト（全桁入力済み時）
+void test_input_logic_move_cursor_failure() {
+    MoveCursorLogic logic;
+    logic.cursor = 0; // 最左端
+    logic.moveCursorResult = false; // 失敗をシミュレート
+    
+    bool result = logic.moveCursor();
+    TEST_ASSERT_FALSE(result);
+    TEST_ASSERT_EQUAL(0, logic.getCursor()); // 位置は変わらない
+}
+
+// 入力画面でのB短押しで桁送りが動作するテスト
+void test_input_display_b_button_move_cursor() {
+    MoveCursorLogic logic;
+    logic.cursor = 3;
+    MockView view;
+    InputDisplayState state(&logic, &view);
+    
+    // B短押しで桁送り
+    state.onButtonB();
+    
+    // カーソル位置が更新される
+    TEST_ASSERT_EQUAL(2, logic.getCursor());
+}
+
+// 桁送り失敗時は何も起こらないテスト
+void test_input_display_b_button_move_cursor_failure() {
+    MoveCursorLogic logic;
+    logic.cursor = 0;
+    logic.moveCursorResult = false;
+    MockView view;
+    InputDisplayState state(&logic, &view);
+    
+    int initialCursor = logic.getCursor();
+    
+    // B短押しで桁送り失敗
+    state.onButtonB();
+    
+    // カーソル位置は変わらない
+    TEST_ASSERT_EQUAL(initialCursor, logic.getCursor());
+}
+
+// 実際のInputLogicを使用した桁送りテスト
+void test_real_input_logic_move_cursor() {
+    InputLogic logic;
+    logic.reset();
+    
+    // 初期状態: カーソル位置3（分一の位）
+    TEST_ASSERT_EQUAL(3, logic.getCursor());
+    
+    // 桁送り1回目: 3→2（分十の位）
+    bool result = logic.moveCursor();
+    TEST_ASSERT_TRUE(result);
+    TEST_ASSERT_EQUAL(2, logic.getCursor());
+    
+    // 桁送り2回目: 2→1（時一の位）
+    result = logic.moveCursor();
+    TEST_ASSERT_TRUE(result);
+    TEST_ASSERT_EQUAL(1, logic.getCursor());
+    
+    // 桁送り3回目: 1→0（時十の位）
+    result = logic.moveCursor();
+    TEST_ASSERT_TRUE(result);
+    TEST_ASSERT_EQUAL(0, logic.getCursor());
+    
+    // 桁送り4回目: 0→失敗（最左端）
+    result = logic.moveCursor();
+    TEST_ASSERT_FALSE(result);
+    TEST_ASSERT_EQUAL(0, logic.getCursor()); // 位置は変わらない
+}
+
+// 全桁入力済み（99:99）時の桁送り拒絶テスト
+void test_input_logic_move_cursor_all_digits_entered() {
+    InputLogic logic;
+    logic.reset();
+    
+    // 全桁に9を入力（99:99）
+    logic.incrementAtCursor(9); // 分一の位に9
+    logic.moveCursor(); // 分十の位に移動
+    logic.incrementAtCursor(9); // 分十の位に9
+    logic.moveCursor(); // 時一の位に移動
+    logic.incrementAtCursor(9); // 時一の位に9
+    logic.moveCursor(); // 時十の位に移動
+    logic.incrementAtCursor(9); // 時十の位に9
+    
+    // 全桁入力済み状態で桁送りを試行
+    bool result = logic.moveCursor();
+    TEST_ASSERT_FALSE(result); // 拒絶される
+    TEST_ASSERT_EQUAL(0, logic.getCursor()); // 位置は変わらない
+}
 
 int main(int argc, char **argv) {
     UNITY_BEGIN();
@@ -195,9 +324,12 @@ int main(int argc, char **argv) {
     RUN_TEST(test_input_display_initial_value_is_empty);
     RUN_TEST(test_input_logic_cursor_initial_position);
     RUN_TEST(test_input_logic_reset_on_enter);
-    // RUN_TEST(test_inputlogic_plus1_plus5_basic); // 削除
-    // RUN_TEST(test_inputlogic_plus1_plus5_each_digit); // 削除
-    // RUN_TEST(test_inputlogic_plus1_plus5_multi); // 削除
+    RUN_TEST(test_input_logic_move_cursor_success);
+    RUN_TEST(test_input_logic_move_cursor_failure);
+    RUN_TEST(test_input_display_b_button_move_cursor);
+    RUN_TEST(test_input_display_b_button_move_cursor_failure);
+    RUN_TEST(test_real_input_logic_move_cursor);
+    RUN_TEST(test_input_logic_move_cursor_all_digits_entered);
     UNITY_END();
     return 0;
 } 

@@ -18,7 +18,7 @@ public:
         if (view) {
             view->clear();
             view->showTitle("INPUT", 42, false);
-            view->showHints("OK", "", "CANCEL");
+            view->showHints("+1/+5", "Next/Reset", "Set/Cancel");
             for (int i = 0; i < 4; ++i) { lastDigits[i] = -1; lastEntered[i] = false; }
         }
     }
@@ -55,7 +55,16 @@ public:
         }
         onDraw();
     }
-    void onButtonB() override {}
+    void onButtonB() override {
+        if (inputLogic) {
+            // 桁送りを試行
+            bool success = inputLogic->moveCursor();
+            // 成功時のみUI反映（失敗時は何もしない）
+            if (success) {
+                onDraw();
+            }
+        }
+    }
     void onButtonC() override {
         if (!inputLogic || !view) return;
         

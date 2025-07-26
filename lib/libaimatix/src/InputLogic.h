@@ -38,6 +38,25 @@ public:
         }
         entered[cursor] = true;
     }
+    
+    // 桁送り機能（右から左: 3→2→1→0）
+    virtual bool moveCursor() {
+        // 全桁入力済み（99:99）の場合は拒絶
+        if (entered[0] && entered[1] && entered[2] && entered[3]) {
+            int value = getValue();
+            if (value == 9999) { // 99:99の場合
+                return false;
+            }
+        }
+        
+        // 右から左に移動（3→2→1→0）
+        if (cursor > 0) {
+            cursor--;
+            return true;
+        }
+        
+        return false;
+    }
     // 各桁の値・入力済み状態を取得
     int getDigit(int idx) const { return digits[idx]; }
     bool isEntered(int idx) const { return entered[idx]; }
