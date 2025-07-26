@@ -30,6 +30,7 @@ Aimatix/
 │   ├── pure/                 # 純粋ロジックテスト
 │   └── mock/                 # モックファイル
 ├── doc/                      # ドキュメント
+├── .clang-tidy              # Clang-Tidy設定
 └── platformio.ini           # PlatformIO設定
 ```
 
@@ -72,7 +73,7 @@ pio test -e native -f test_button_manager_pure
 #### 3.2.2 テストカバレッジ測定
 ```bash
 # カバレッジ測定
-pio test -e native --coverage
+python scripts/test_coverage.py
 ```
 
 #### 3.2.3 静的解析実行
@@ -105,16 +106,17 @@ pio run -e m5stack-fire -t clean
 2. **設計**: `doc/design/`で設計を確認・更新
 3. **実装**: 純粋ロジック→アダプター→UIの順で実装
 4. **テスト**: 単体テスト→統合テストの順でテスト
-5. **ドキュメント更新**: 必要に応じてドキュメントを更新
+5. **静的解析**: Clang-Tidyによる品質チェック
+6. **ドキュメント更新**: 必要に応じてドキュメントを更新
 
 #### 4.1.2 実装順序
 1. **純粋ロジック**: `lib/libaimatix/src/`に実装
 2. **インターフェース**: `lib/libaimatix/include/`に定義
 3. **テスト**: 単体テストの作成・実行
 4. **静的解析**: Clang-Tidyによる静的解析実行
-3. **アダプター**: `src/m5stack_adapters.cpp/h`に実装
-4. **UI**: `src/ui.cpp/h`に実装
-5. **統合**: `src/main.cpp`で統合
+5. **アダプター**: `src/m5stack_adapters.cpp/h`に実装
+6. **UI**: `src/ui.cpp/h`に実装
+7. **統合**: `src/main.cpp`で統合
 
 ### 4.2 バグ修正
 
@@ -123,7 +125,8 @@ pio run -e m5stack-fire -t clean
 2. **原因分析**: どのレイヤーで問題が発生しているか特定
 3. **修正**: 該当レイヤーで修正
 4. **テスト**: 修正内容のテスト
-5. **回帰テスト**: 他の機能への影響確認
+5. **静的解析**: Clang-Tidyによる品質チェック
+6. **回帰テスト**: 他の機能への影響確認
 
 #### 4.2.2 修正優先度
 1. **高優先度**: ビルドエラー、クラッシュ
@@ -204,6 +207,7 @@ Serial.printf("Min free heap: %d\n", ESP.getMinFreeHeap());
 #### 6.1.2 変数名
 - **英語**: スネークケース（lower_case）
 - **例**: `current_mode`, `last_mode_change`
+- **制約**: 3文字以上の意味のある名前を使用
 
 #### 6.1.3 定数名
 - **英語**: 大文字+アンダースコア（UPPER_CASE）
@@ -219,13 +223,16 @@ Serial.printf("Min free heap: %d\n", ESP.getMinFreeHeap());
 - **例**: `ButtonManager` クラス -> `button_manager.h`, `button_manager.cpp`
 
 #### 6.1.6 定数定義
-- **方法**: `const`変数を使用（現代的なC++方式）
+- **方法**: `constexpr`変数を使用（現代的なC++方式）
 - **説明**: マジックナンバーは避け、意味のある定数名で定義します。
 - **例**: 
   ```cpp
-  const int SCREEN_WIDTH = 320;
-  const int SCREEN_HEIGHT = 240;
-  const unsigned long DEBOUNCE_TIME = 50;
+  constexpr int SCREEN_WIDTH = 320;
+  constexpr int SCREEN_HEIGHT = 240;
+  constexpr unsigned long DEBOUNCE_TIME = 50;
+  constexpr int SECONDS_10 = 10;
+  constexpr int MINUTES_60 = 60;
+  constexpr int HOURS_24 = 24;
   ```
 
 #### 6.1.7 グローバル変数
@@ -268,7 +275,7 @@ bool displayTimeInput(time_t time, int x, int y);
 - **処理**: 具体的な処理
 
 #### 6.3.3 インクルード順序
-1. 標準ライブラリ
+1. 標準ライブラリ（C++形式: `<cstdio>`, `<cstring>`）
 2. 外部ライブラリ
 3. プロジェクト内
 
@@ -276,6 +283,29 @@ bool displayTimeInput(time_t time, int x, int y);
 - **原則**: 関数は50行以内を目安とする
 - **説明**: 長い関数は分割し、単一責任の原則に従います。
 - **例外**: UI描画関数など、分割が困難な場合は適切にコメントで説明
+
+### 6.4 Clang-Tidy準拠
+
+#### 6.4.1 主要なチェック項目
+- **bugprone-***: バグ検出
+- **performance-***: パフォーマンス最適化
+- **readability-***: 可読性向上
+- **modernize-***: 現代的なC++の使用
+- **cppcoreguidelines-***: C++ Core Guidelines準拠
+- **misc-***: その他の品質チェック
+
+#### 6.4.2 必須遵守項目
+- **マジックナンバーの禁止**: 定数定義を使用
+- **短い識別子名の禁止**: 3文字以上の意味のある名前
+- **暗黙的bool変換の禁止**: 明示的な比較を使用
+- **波括弧なしの文の禁止**: 単一文でも波括弧を使用
+- **const修飾子の適切な使用**: 変更されない変数はconst
+- **C++標準ヘッダーの使用**: `<cstdio>`、`<cstring>`等
+
+#### 6.4.3 品質ゲート基準
+- **High**: 高重要度の警告は0件以下
+- **Medium**: 中重要度の警告は100件以下（ゲート基準）
+- **Low**: 低重要度の警告は50件以下
 
 ## 7. トラブルシューティング
 
@@ -307,6 +337,21 @@ Test failed: expected X, but was Y
 - テストケースの期待値を確認
 - 実装のロジックを確認
 - 境界値の処理を確認
+
+#### 7.1.4 Clang-Tidy警告
+```
+warning: 'x' is too short, expected at least 3 characters
+```
+**解決方法**:
+- 短い変数名を意味のある名前に変更
+- 例: `x` → `pos_x`, `y` → `pos_y`
+
+```
+warning: 10 is a magic number; consider replacing it with a named constant
+```
+**解決方法**:
+- マジックナンバーを定数定義に変更
+- 例: `10` → `constexpr int SECONDS_10 = 10;`
 
 ### 7.2 デバッグTips
 
@@ -350,12 +395,26 @@ Serial.printf("Processing time: %lu ms\n", endTime - startTime);
 - **対象**: 全ソースコード
 - **環境**: native環境
 - **頻度**: 各開発ステップで実行
-- **目標**: 高重要度警告0件、中重要度警告を適切に管理
+- **品質ゲート**: 中重要度警告100件以下
 
 #### 8.2.2 静的解析の活用
 - **バグ検出**: 潜在的なバグの早期発見
 - **コード品質**: コーディング規約の遵守
 - **保守性**: コードの可読性・保守性向上
+
+#### 8.2.3 品質ゲート基準
+```bash
+# 品質ゲートチェック
+pio check -e native
+
+# 結果確認
+Component            HIGH    MEDIUM    LOW
+------------------  ------  --------  -----
+lib\libaimatix\src    0        78       0
+src                   0        22       0
+
+Total                 0       100       0  # ← 100件以下で合格
+```
 
 ### 8.3 コードレビュー
 
@@ -364,14 +423,16 @@ Serial.printf("Processing time: %lu ms\n", endTime - startTime);
 - **品質**: コードの品質は適切か
 - **テスト**: テストは十分か
 - **静的解析**: Clang-Tidy警告は適切に対処されているか
+- **品質ゲート**: 100件以下の基準を満たしているか
 - **ドキュメント**: ドキュメントは更新されているか
 
 #### 8.3.2 レビュープロセス
 1. **自己レビュー**: 実装者が自己レビュー
 2. **静的解析**: Clang-Tidyによる自動チェック
-3. **ピアレビュー**: 他の開発者がレビュー
-4. **修正**: 指摘された問題を修正
-5. **再レビュー**: 必要に応じて再レビュー
+3. **品質ゲート確認**: 100件以下の基準確認
+4. **ピアレビュー**: 他の開発者がレビュー
+5. **修正**: 指摘された問題を修正
+6. **再レビュー**: 必要に応じて再レビュー
 
 ## 9. リソース
 
@@ -388,11 +449,13 @@ Serial.printf("Processing time: %lu ms\n", endTime - startTime);
 
 ### 9.3 設定ファイル
 - `platformio.ini`: PlatformIO設定
+- `.clang-tidy`: Clang-Tidy設定
 - `.gitignore`: Git除外設定
 - `README.md`: プロジェクト概要
 
 ---
 
 **作成日**: 2025年1月  
-**バージョン**: 1.0.0  
-**更新日**: 2025年1月 
+**バージョン**: 2.0.0  
+**更新日**: 2025年1月  
+**品質ゲート基準**: 中重要度警告100件以下 

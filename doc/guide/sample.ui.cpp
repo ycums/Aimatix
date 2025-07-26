@@ -211,7 +211,7 @@ void draw_main_display(const Settings& settings) {
   sprite.drawString(hmStr, SCREEN_WIDTH/2, GRID_Y(1) + GRID_HEIGHT);
   
   // --- 次のアラームまでの残り時間 ---
-  time_t nextAlarm = AlarmLogic::getNextAlarmTime(alarmTimes, now);
+  time_t nextAlarm = AlarmLogic::getNextAlarmTime(alarm_times, now);
   
   sprite.setTextDatum(MC_DATUM);
   sprite.setTextFont(7);
@@ -252,10 +252,10 @@ void draw_main_display(const Settings& settings) {
   sprite.setTextColor(AMBER_COLOR, TFT_BLACK);
   
   int count = 0;
-  for (time_t t : alarmTimes) {
+  for (time_t t : alarm_times) {
     if (count >= 5) break;
-    int x = GRID_X(1) + count * (14 * GRID_WIDTH / 5); // X=1から開始、5等分して配置
-    sprite.drawString(get_time_string(t).c_str(), x, GRID_Y(8) + GRID_HEIGHT/2);
+    int pos_x = GRID_X(1) + count * (14 * GRID_WIDTH / 5); // X=1から開始、5等分して配置
+    sprite.drawString(get_time_string(t).c_str(), pos_x, GRID_Y(8) + GRID_HEIGHT/2);
     count++;
   }
   
@@ -423,26 +423,26 @@ void draw_alarm_management() {
   int maxItems = 9; // グリッドセル(0,1)-(15,9)に収まる最大アイテム数
   int x = GRID_X(1); // X=1で左寄せ
   
-  for (int i = 0; i < alarmTimes.size() && i < maxItems; i++) {
-    int y = yStart + i * lineHeight;
+  for (int i = 0; i < alarm_times.size() && i < maxItems; i++) {
+    int pos_y = yStart + i * lineHeight;
     
     if (i == scheduleSelectedIndex) {
       // 選択中の項目は水平方向のすべてを反転
       int fontHeight = sprite.fontHeight(4); // Font4の実際の高さを取得
       // ML_DATUMの場合、yは文字の中心位置なので、背景は文字の上端から開始
-      int backgroundY = y - fontHeight/2; // 文字の中心から上端までの距離
+      int backgroundY = pos_y - fontHeight/2; // 文字の中心から上端までの距離
       sprite.fillRect(0, backgroundY, 320, fontHeight, AMBER_COLOR);
       sprite.setTextColor(TFT_BLACK, AMBER_COLOR);
-      sprite.drawString(get_time_string(alarmTimes[i]).c_str(), x, y);
+      sprite.drawString(get_time_string(alarm_times[i]).c_str(), x, pos_y);
       sprite.setTextColor(AMBER_COLOR, TFT_BLACK);
     } else {
       sprite.setTextFont(4); // 非選択項目も同じフォントサイズを使用
-      sprite.drawString(get_time_string(alarmTimes[i]).c_str(), x, y);
+      sprite.drawString(get_time_string(alarm_times[i]).c_str(), x, pos_y);
     }
   }
   
   // アラームが0件の場合のメッセージ
-  if (alarmTimes.empty()) {
+  if (alarm_times.empty()) {
     sprite.setTextFont(2);
     sprite.setTextColor(AMBER_COLOR, TFT_BLACK);
     sprite.setTextDatum(MC_DATUM); // 中央寄せに戻す
