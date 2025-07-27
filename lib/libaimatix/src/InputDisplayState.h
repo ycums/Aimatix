@@ -96,7 +96,7 @@ public:
                     }
                 } else {
                     // 絶対時刻入力モードの場合は従来通り
-                    snprintf(preview, sizeof(preview), "プレビュー: %02d:%02d", value/100, value%100);
+                    snprintf(preview, sizeof(preview), "%02d:%02d", value/100, value%100);
                 }
             } else {
                 // 部分入力時のプレビュー表示
@@ -137,7 +137,7 @@ public:
                             }
                         } else {
                             // 絶対時刻入力モードの場合は部分入力を表示
-                            snprintf(preview, sizeof(preview), "プレビュー: %02d:%02d", partialValue/100, partialValue%100);
+                            snprintf(preview, sizeof(preview), "%02d:%02d", partialValue/100, partialValue%100);
                         }
                     }
                 }

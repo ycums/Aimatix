@@ -866,6 +866,58 @@ void test_relative_input_partial_alarm_calculation() {
     TEST_ASSERT_TRUE(abs(alarm_times[0] - expected_alarm) <= 1);
 }
 
+// 絶対値入力モードのプレビュー表示書式テスト
+void test_absolute_input_preview_format() {
+    InputLogic logic(testTimeProvider);
+    RelativeInputMockView view;
+    InputDisplayState state(&logic, &view);
+    
+    // 絶対値入力モードに設定
+    state.setRelativeMode(false);
+    
+    // 12:34 の状態を作る
+    logic.incrementInput(1); // 時十の位に1を入力
+    logic.shiftDigits();
+    logic.incrementInput(2); // 時一の位に2を入力
+    logic.shiftDigits();
+    logic.incrementInput(3); // 分十の位に3を入力
+    logic.shiftDigits();
+    logic.incrementInput(4); // 分一の位に4を入力
+    
+    // プレビュー表示を実行
+    state.onDraw();
+    
+    // プレビューが正しく表示されることを確認
+    TEST_ASSERT_EQUAL(1, view.showPreviewCount);
+    // 期待: "12:34" (プレビュー: プレフィックスなし)
+    TEST_ASSERT_EQUAL_STRING("12:34", view.lastPreview.c_str());
+}
+
+// 絶対値入力モードの部分入力プレビュー表示テスト
+void test_absolute_input_partial_preview_format() {
+    InputLogic logic(testTimeProvider);
+    RelativeInputMockView view;
+    InputDisplayState state(&logic, &view);
+    
+    // 絶対値入力モードに設定
+    state.setRelativeMode(false);
+    
+    // 12:3_ の状態を作る（部分入力）
+    logic.incrementInput(1); // 時十の位に1を入力
+    logic.shiftDigits();
+    logic.incrementInput(2); // 時一の位に2を入力
+    logic.shiftDigits();
+    logic.incrementInput(3); // 分十の位に3を入力
+    // 分一の位は未入力のまま
+    
+    // プレビュー表示を実行
+    state.onDraw();
+    
+    // プレビューが正しく表示されることを確認
+    TEST_ASSERT_EQUAL(1, view.showPreviewCount);
+    // 期待: "01:23" (入力順序に基づく実際の値)
+    TEST_ASSERT_EQUAL_STRING("01:23", view.lastPreview.c_str());
+}
 
 
 int main(int argc, char **argv) {
@@ -881,6 +933,10 @@ int main(int argc, char **argv) {
     RUN_TEST(test_main_display_b_button_transitions_to_relative_input);
     RUN_TEST(test_relative_input_display_shows_rel_title);
     RUN_TEST(test_absolute_input_mode_confirmation);
+    
+    // 絶対値入力モードのプレビュー表示書式テストを追加
+    RUN_TEST(test_absolute_input_preview_format);
+    RUN_TEST(test_absolute_input_partial_preview_format);
     
     // 複雑な相対値計算テストは後で有効化
     // RUN_TEST(test_relative_time_calculation_basic);

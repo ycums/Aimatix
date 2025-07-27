@@ -18,9 +18,12 @@ public:
         int underlineY = GRID_Y(6) - 8;
         int x0 = SCREEN_WIDTH/2 - (2*digitW + colonW/2);
         int x;
+        // インデックス順序: [0]=時十の位, [1]=時一の位, [2]=分十の位, [3]=分一の位
         if (index < 2) {
+            // 時十の位、時一の位
             x = x0 + index * digitW + digitW/2;
         } else {
+            // 分十の位、分一の位
             x = x0 + 2 * digitW + colonW + (index-2) * digitW + digitW/2;
         }
         if (entered) {

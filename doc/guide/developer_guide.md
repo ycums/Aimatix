@@ -67,7 +67,7 @@ pio test -e native
 pio test -e native
 
 # 特定テスト実行
-pio test -e native -f test_button_manager_pure
+pio test -e native -f pure/test_button_manager_pure
 ```
 
 #### 3.2.2 テストカバレッジ測定
