@@ -153,7 +153,8 @@ test_framework = unity
 
 - **includeエラー時**
   - ヘッダの配置場所・記法・lib/xxx/src/構成を再確認
-  - platformio.iniのbuild_src_filter, build_flagsを確認
+  - platformio.ini は原則変更不可。`unity_config.h` も追加不可。
+    - それ以外の箇所に問題が必ず問題があります。
   - `pio run --target clean` でキャッシュクリア
 - **テストエラー時**
   - テストディレクトリ構造が正しいか（test_main.cppが1つ/ディレクトリ）
