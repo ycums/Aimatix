@@ -8,17 +8,13 @@
 extern std::vector<time_t> alarm_times;
 
 void AlarmDisplayState::onEnter() {
-    selectedIndex = 0;
-    lastSelectedIndex = 0; // 初期状態をリセット
-    lastDisplayedAlarms.clear(); // 初期状態をリセット
-    updateLastUserAction();
-    if (view) {
-        view->clear();
-        // 共通のタイトルバーとボタンヒントを使用
-        view->showTitle("ALARMS", BATTERY_WARNING_THRESHOLD, false); // 仮のバッテリー値
-        view->showHints("UP", "DOWN", "DEL");
+    if (view == nullptr) {
+        return;
     }
-    // 初期表示を即座に実行（鈍重さを解消）
+    
+    view->clear();
+    view->showTitle("ALARMS", BATTERY_WARNING_THRESHOLD, false);
+    view->showHints("UP", "DOWN", "DEL");
     forceDraw();
 }
 
@@ -31,11 +27,10 @@ void AlarmDisplayState::onDraw() {
         return;
     }
     
-    // ハイブリッドアプローチ: リアルタイム更新の判定
+    // ハイブリッドアプローチ: リアルタイム更新とユーザー操作の両立
     if (shouldUpdateRealTime()) {
         forceDraw();
     }
-    // 更新抑制中は前回の表示を維持（何もしない）
 }
 
 void AlarmDisplayState::forceDraw() {
@@ -129,7 +124,7 @@ void AlarmDisplayState::onButtonBLongPress() {
 void AlarmDisplayState::onButtonCLongPress() {
     updateLastUserAction();
     // メイン画面に戻る
-    if (manager && mainDisplayState) {
+    if (manager != nullptr && mainDisplayState != nullptr) {
         manager->setState(mainDisplayState);
     }
 }

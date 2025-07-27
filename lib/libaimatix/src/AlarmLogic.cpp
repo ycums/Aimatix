@@ -193,7 +193,7 @@ auto AlarmLogic::addAlarmFromPartialInput(
     std::string& errorMsg
 ) -> bool {
     // 入力チェック
-    if (!digits || !entered) {
+    if (digits == nullptr || entered == nullptr) {
         result = AddAlarmResult::ErrorInvalid;
         errorMsg = "Invalid input data";
         return false;
