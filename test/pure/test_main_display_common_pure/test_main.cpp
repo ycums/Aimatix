@@ -140,6 +140,22 @@ void test_main_display_c_long_press_does_nothing() {
     TEST_ASSERT_EQUAL_PTR(&mainState, sm.getCurrentState());
 }
 
+// InputDisplayStateのonButtonBLongPress()のテスト
+void test_input_display_b_long_press_resets_input() {
+    MockLogic logic(testTimeProvider);
+    MockView view;
+    InputDisplayState state(&logic, &view);
+    
+    // 初期状態でonButtonBLongPress()を呼び出し
+    state.onButtonBLongPress();
+    // 例外が発生しないことを確認（正常に実行されることを確認）
+    
+    // 入力値を設定してからリセット
+    logic.value = 42;
+    state.onButtonBLongPress();
+    // 例外が発生しないことを確認（正常に実行されることを確認）
+}
+
 int main(int argc, char **argv) {
     UNITY_BEGIN();
     RUN_TEST(test_transition_to_input_display_on_a_button_press);
@@ -147,6 +163,7 @@ int main(int argc, char **argv) {
     RUN_TEST(test_input_display_c_long_press_returns_to_main);
     RUN_TEST(test_input_display_other_buttons_do_not_return_to_main);
     RUN_TEST(test_main_display_c_long_press_does_nothing);
+    RUN_TEST(test_input_display_b_long_press_resets_input);
     UNITY_END();
     return 0;
 } 

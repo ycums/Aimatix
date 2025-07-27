@@ -65,6 +65,31 @@ void test_debounce_edge_and_error_cases() {
     TEST_ASSERT_TRUE(dm5.getStable());
 }
 
+// getLastChange()のテスト
+void test_debounce_get_last_change() {
+    DebounceManager dm(50);
+    uint32_t t = 1000;
+    
+    // 初期状態ではlastChangeは0
+    TEST_ASSERT_EQUAL(0, dm.getLastChange());
+    
+    // 最初のupdateでlastChangeが設定される
+    dm.update(true, t);
+    TEST_ASSERT_EQUAL(t, dm.getLastChange());
+    
+    // 値が変わるとlastChangeが更新される
+    dm.update(false, t+10);
+    TEST_ASSERT_EQUAL(t+10, dm.getLastChange());
+    
+    // 同じ値が続いてもlastChangeは更新されない
+    dm.update(false, t+20);
+    TEST_ASSERT_EQUAL(t+10, dm.getLastChange());
+    
+    // 値が変わるとlastChangeが更新される
+    dm.update(true, t+30);
+    TEST_ASSERT_EQUAL(t+30, dm.getLastChange());
+}
+
 void setUp(void) {}
 void tearDown(void) {}
 
@@ -73,6 +98,7 @@ int main(int argc, char **argv) {
     RUN_TEST(test_debounce_basic);
     RUN_TEST(test_debounce_edge);
     RUN_TEST(test_debounce_edge_and_error_cases);
+    RUN_TEST(test_debounce_get_last_change);
     UNITY_END();
     return 0;
 } 

@@ -299,5 +299,26 @@
     "pure_coverage": 83.97163120567376,
     "m5stack_coverage": 0.0,
     "quality_gate": false
+  },
+  {
+    "timestamp": "2025-07-27T18:10:25.034176",
+    "coverage": 83.97163120567376,
+    "pure_coverage": 83.97163120567376,
+    "m5stack_coverage": 0.0,
+    "quality_gate": false
+  },
+  {
+    "timestamp": "2025-07-27T18:14:22.323681",
+    "coverage": 83.97163120567376,
+    "pure_coverage": 83.97163120567376,
+    "m5stack_coverage": 0.0,
+    "quality_gate": false
+  },
+  {
+    "timestamp": "2025-07-27T18:20:39.439944",
+    "coverage": 86.66666666666667,
+    "pure_coverage": 86.66666666666667,
+    "m5stack_coverage": 0.0,
+    "quality_gate": true
   }
 ]

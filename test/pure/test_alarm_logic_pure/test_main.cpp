@@ -401,6 +401,43 @@ void test_add_alarm_at_time_multiple_success() {
     TEST_ASSERT_EQUAL(3000, alarms[2]);
 }
 
+// deleteAlarm()のテスト
+void test_alarmlogic_delete_alarm() {
+    std::vector<time_t> alarms = {1000, 2000, 3000, 4000};
+    
+    // 正常系: 存在するアラームを削除
+    bool ok = AlarmLogic::deleteAlarm(alarms, 1); // インデックス1の2000を削除
+    TEST_ASSERT_TRUE(ok);
+    TEST_ASSERT_EQUAL(3, alarms.size());
+    TEST_ASSERT_EQUAL(1000, alarms[0]);
+    TEST_ASSERT_EQUAL(3000, alarms[1]);
+    TEST_ASSERT_EQUAL(4000, alarms[2]);
+    
+    // 正常系: 最初のアラームを削除
+    ok = AlarmLogic::deleteAlarm(alarms, 0);
+    TEST_ASSERT_TRUE(ok);
+    TEST_ASSERT_EQUAL(2, alarms.size());
+    TEST_ASSERT_EQUAL(3000, alarms[0]);
+    TEST_ASSERT_EQUAL(4000, alarms[1]);
+    
+    // 正常系: 最後のアラームを削除
+    ok = AlarmLogic::deleteAlarm(alarms, 1);
+    TEST_ASSERT_TRUE(ok);
+    TEST_ASSERT_EQUAL(1, alarms.size());
+    TEST_ASSERT_EQUAL(3000, alarms[0]);
+    
+    // 異常系: インデックスが範囲外
+    ok = AlarmLogic::deleteAlarm(alarms, 1);
+    TEST_ASSERT_FALSE(ok);
+    TEST_ASSERT_EQUAL(1, alarms.size()); // サイズは変わらない
+    
+    // 異常系: 空のリスト
+    std::vector<time_t> empty_alarms;
+    ok = AlarmLogic::deleteAlarm(empty_alarms, 0);
+    TEST_ASSERT_FALSE(ok);
+    TEST_ASSERT_EQUAL(0, empty_alarms.size());
+}
+
 void setUp(void) {}
 void tearDown(void) {}
 
@@ -427,6 +464,7 @@ int main(int argc, char **argv) {
     RUN_TEST(test_add_alarm_at_time_max_reached);
     RUN_TEST(test_add_alarm_at_time_sorting);
     RUN_TEST(test_add_alarm_at_time_multiple_success);
+    RUN_TEST(test_alarmlogic_delete_alarm);
     UNITY_END();
     return 0;
 } 

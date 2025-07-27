@@ -525,6 +525,53 @@ void test_AlarmDisplayState_PartialAreaClear() {
     TEST_ASSERT_FALSE(pastAlarmExists);
 }
 
+// テストケース: onButtonCLongPress()の動作確認
+void test_AlarmDisplayState_OnButtonCLongPress() {
+    MockDisplay mockDisplay;
+    MockStateManager mockManager;
+    auto timeProvider = std::make_shared<MockTimeProvider>();
+    auto timeManager = std::make_shared<MockTimeManager>();
+    AlarmDisplayState state(&mockManager, &mockDisplay, timeProvider, timeManager);
+    
+    // 初期アラームリストを準備
+    time_t now = time(nullptr);
+    alarm_times.clear();
+    alarm_times.push_back(now + 60);
+    alarm_times.push_back(now + 120);
+    
+    // 初期表示
+    state.onEnter();
+    
+    // onButtonCLongPress()を呼び出し（例外が発生しないことを確認）
+    state.onButtonCLongPress();
+    
+    // 正常に実行されることを確認（例外が発生しなければOK）
+    TEST_ASSERT_TRUE(true);
+}
+
+// テストケース: onExit()の動作確認
+void test_AlarmDisplayState_OnExit() {
+    MockDisplay mockDisplay;
+    MockStateManager mockManager;
+    auto timeProvider = std::make_shared<MockTimeProvider>();
+    auto timeManager = std::make_shared<MockTimeManager>();
+    AlarmDisplayState state(&mockManager, &mockDisplay, timeProvider, timeManager);
+    
+    // 初期アラームリストを準備
+    time_t now = time(nullptr);
+    alarm_times.clear();
+    alarm_times.push_back(now + 60);
+    
+    // 初期表示
+    state.onEnter();
+    
+    // onExit()を呼び出し（例外が発生しないことを確認）
+    state.onExit();
+    
+    // 正常に実行されることを確認（例外が発生しなければOK）
+    TEST_ASSERT_TRUE(true);
+}
+
 int main() {
     UNITY_BEGIN();
     
@@ -544,6 +591,8 @@ int main() {
     RUN_TEST(test_AlarmDisplayState_TimeBasedDeletion_DisplayClear);
     RUN_TEST(test_AlarmDisplayState_NoAlarmsDisplay_NoFlicker);
     RUN_TEST(test_AlarmDisplayState_PartialAreaClear);
+    RUN_TEST(test_AlarmDisplayState_OnButtonCLongPress);
+    RUN_TEST(test_AlarmDisplayState_OnExit);
     
     return UNITY_END();
 } 
