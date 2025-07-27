@@ -7,6 +7,7 @@
 #include "AlarmLogic.h"
 #include <cstring>
 
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 class InputDisplayState : public IState {
 public:
     // InputDisplayStateのコンストラクタ

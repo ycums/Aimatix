@@ -3,7 +3,7 @@
 DebounceManager::DebounceManager(uint32_t debounce_ms)
     : debounceMs(debounce_ms) {}
 
-bool DebounceManager::update(bool raw, uint32_t now_ms) {
+auto DebounceManager::update(bool raw, uint32_t now_ms) -> bool {
     if (raw != lastRaw) {
         lastRaw = raw;
         lastChange = now_ms;
@@ -14,10 +14,10 @@ bool DebounceManager::update(bool raw, uint32_t now_ms) {
     return stable;
 }
 
-bool DebounceManager::getStable() const {
+auto DebounceManager::getStable() const -> bool {
     return stable;
 }
 
-uint32_t DebounceManager::getLastChange() const {
+auto DebounceManager::getLastChange() const -> uint32_t {
     return lastChange;
 } 

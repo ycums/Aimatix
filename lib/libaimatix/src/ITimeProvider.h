@@ -1,6 +1,7 @@
 #pragma once
 
 // 物理時間（現在時刻）取得インターフェース
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 class ITimeProvider {
 public:
     virtual ~ITimeProvider() {}

@@ -395,7 +395,7 @@ Serial.printf("Processing time: %lu ms\n", endTime - startTime);
 - **対象**: 全ソースコード
 - **環境**: native環境
 - **頻度**: 各開発ステップで実行
-- **品質ゲート**: 中重要度警告100件以下
+- **品質ゲート**: 中重要度警告80件以下
 
 #### 8.2.2 静的解析の活用
 - **バグ検出**: 潜在的なバグの早期発見
@@ -413,7 +413,7 @@ Component            HIGH    MEDIUM    LOW
 lib\libaimatix\src    0        78       0
 src                   0        22       0
 
-Total                 0       100       0  # ← 90件以下で合格
+Total                 0       100       0  # ← 80件以下で合格
 ```
 
 ### 8.3 コードレビュー

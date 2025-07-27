@@ -1,4 +1,5 @@
 #pragma once
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 class IInputDisplayView {
 public:
     virtual ~IInputDisplayView() {}

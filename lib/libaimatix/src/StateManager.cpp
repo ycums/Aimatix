@@ -12,7 +12,7 @@ void StateManager::setState(IState* state) {
     }
 }
 
-IState* StateManager::getCurrentState() const {
+auto StateManager::getCurrentState() const -> IState* {
     return currentState;
 }
 

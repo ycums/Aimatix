@@ -35,7 +35,7 @@ void ButtonManager::update(ButtonType btn, bool pressed, uint32_t now_ms) {
     }
 }
 
-bool ButtonManager::isShortPress(ButtonType btn) const {
+auto ButtonManager::isShortPress(ButtonType btn) const -> bool {
     if (btn < 0 || btn >= static_cast<ButtonType>(sizeof(btnStates)/sizeof(btnStates[0]))) {
         return false; // 無効なボタンタイプ
     }
@@ -44,7 +44,7 @@ bool ButtonManager::isShortPress(ButtonType btn) const {
     return ret;
 }
 
-bool ButtonManager::isLongPress(ButtonType btn) const {
+auto ButtonManager::isLongPress(ButtonType btn) const -> bool {
     if (btn < 0 || btn >= static_cast<ButtonType>(sizeof(btnStates)/sizeof(btnStates[0]))) {
         return false; // 無効なボタンタイプ
     }

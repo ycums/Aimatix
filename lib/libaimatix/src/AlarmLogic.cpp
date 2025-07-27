@@ -73,7 +73,9 @@ bool AlarmLogic::addAlarm(std::vector<time_t>& alarms, time_t now, time_t input,
     struct tm alarm_tm = *now_tm;
     alarm_tm.tm_sec = 0;
     alarm_tm.tm_isdst = -1;
-    int hour, minute, add_day = 0;
+    int hour = 0;
+    int minute = 0;
+    int add_day = 0;
     if (input < HOURS_100) {
         // 分のみ指定
         minute = input % MINUTES_60;
@@ -239,7 +241,7 @@ bool AlarmLogic::addAlarmFromPartialInput(
     // 分繰り上げ
     if (minute >= MINUTES_60) { hour += minute / MINUTES_60; minute = minute % MINUTES_60; }
     // 時繰り上げ
-    int add_day = hour / HOURS_24;
+    const int add_day = hour / HOURS_24;
     hour = hour % HOURS_24;
     
     alarm_tm.tm_hour = hour;
