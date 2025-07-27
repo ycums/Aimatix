@@ -156,6 +156,31 @@ bool AlarmLogic::addAlarm(std::vector<time_t>& alarms, time_t now, time_t input,
     return true;
 }
 
+// 絶対時刻（time_t）をアラームとして追加。エラー時はresult, errorMsgに理由を格納。
+bool AlarmLogic::addAlarmAtTime(std::vector<time_t>& alarms, time_t alarmTime, AddAlarmResult& result, std::string& errorMsg) {
+    // 最大数チェック
+    constexpr int MAX_ALARMS = 5;
+    if (alarms.size() >= MAX_ALARMS) {
+        result = AddAlarmResult::ErrorMaxReached;
+        errorMsg = "Max alarms reached (5)";
+        return false;
+    }
+    
+    // 重複チェック
+    for (auto existing : alarms) {
+        if (existing == alarmTime) {
+            result = AddAlarmResult::ErrorDuplicate;
+            errorMsg = "Duplicate alarm time";
+            return false;
+        }
+    }
+    
+    alarms.push_back(alarmTime);
+    std::sort(alarms.begin(), alarms.end());
+    result = AddAlarmResult::Success;
+    return true;
+}
+
 // 部分的な入力状態（digits[4], entered[4]）からアラームを追加
 bool AlarmLogic::addAlarmFromPartialInput(
     std::vector<time_t>& alarms, 

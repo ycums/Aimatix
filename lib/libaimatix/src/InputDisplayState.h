@@ -210,12 +210,11 @@ public:
             time_t relativeTime = inputLogic->getRelativeValue();
             if (relativeTime != -1) {
                 extern std::vector<time_t> alarm_times;
-                time_t now = time(nullptr);
                 AlarmLogic::AddAlarmResult result;
                 std::string msg;
                 
                 // 絶対時刻としてアラーム追加
-                success = AlarmLogic::addAlarm(alarm_times, now, relativeTime, result, msg);
+                success = AlarmLogic::addAlarmAtTime(alarm_times, relativeTime, result, msg);
                 if (!success) {
                     error = true;
                     showError = true;

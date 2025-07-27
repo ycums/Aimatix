@@ -324,6 +324,83 @@ void test_partial_input_future_time() {
     TEST_ASSERT_EQUAL(0, tm->tm_min);
 }
 
+// === ここからTDD: addAlarmAtTimeメソッドのテスト ===
+void test_add_alarm_at_time_success() {
+    std::vector<time_t> alarms;
+    time_t alarmTime = 1000; // 固定時刻
+    AlarmLogic::AddAlarmResult result;
+    std::string msg;
+    
+    // 正常系: 新規追加
+    bool ok = AlarmLogic::addAlarmAtTime(alarms, alarmTime, result, msg);
+    TEST_ASSERT_TRUE(ok);
+    TEST_ASSERT_EQUAL((int)AlarmLogic::AddAlarmResult::Success, (int)result);
+    TEST_ASSERT_EQUAL(1, alarms.size());
+    TEST_ASSERT_EQUAL(alarmTime, alarms[0]);
+}
+
+void test_add_alarm_at_time_duplicate() {
+    std::vector<time_t> alarms;
+    time_t alarmTime = 1000;
+    AlarmLogic::AddAlarmResult result;
+    std::string msg;
+    
+    // 最初のアラームを追加
+    AlarmLogic::addAlarmAtTime(alarms, alarmTime, result, msg);
+    
+    // 重複アラームを追加
+    bool ok = AlarmLogic::addAlarmAtTime(alarms, alarmTime, result, msg);
+    TEST_ASSERT_FALSE(ok);
+    TEST_ASSERT_EQUAL((int)AlarmLogic::AddAlarmResult::ErrorDuplicate, (int)result);
+    TEST_ASSERT_EQUAL(1, alarms.size()); // サイズは変わらない
+}
+
+void test_add_alarm_at_time_max_reached() {
+    std::vector<time_t> alarms = {1000, 2000, 3000, 4000, 5000}; // 最大数に達している
+    time_t alarmTime = 6000;
+    AlarmLogic::AddAlarmResult result;
+    std::string msg;
+    
+    // 上限超過のアラームを追加
+    bool ok = AlarmLogic::addAlarmAtTime(alarms, alarmTime, result, msg);
+    TEST_ASSERT_FALSE(ok);
+    TEST_ASSERT_EQUAL((int)AlarmLogic::AddAlarmResult::ErrorMaxReached, (int)result);
+    TEST_ASSERT_EQUAL(5, alarms.size()); // サイズは変わらない
+}
+
+void test_add_alarm_at_time_sorting() {
+    std::vector<time_t> alarms;
+    AlarmLogic::AddAlarmResult result;
+    std::string msg;
+    
+    // 順序を変えてアラームを追加
+    AlarmLogic::addAlarmAtTime(alarms, 3000, result, msg);
+    AlarmLogic::addAlarmAtTime(alarms, 1000, result, msg);
+    AlarmLogic::addAlarmAtTime(alarms, 2000, result, msg);
+    
+    // ソートされていることを確認
+    TEST_ASSERT_EQUAL(3, alarms.size());
+    TEST_ASSERT_EQUAL(1000, alarms[0]);
+    TEST_ASSERT_EQUAL(2000, alarms[1]);
+    TEST_ASSERT_EQUAL(3000, alarms[2]);
+}
+
+void test_add_alarm_at_time_multiple_success() {
+    std::vector<time_t> alarms;
+    AlarmLogic::AddAlarmResult result;
+    std::string msg;
+    
+    // 複数のアラームを正常に追加
+    TEST_ASSERT_TRUE(AlarmLogic::addAlarmAtTime(alarms, 1000, result, msg));
+    TEST_ASSERT_TRUE(AlarmLogic::addAlarmAtTime(alarms, 2000, result, msg));
+    TEST_ASSERT_TRUE(AlarmLogic::addAlarmAtTime(alarms, 3000, result, msg));
+    
+    TEST_ASSERT_EQUAL(3, alarms.size());
+    TEST_ASSERT_EQUAL(1000, alarms[0]);
+    TEST_ASSERT_EQUAL(2000, alarms[1]);
+    TEST_ASSERT_EQUAL(3000, alarms[2]);
+}
+
 void setUp(void) {}
 void tearDown(void) {}
 
@@ -345,6 +422,11 @@ int main(int argc, char **argv) {
     RUN_TEST(test_partial_input_minute_only);
     RUN_TEST(test_partial_input_hour_minute_partial);
     RUN_TEST(test_partial_input_future_time);
+    RUN_TEST(test_add_alarm_at_time_success);
+    RUN_TEST(test_add_alarm_at_time_duplicate);
+    RUN_TEST(test_add_alarm_at_time_max_reached);
+    RUN_TEST(test_add_alarm_at_time_sorting);
+    RUN_TEST(test_add_alarm_at_time_multiple_success);
     UNITY_END();
     return 0;
 } 
