@@ -42,7 +42,7 @@ public:
         time_t now = timeProvider_->now();
         struct tm* tm_now = timeProvider_->localtime(&now);
         struct tm alarm_tm = *tm_now;
-        alarm_tm.tm_sec = 0;
+        alarm_tm.tm_sec = 0; // ← おそらくこれが直接原因
         alarm_tm.tm_isdst = -1;
         if (inputMinute >= 60) { inputHour += inputMinute / 60; inputMinute = inputMinute % 60; }
         int add_day = inputHour / 24;
