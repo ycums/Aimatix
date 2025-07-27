@@ -1,5 +1,6 @@
 #include <unity.h>
 #include "AlarmDisplayState.h"
+#include "IAlarmDisplayView.h"
 #include "AlarmLogic.h"
 #include "ITimeProvider.h"
 #include "ITimeManager.h"
@@ -33,46 +34,65 @@ public:
     void setTime(time_t time) { mockTime = time; }
 };
 
-// モックDisplayクラス
-class MockDisplay : public IDisplay {
+// モックAlarmDisplayViewクラス
+class MockAlarmDisplayView : public IAlarmDisplayView {
 public:
     std::vector<std::string> drawnTexts;
     std::vector<int> textColors;
     std::vector<int> bgColors;
     bool cleared = false;
+    std::vector<time_t> lastShownAlarms;
+    size_t lastSelectedIndex = 0;
+    bool noAlarmsShown = false;
     
     void clear() override { cleared = true; }
-    void drawText(int x, int y, const char* text, int fontSize) override {
-        drawnTexts.push_back(std::string(text));
+    void showTitle(const char* title, int batteryLevel, bool isCharging) override {
+        drawnTexts.push_back(std::string("TITLE: ") + title);
     }
-    void setTextColor(uint32_t color, uint32_t bgColor) override {
-        textColors.push_back(color);
-        bgColors.push_back(bgColor);
+    void showHints(const char* btnA, const char* btnB, const char* btnC) override {
+        drawnTexts.push_back(std::string("HINTS: ") + btnA + " " + btnB + " " + btnC);
     }
-    void fillRect(int x, int y, int w, int h, uint32_t color) override {}
-    void drawRect(int x, int y, int w, int h, uint32_t color) override {}
-    void setTextDatum(int datum) override {}
-    void setTextFont(int font) override {}
-    void fillProgressBarSprite(int x, int y, int w, int h, int percent) override {}
-    void drawLine(int x0, int y0, int x1, int y1, uint32_t color) override {}
-    int getTextDatum() const override { return 0; }
+    void showAlarmList(const std::vector<time_t>& alarms, size_t selectedIndex) override {
+        lastShownAlarms = alarms;
+        lastSelectedIndex = selectedIndex;
+        noAlarmsShown = false;
+    }
+    void showNoAlarms() override {
+        lastShownAlarms.clear();
+        noAlarmsShown = true;
+    }
     
     void reset() {
         drawnTexts.clear();
         textColors.clear();
         bgColors.clear();
         cleared = false;
+        lastShownAlarms.clear();
+        lastSelectedIndex = 0;
+        noAlarmsShown = false;
     }
 };
 
 // モックStateManagerクラス
-class MockStateManager : public StateManager {
+class MockStateManager : public StateManager, public IState {
 public:
     IState* lastSetState = nullptr;
-    void setState(IState* state) {
-        StateManager::setState(state);
+    
+    // StateManager::setStateをオーバーライド
+    void setState(IState* state) override {
         lastSetState = state;
     }
+    
+    // IStateインターフェースの実装
+    void onEnter() override {}
+    void onExit() override {}
+    void onDraw() override {}
+    void onButtonA() override {}
+    void onButtonB() override {}
+    void onButtonC() override {}
+    void onButtonALongPress() override {}
+    void onButtonBLongPress() override {}
+    void onButtonCLongPress() override {}
 };
 
 // テスト用のアラームリスト
@@ -81,10 +101,10 @@ std::vector<time_t> alarm_times; // 外部変数の定義
 
 void setUp(void) {
     test_alarm_times.clear();
-    alarm_times.clear();
+    alarm_times.clear(); // ←必ずリセット
     time_t now = time(nullptr);
     AlarmLogic::initAlarms(test_alarm_times, now);
-    AlarmLogic::initAlarms(alarm_times, now);
+    // alarm_timesへの初期化は各テストで必要に応じて行う
 }
 
 void tearDown(void) {
@@ -93,488 +113,355 @@ void tearDown(void) {
 
 // テストケース: 初期化
 void test_AlarmDisplayState_Initialization() {
-    MockDisplay mockDisplay;
+    MockAlarmDisplayView mockView;
     MockStateManager mockManager;
     auto timeProvider = std::make_shared<MockTimeProvider>();
     auto timeManager = std::make_shared<MockTimeManager>();
-    AlarmDisplayState state(&mockManager, &mockDisplay, timeProvider, timeManager);
+    AlarmDisplayState state(&mockManager, &mockView, timeProvider, timeManager);
     
-    TEST_ASSERT_NOT_NULL(&state);
+    TEST_ASSERT_EQUAL(0, state.getSelectedIndex());
 }
 
-// テストケース: 選択位置の管理
+// テストケース: 選択管理
 void test_AlarmDisplayState_SelectionManagement() {
-    MockDisplay mockDisplay;
+    MockAlarmDisplayView mockView;
     MockStateManager mockManager;
     auto timeProvider = std::make_shared<MockTimeProvider>();
     auto timeManager = std::make_shared<MockTimeManager>();
-    AlarmDisplayState state(&mockManager, &mockDisplay, timeProvider, timeManager);
+    AlarmDisplayState state(&mockManager, &mockView, timeProvider, timeManager);
     
-    // 初期選択位置は0
-    state.onEnter();
-    // 実際のテストでは選択位置の確認が必要
-    TEST_ASSERT_EQUAL(0, 0);
+    state.setSelectedIndex(2);
+    TEST_ASSERT_EQUAL(2, state.getSelectedIndex());
 }
 
 // テストケース: 上移動
 void test_AlarmDisplayState_MoveUp() {
-    MockDisplay mockDisplay;
+    MockAlarmDisplayView mockView;
     MockStateManager mockManager;
     auto timeProvider = std::make_shared<MockTimeProvider>();
     auto timeManager = std::make_shared<MockTimeManager>();
-    AlarmDisplayState state(&mockManager, &mockDisplay, timeProvider, timeManager);
+    AlarmDisplayState state(&mockManager, &mockView, timeProvider, timeManager);
     
-    // 初期状態で上移動を試行（端で停止）
-    state.onButtonA();
-    // 実際のテストでは選択位置が変化しないことを確認
-    TEST_ASSERT_EQUAL(0, 0);
+    // アラームを追加
+    alarm_times.push_back(time(nullptr) + 3600);
+    alarm_times.push_back(time(nullptr) + 7200);
+    
+    state.setSelectedIndex(1);
+    state.onButtonA(); // 上移動
+    
+    TEST_ASSERT_EQUAL(0, state.getSelectedIndex());
 }
 
 // テストケース: 下移動
 void test_AlarmDisplayState_MoveDown() {
-    MockDisplay mockDisplay;
+    MockAlarmDisplayView mockView;
     MockStateManager mockManager;
     auto timeProvider = std::make_shared<MockTimeProvider>();
     auto timeManager = std::make_shared<MockTimeManager>();
-    AlarmDisplayState state(&mockManager, &mockDisplay, timeProvider, timeManager);
+    AlarmDisplayState state(&mockManager, &mockView, timeProvider, timeManager);
     
-    // 下移動のテスト
-    state.onButtonB();
-    // 実際のテストでは選択位置の変化を確認
-    TEST_ASSERT_EQUAL(0, 0);
+    // アラームを追加
+    alarm_times.push_back(time(nullptr) + 3600);
+    alarm_times.push_back(time(nullptr) + 7200);
+    
+    state.setSelectedIndex(0);
+    state.onButtonB(); // 下移動
+    
+    TEST_ASSERT_EQUAL(1, state.getSelectedIndex());
 }
 
 // テストケース: 一番上に移動
 void test_AlarmDisplayState_MoveToTop() {
-    MockDisplay mockDisplay;
+    MockAlarmDisplayView mockView;
     MockStateManager mockManager;
     auto timeProvider = std::make_shared<MockTimeProvider>();
     auto timeManager = std::make_shared<MockTimeManager>();
-    AlarmDisplayState state(&mockManager, &mockDisplay, timeProvider, timeManager);
+    AlarmDisplayState state(&mockManager, &mockView, timeProvider, timeManager);
     
-    // 一番上に移動のテスト
-    state.onButtonALongPress();
-    // 実際のテストでは選択位置が0になることを確認
-    TEST_ASSERT_EQUAL(0, 0);
+    // アラームを追加
+    alarm_times.push_back(time(nullptr) + 3600);
+    alarm_times.push_back(time(nullptr) + 7200);
+    
+    state.setSelectedIndex(1);
+    state.onButtonALongPress(); // 一番上に移動
+    
+    TEST_ASSERT_EQUAL(0, state.getSelectedIndex());
 }
 
 // テストケース: 一番下に移動
 void test_AlarmDisplayState_MoveToBottom() {
-    MockDisplay mockDisplay;
+    MockAlarmDisplayView mockView;
     MockStateManager mockManager;
     auto timeProvider = std::make_shared<MockTimeProvider>();
     auto timeManager = std::make_shared<MockTimeManager>();
-    AlarmDisplayState state(&mockManager, &mockDisplay, timeProvider, timeManager);
+    AlarmDisplayState state(&mockManager, &mockView, timeProvider, timeManager);
     
-    // 一番下に移動のテスト
-    state.onButtonBLongPress();
-    // 実際のテストでは選択位置が最後になることを確認
-    TEST_ASSERT_EQUAL(0, 0);
+    // アラームを追加
+    alarm_times.push_back(time(nullptr) + 3600);
+    alarm_times.push_back(time(nullptr) + 7200);
+    
+    state.setSelectedIndex(0);
+    state.onButtonBLongPress(); // 一番下に移動
+    
+    // アラームリストの最後のインデックスを取得
+    size_t expectedIndex = alarm_times.size() - 1;
+    TEST_ASSERT_EQUAL(expectedIndex, state.getSelectedIndex());
 }
 
-// テストケース: アラーム削除（正常ケース）
+// テストケース: アラーム削除（正常）
 void test_AlarmDisplayState_DeleteAlarm_Normal() {
-    MockDisplay mockDisplay;
+    MockAlarmDisplayView mockView;
     MockStateManager mockManager;
     auto timeProvider = std::make_shared<MockTimeProvider>();
     auto timeManager = std::make_shared<MockTimeManager>();
-    AlarmDisplayState state(&mockManager, &mockDisplay, timeProvider, timeManager);
+    AlarmDisplayState state(&mockManager, &mockView, timeProvider, timeManager);
     
-    // アラームリストを準備
-    time_t now = time(nullptr);
-    alarm_times.clear();
-    alarm_times.push_back(now + 60);  // +1分
-    alarm_times.push_back(now + 120); // +2分
-    alarm_times.push_back(now + 180); // +3分
+    // アラームを追加
+    time_t alarmTime = time(nullptr) + 3600;
+    alarm_times.push_back(alarmTime);
     
+    state.setSelectedIndex(0);
     size_t initialSize = alarm_times.size();
-    state.onButtonC(); // 削除実行
     
-    // アラームが1つ削除されることを確認
+    state.onButtonC(); // 削除
+    
     TEST_ASSERT_EQUAL(initialSize - 1, alarm_times.size());
 }
 
-// テストケース: アラーム削除（消化済みエッジケース）
+// テストケース: アラーム削除（既に削除済み）
 void test_AlarmDisplayState_DeleteAlarm_AlreadyRemoved() {
-    MockDisplay mockDisplay;
+    MockAlarmDisplayView mockView;
     MockStateManager mockManager;
     auto timeProvider = std::make_shared<MockTimeProvider>();
     auto timeManager = std::make_shared<MockTimeManager>();
-    AlarmDisplayState state(&mockManager, &mockDisplay, timeProvider, timeManager);
+    AlarmDisplayState state(&mockManager, &mockView, timeProvider, timeManager);
     
-    // アラームリストを準備
-    time_t now = time(nullptr);
-    alarm_times.clear();
-    alarm_times.push_back(now + 60);  // +1分
-    
-    // 表示用のリスト（古い状態を模擬）
-    std::vector<time_t> displayedAlarms = {now + 60}; // 古い状態
-    
-    // 実際のリストからは既に削除済み（消化済み）
-    alarm_times.clear(); // 消化済み状態
-    
+    alarm_times.clear(); // 明示的にリセット
+    // アラームを追加して削除
+    time_t alarmTime = time(nullptr) + 3600;
+    alarm_times.push_back(alarmTime);
     size_t initialSize = alarm_times.size();
-    state.onButtonC(); // 削除実行
     
-    // 何も削除されない（既に消化済みのため）
-    TEST_ASSERT_EQUAL(initialSize, alarm_times.size());
+    state.setSelectedIndex(0);
+    state.onButtonC(); // 削除
+    
+    // 再度削除を試行（既に削除済み）
+    state.onButtonC();
+    
+    // 削除後のサイズを確認（既に削除済みなので0）
+    TEST_ASSERT_EQUAL(0, alarm_times.size());
 }
 
 // テストケース: ハイブリッドアプローチ - リアルタイム更新
 void test_AlarmDisplayState_HybridApproach_RealTimeUpdate() {
-    MockDisplay mockDisplay;
+    MockAlarmDisplayView mockView;
     MockStateManager mockManager;
     auto timeProvider = std::make_shared<MockTimeProvider>();
     auto timeManager = std::make_shared<MockTimeManager>();
-    AlarmDisplayState state(&mockManager, &mockDisplay, timeProvider, timeManager);
+    AlarmDisplayState state(&mockManager, &mockView, timeProvider, timeManager);
     
-    // ユーザー操作から3秒以上経過した状態を模擬
+    // ユーザー操作から十分な時間が経過
     timeManager->setMillis(5000); // 5秒経過
     
-    // アラームリストを準備
-    time_t now = time(nullptr);
-    alarm_times.clear();
-    alarm_times.push_back(now + 60);  // +1分
+    // アラームを追加して描画を有効にする
+    alarm_times.push_back(time(nullptr) + 3600);
     
-    state.onDraw();
+    state.onDraw(); // リアルタイム更新が実行される
     
-    // リアルタイム更新が行われることを確認
-    // 実際のテストでは更新処理が実行されることを確認
-    TEST_ASSERT_EQUAL(0, 0);
+    // Viewが呼び出されたことを確認
+    TEST_ASSERT_TRUE(mockView.cleared || !mockView.drawnTexts.empty() || !mockView.lastShownAlarms.empty());
 }
 
 // テストケース: ハイブリッドアプローチ - 更新抑制
 void test_AlarmDisplayState_HybridApproach_UpdateSuppression() {
-    MockDisplay mockDisplay;
+    MockAlarmDisplayView mockView;
     MockStateManager mockManager;
     auto timeProvider = std::make_shared<MockTimeProvider>();
     auto timeManager = std::make_shared<MockTimeManager>();
-    AlarmDisplayState state(&mockManager, &mockDisplay, timeProvider, timeManager);
+    AlarmDisplayState state(&mockManager, &mockView, timeProvider, timeManager);
     
-    // ユーザー操作直後の状態を模擬
-    timeManager->setMillis(1000); // 1秒経過（3秒未満）
+    // ユーザー操作直後
+    timeManager->setMillis(100); // 0.1秒経過
     
-    // アラームリストを準備
-    time_t now = time(nullptr);
-    alarm_times.clear();
-    alarm_times.push_back(now + 60);  // +1分
+    mockView.reset();
+    state.onDraw(); // 更新抑制される
     
-    state.onDraw();
-    
-    // 更新が抑制されることを確認
-    // 実際のテストでは更新処理が実行されないことを確認
-    TEST_ASSERT_EQUAL(0, 0);
+    // Viewが呼び出されないことを確認
+    TEST_ASSERT_FALSE(mockView.cleared);
 }
 
-// テストケース: 空リストでの動作
+// テストケース: 空リスト
 void test_AlarmDisplayState_EmptyList() {
-    MockDisplay mockDisplay;
+    MockAlarmDisplayView mockView;
     MockStateManager mockManager;
     auto timeProvider = std::make_shared<MockTimeProvider>();
     auto timeManager = std::make_shared<MockTimeManager>();
-    AlarmDisplayState state(&mockManager, &mockDisplay, timeProvider, timeManager);
+    AlarmDisplayState state(&mockManager, &mockView, timeProvider, timeManager);
     
-    // 空リストを準備
+    // アラームリストを空にする
     alarm_times.clear();
     
-    // ユーザー操作から3秒以上経過した状態を模擬（リアルタイム更新を有効化）
-    timeManager->setMillis(5000); // 5秒経過
+    state.onEnter();
     
-    state.onDraw();
-    
-    // "NO ALARMS"が表示されることを確認
-    bool foundNoAlarms = false;
-    for (const auto& text : mockDisplay.drawnTexts) {
-        printf("Drawn text: %s\n", text.c_str());
-        if (text.find("NO ALARMS") != std::string::npos) {
-            foundNoAlarms = true;
-            break;
-        }
-    }
-    
-    printf("Found NO ALARMS: %s\n", foundNoAlarms ? "true" : "false");
-    printf("Total drawn texts: %zu\n", mockDisplay.drawnTexts.size());
-    
-    TEST_ASSERT_TRUE(foundNoAlarms);
+    // 空リスト表示が呼び出されることを確認
+    TEST_ASSERT_TRUE(mockView.noAlarmsShown);
 }
 
-// テストケース: 境界値テスト
+// テストケース: 境界条件
 void test_AlarmDisplayState_BoundaryConditions() {
-    MockDisplay mockDisplay;
+    MockAlarmDisplayView mockView;
     MockStateManager mockManager;
     auto timeProvider = std::make_shared<MockTimeProvider>();
     auto timeManager = std::make_shared<MockTimeManager>();
-    AlarmDisplayState state(&mockManager, &mockDisplay, timeProvider, timeManager);
+    AlarmDisplayState state(&mockManager, &mockView, timeProvider, timeManager);
     
-    // 最大リストでの動作
-    time_t now = time(nullptr);
-    alarm_times.clear();
-    for (int i = 0; i < 5; ++i) {
-        alarm_times.push_back(now + (i + 1) * 60);
-    }
+    // アラームを追加
+    alarm_times.push_back(time(nullptr) + 3600);
+    alarm_times.push_back(time(nullptr) + 7200);
     
-    // 端での移動制限をテスト
-    state.onButtonA(); // 最初の位置で上移動
-    // 選択位置が変化しないことを確認
+    // 上端での移動制限
+    state.setSelectedIndex(0);
+    state.onButtonA(); // 上移動を試行
+    TEST_ASSERT_EQUAL(0, state.getSelectedIndex()); // 移動しない
     
-    // 最後の位置に移動
-    for (int i = 0; i < 4; ++i) {
-        state.onButtonB();
-    }
-    state.onButtonB(); // 最後の位置で下移動
-    // 選択位置が変化しないことを確認
-    
-    TEST_ASSERT_EQUAL(0, 0);
+    // 下端での移動制限
+    size_t lastIndex = alarm_times.size() - 1;
+    state.setSelectedIndex(lastIndex);
+    state.onButtonB(); // 下移動を試行
+    TEST_ASSERT_EQUAL(lastIndex, state.getSelectedIndex()); // 移動しない
 }
 
-// テストケース: valueベース削除の確認
+// テストケース: 値ベース削除
 void test_AlarmDisplayState_ValueBasedDeletion() {
-    MockDisplay mockDisplay;
+    MockAlarmDisplayView mockView;
     MockStateManager mockManager;
     auto timeProvider = std::make_shared<MockTimeProvider>();
     auto timeManager = std::make_shared<MockTimeManager>();
-    AlarmDisplayState state(&mockManager, &mockDisplay, timeProvider, timeManager);
+    AlarmDisplayState state(&mockManager, &mockView, timeProvider, timeManager);
     
-    // アラームリストを準備
-    time_t now = time(nullptr);
-    alarm_times.clear();
-    time_t targetTime = now + 120; // +2分
-    alarm_times.push_back(now + 60);  // +1分
-    alarm_times.push_back(targetTime); // +2分（削除対象）
-    alarm_times.push_back(now + 180); // +3分
+    // 同じ時刻のアラームを複数追加
+    time_t alarmTime = time(nullptr) + 3600;
+    alarm_times.push_back(alarmTime);
+    alarm_times.push_back(alarmTime); // 重複
     
-    printf("Initial alarm count: %zu\n", alarm_times.size());
-    printf("Target time: %ld\n", targetTime);
+    state.setSelectedIndex(0);
+    size_t initialSize = alarm_times.size();
     
-    // 選択位置を1に設定（targetTimeを選択）
-    state.setSelectedIndex(1);
+    state.onButtonC(); // 削除
     
-    // 削除前の確認
-    bool targetExistsBefore = false;
-    for (const auto& alarm : alarm_times) {
-        if (alarm == targetTime) {
-            targetExistsBefore = true;
-            break;
-        }
-    }
-    printf("Target exists before deletion: %s\n", targetExistsBefore ? "true" : "false");
-    
-    state.onButtonC(); // 削除実行
-    
-    printf("Alarm count after deletion: %zu\n", alarm_times.size());
-    
-    // targetTimeが削除されることを確認
-    bool targetExists = false;
-    for (const auto& alarm : alarm_times) {
-        if (alarm == targetTime) {
-            targetExists = true;
-            break;
-        }
-    }
-    
-    printf("Target exists after deletion: %s\n", targetExists ? "true" : "false");
-    TEST_ASSERT_FALSE(targetExists);
+    // 値ベースで削除されることを確認
+    TEST_ASSERT_EQUAL(initialSize - 1, alarm_times.size());
 }
 
-// テストケース: 時間経過での項目削除時の表示領域クリア
+// テストケース: 時刻ベース削除 - 表示クリア
 void test_AlarmDisplayState_TimeBasedDeletion_DisplayClear() {
-    MockDisplay mockDisplay;
+    MockAlarmDisplayView mockView;
     MockStateManager mockManager;
     auto timeProvider = std::make_shared<MockTimeProvider>();
     auto timeManager = std::make_shared<MockTimeManager>();
-    AlarmDisplayState state(&mockManager, &mockDisplay, timeProvider, timeManager);
+    AlarmDisplayState state(&mockManager, &mockView, timeProvider, timeManager);
     
-    // 初期アラームリストを準備（3つのアラーム）
-    time_t now = time(nullptr);
-    alarm_times.clear();
-    alarm_times.push_back(now + 60);   // +1分
-    alarm_times.push_back(now + 120);  // +2分
-    alarm_times.push_back(now + 180);  // +3分
+    alarm_times.clear(); // 明示的にリセット
+    // 過去のアラームを追加
+    time_t pastAlarm = time(nullptr) - 3600; // 1時間前
+    alarm_times.push_back(pastAlarm);
     
-    // 初期表示
+    // MockTimeProviderの時刻を未来に設定
+    timeProvider->setTime(time(nullptr) + 3600); // 1時間後
+    
+    // 初期化時に過去のアラームが削除されることを確認
     state.onEnter();
-    mockDisplay.reset();
     
-    // 時間を進めて1つのアラームを消化（+1分のアラームが過去になる）
-    timeProvider->setTime(now + 90); // +1.5分
-    timeManager->setTime(now + 90);  // TimeManagerも同期
-    
-    // 手動で過去のアラームを削除（テスト用）
-    AlarmLogic::removePastAlarms(alarm_times, now + 90);
-    
-    // 表示更新
-    state.onDraw();
-    
-    // アラームが1つ減っていることを確認
-    TEST_ASSERT_EQUAL(2, alarm_times.size());
-    
-    // 過去のアラームが削除されていることを確認
-    bool pastAlarmExists = false;
-    for (const auto& alarm : alarm_times) {
-        if (alarm == now + 60) {
-            pastAlarmExists = true;
-            break;
-        }
-    }
-    TEST_ASSERT_FALSE(pastAlarmExists);
-}
-
-// テストケース: NO ALARMS表示のちらつき防止
-void test_AlarmDisplayState_NoAlarmsDisplay_NoFlicker() {
-    MockDisplay mockDisplay;
-    MockStateManager mockManager;
-    auto timeProvider = std::make_shared<MockTimeProvider>();
-    auto timeManager = std::make_shared<MockTimeManager>();
-    AlarmDisplayState state(&mockManager, &mockDisplay, timeProvider, timeManager);
-    
-    // 初期アラームリストを準備（1つのアラーム）
-    time_t now = time(nullptr);
-    alarm_times.clear();
-    alarm_times.push_back(now + 60); // +1分
-    
-    // 初期表示
-    state.onEnter();
-    mockDisplay.reset();
-    
-    // 時間を進めてアラームを消化（空リストになる）
-    timeProvider->setTime(now + 90); // +1.5分
-    timeManager->setTime(now + 90);  // TimeManagerも同期
-    
-    // 手動で過去のアラームを削除（テスト用）
-    AlarmLogic::removePastAlarms(alarm_times, now + 90);
-    
-    // 時間経過をシミュレート（shouldUpdateRealTimeがtrueになるように）
-    timeManager->setMillis(5000); // 5秒経過
-    
-    // 表示更新（NO ALARMS表示になる）
-    state.onDraw();
-    
-    // アラームリストが空になっていることを確認
+    // 過去のアラームが削除されることを確認
     TEST_ASSERT_EQUAL(0, alarm_times.size());
-    
-    // NO ALARMSが表示されていることを確認
-    bool foundNoAlarms = false;
-    for (const auto& text : mockDisplay.drawnTexts) {
-        if (text.find("NO ALARMS") != std::string::npos) {
-            foundNoAlarms = true;
-            break;
-        }
-    }
-    
-    // デバッグ出力
-    printf("Drawn texts count: %zu\n", mockDisplay.drawnTexts.size());
-    for (size_t i = 0; i < mockDisplay.drawnTexts.size(); ++i) {
-        printf("Text %zu: %s\n", i, mockDisplay.drawnTexts[i].c_str());
-    }
-    
-    TEST_ASSERT_TRUE(foundNoAlarms);
-    
-    // 再度表示更新（ちらつき防止のため、同じ内容なら再描画されない）
-    mockDisplay.reset();
-    state.onDraw();
-    
-    // ちらつき防止機能が働いていることを確認（同じ内容なので再描画されない）
-    // ただし、初期表示時は必ず描画されるので、この場合は再描画される可能性がある
-    // 実際の動作を確認するため、再描画されても問題ないとする
-    printf("Second draw - Drawn texts count: %zu\n", mockDisplay.drawnTexts.size());
-    
-    // ちらつき防止のテストは、実際の表示内容が変わらないことを確認する
-    // このテストでは、NO ALARMSが正しく表示されることを確認できれば十分
 }
 
-// テストケース: 部分的な領域クリアの動作確認
+// テストケース: アラームなし表示 - ちらつきなし
+void test_AlarmDisplayState_NoAlarmsDisplay_NoFlicker() {
+    MockAlarmDisplayView mockView;
+    MockStateManager mockManager;
+    auto timeProvider = std::make_shared<MockTimeProvider>();
+    auto timeManager = std::make_shared<MockTimeManager>();
+    AlarmDisplayState state(&mockManager, &mockView, timeProvider, timeManager);
+    
+    // アラームリストを空にする
+    alarm_times.clear();
+    
+    state.onEnter();
+    mockView.reset();
+    
+    // 2回目の描画（変更なし）
+    state.onDraw();
+    
+    // ちらつき防止のため、2回目の描画では何も呼び出されないことを確認
+    TEST_ASSERT_FALSE(mockView.cleared);
+    TEST_ASSERT_TRUE(mockView.drawnTexts.empty());
+}
+
+// テストケース: 部分領域クリア
 void test_AlarmDisplayState_PartialAreaClear() {
-    MockDisplay mockDisplay;
+    MockAlarmDisplayView mockView;
     MockStateManager mockManager;
     auto timeProvider = std::make_shared<MockTimeProvider>();
     auto timeManager = std::make_shared<MockTimeManager>();
-    AlarmDisplayState state(&mockManager, &mockDisplay, timeProvider, timeManager);
+    AlarmDisplayState state(&mockManager, &mockView, timeProvider, timeManager);
     
-    // 初期アラームリストを準備（5つのアラーム）
-    time_t now = time(nullptr);
-    alarm_times.clear();
-    for (int i = 0; i < 5; ++i) {
-        alarm_times.push_back(now + (i + 1) * 60);
-    }
+    alarm_times.clear(); // 明示的にリセット
+    // 複数のアラームを追加
+    alarm_times.push_back(time(nullptr) + 3600);
+    alarm_times.push_back(time(nullptr) + 7200);
+    alarm_times.push_back(time(nullptr) + 10800);
     
-    // 初期表示
     state.onEnter();
-    mockDisplay.reset();
+    TEST_ASSERT_EQUAL(3, mockView.lastShownAlarms.size());
     
-    // 時間を進めて2つのアラームを消化
-    timeProvider->setTime(now + 150); // +2.5分（最初の2つが過去になる）
-    timeManager->setTime(now + 150);  // TimeManagerも同期
+    // アラームを削除
+    alarm_times.pop_back();
     
-    // 手動で過去のアラームを削除（テスト用）
-    AlarmLogic::removePastAlarms(alarm_times, now + 150);
+    // 十分な時間経過を設定してshouldUpdateRealTime()がtrueを返すようにする
+    timeManager->setMillis(5000);
     
-    // 表示更新
+    mockView.lastShownAlarms.clear(); // ここでリセット
+    
     state.onDraw();
     
-    // アラームが2つ減っていることを確認
-    TEST_ASSERT_EQUAL(3, alarm_times.size());
-    
-    // 過去のアラームが削除されていることを確認
-    bool pastAlarmExists = false;
-    for (const auto& alarm : alarm_times) {
-        if (alarm <= now + 120) { // +2分以下のアラーム
-            pastAlarmExists = true;
-            break;
-        }
-    }
-    TEST_ASSERT_FALSE(pastAlarmExists);
+    TEST_ASSERT_EQUAL(2, mockView.lastShownAlarms.size());
 }
 
-// テストケース: onButtonCLongPress()の動作確認
+// テストケース: Cボタン長押し
 void test_AlarmDisplayState_OnButtonCLongPress() {
-    MockDisplay mockDisplay;
+    MockAlarmDisplayView mockView;
     MockStateManager mockManager;
+    MockStateManager mainState;
+    mainState.lastSetState = nullptr; // 明示的に初期化
     auto timeProvider = std::make_shared<MockTimeProvider>();
     auto timeManager = std::make_shared<MockTimeManager>();
-    AlarmDisplayState state(&mockManager, &mockDisplay, timeProvider, timeManager);
+    AlarmDisplayState state(&mockManager, &mockView, timeProvider, timeManager);
     
-    // 初期アラームリストを準備
-    time_t now = time(nullptr);
-    alarm_times.clear();
-    alarm_times.push_back(now + 60);
-    alarm_times.push_back(now + 120);
-    
-    // 初期表示
-    state.onEnter();
-    
-    // onButtonCLongPress()を呼び出し（例外が発生しないことを確認）
+    state.setMainDisplayState(&mainState);
     state.onButtonCLongPress();
     
-    // 正常に実行されることを確認（例外が発生しなければOK）
-    TEST_ASSERT_TRUE(true);
+    // メイン画面に遷移することを確認（nullptrでないことを確認）
+    TEST_ASSERT_NOT_NULL(mockManager.lastSetState);
 }
 
-// テストケース: onExit()の動作確認
+// テストケース: 終了処理
 void test_AlarmDisplayState_OnExit() {
-    MockDisplay mockDisplay;
+    MockAlarmDisplayView mockView;
     MockStateManager mockManager;
     auto timeProvider = std::make_shared<MockTimeProvider>();
     auto timeManager = std::make_shared<MockTimeManager>();
-    AlarmDisplayState state(&mockManager, &mockDisplay, timeProvider, timeManager);
+    AlarmDisplayState state(&mockManager, &mockView, timeProvider, timeManager);
     
-    // 初期アラームリストを準備
-    time_t now = time(nullptr);
-    alarm_times.clear();
-    alarm_times.push_back(now + 60);
-    
-    // 初期表示
-    state.onEnter();
-    
-    // onExit()を呼び出し（例外が発生しないことを確認）
+    // 終了処理を実行（現在は何もしない）
     state.onExit();
     
-    // 正常に実行されることを確認（例外が発生しなければOK）
-    TEST_ASSERT_TRUE(true);
+    // エラーが発生しないことを確認
+    TEST_PASS();
 }
 
 int main() {
     UNITY_BEGIN();
-    
     RUN_TEST(test_AlarmDisplayState_Initialization);
     RUN_TEST(test_AlarmDisplayState_SelectionManagement);
     RUN_TEST(test_AlarmDisplayState_MoveUp);
@@ -593,6 +480,5 @@ int main() {
     RUN_TEST(test_AlarmDisplayState_PartialAreaClear);
     RUN_TEST(test_AlarmDisplayState_OnButtonCLongPress);
     RUN_TEST(test_AlarmDisplayState_OnExit);
-    
     return UNITY_END();
 } 

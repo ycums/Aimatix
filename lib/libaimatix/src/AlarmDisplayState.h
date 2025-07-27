@@ -1,7 +1,7 @@
 #pragma once
 #include "StateManager.h"
 #include "AlarmLogic.h"
-#include "IDisplay.h"
+#include "IAlarmDisplayView.h"
 #include "ITimeProvider.h"
 #include "ITimeManager.h"
 #include <vector>
@@ -11,10 +11,10 @@
 
 class AlarmDisplayState : public IState {
 public:
-    AlarmDisplayState(StateManager* mgr, IDisplay* display = nullptr, 
+    AlarmDisplayState(StateManager* mgr, IAlarmDisplayView* view = nullptr, 
                      std::shared_ptr<ITimeProvider> timeProvider = nullptr,
                      std::shared_ptr<ITimeManager> timeManager = nullptr)
-        : manager(mgr), display(display), timeProvider(timeProvider), 
+        : manager(mgr), view(view), timeProvider(timeProvider), 
           timeManager(timeManager), selectedIndex(0), mainDisplayState(nullptr), 
           lastUserAction(0), lastSelectedIndex(0) {}
     
@@ -30,7 +30,7 @@ public:
     void onButtonBLongPress() override;
     void onButtonCLongPress() override;
     
-    void setDisplay(IDisplay* d) { display = d; }
+    void setView(IAlarmDisplayView* v) { view = v; }
     void setTimeProvider(std::shared_ptr<ITimeProvider> tp) { timeProvider = tp; }
     void setTimeManager(std::shared_ptr<ITimeManager> tm) { timeManager = tm; }
     
@@ -40,7 +40,7 @@ public:
     
 private:
     StateManager* manager;
-    IDisplay* display;
+    IAlarmDisplayView* view;
     std::shared_ptr<ITimeProvider> timeProvider;
     std::shared_ptr<ITimeManager> timeManager;
     IState* mainDisplayState;

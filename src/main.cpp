@@ -6,6 +6,7 @@
 #include "InputLogic.h"
 #include "InputDisplayViewImpl.h"
 #include "MainDisplayViewImpl.h"
+#include "AlarmDisplayViewImpl.h"
 #include "TimeLogic.h"
 #include "AlarmLogic.h"
 #include "DisplayAdapter.h"
@@ -74,11 +75,12 @@ InputLogic input_logic(m5_time_provider);
 DisplayAdapter display_adapter;
 InputDisplayViewImpl input_display_view_impl(&display_adapter);
 MainDisplayViewImpl main_display_view_impl(&display_adapter);
+AlarmDisplayViewImpl alarm_display_view_impl(&display_adapter);
 TimeLogic time_logic;
 AlarmLogic alarm_logic;
 InputDisplayState input_display_state(&input_logic, &input_display_view_impl);
 MainDisplayState main_display_state(&state_manager, &input_display_state, &main_display_view_impl, &time_logic, &alarm_logic);
-AlarmDisplayState alarm_display_state(&state_manager, &display_adapter, m5_time_provider, m5_time_manager);
+AlarmDisplayState alarm_display_state(&state_manager, &alarm_display_view_impl, m5_time_provider, m5_time_manager);
 ButtonManager button_manager; // 追加
 
 void setup() {

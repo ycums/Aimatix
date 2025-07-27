@@ -1,10 +1,8 @@
 #include "AlarmDisplayState.h"
-#include "DisplayCommon.h"
 #include "ui_constants.h"
 #include <cstdio>
 #include <cstring>
 #include <algorithm>
-#include <array>
 
 // 外部変数（既存のアラームリスト）
 extern std::vector<time_t> alarm_times;
@@ -14,11 +12,11 @@ void AlarmDisplayState::onEnter() {
     lastSelectedIndex = 0; // 初期状態をリセット
     lastDisplayedAlarms.clear(); // 初期状態をリセット
     updateLastUserAction();
-    if (display) {
-        display->clear();
+    if (view) {
+        view->clear();
         // 共通のタイトルバーとボタンヒントを使用
-        drawTitleBar(display, "ALARMS", BATTERY_WARNING_THRESHOLD, false); // 仮のバッテリー値
-        drawButtonHintsGrid(display, "UP", "DOWN", "DEL");
+        view->showTitle("ALARMS", BATTERY_WARNING_THRESHOLD, false); // 仮のバッテリー値
+        view->showHints("UP", "DOWN", "DEL");
     }
     // 初期表示を即座に実行（鈍重さを解消）
     forceDraw();
@@ -29,7 +27,7 @@ void AlarmDisplayState::onExit() {
 }
 
 void AlarmDisplayState::onDraw() {
-    if (display == nullptr) {
+    if (view == nullptr) {
         return;
     }
     
@@ -41,7 +39,7 @@ void AlarmDisplayState::onDraw() {
 }
 
 void AlarmDisplayState::forceDraw() {
-    if (display == nullptr) {
+    if (view == nullptr) {
         return;
     }
     
@@ -83,56 +81,11 @@ void AlarmDisplayState::forceDraw() {
     
     // 変更があった場合のみ画面を更新
     if (alarms.empty()) {
-        // 空リスト表示（中央配置）
-        // 前回アラームがあった場合は、その領域をクリア
-        if (!lastDisplayedAlarms.empty()) {
-            const int clearHeight = std::min(static_cast<int>(lastDisplayedAlarms.size()), ALARM_MAX_DISPLAY) * ALARM_LINE_HEIGHT;
-            display->fillRect(0, ALARM_DISPLAY_START_Y - ALARM_BACKGROUND_OFFSET, SCREEN_WIDTH, clearHeight, TFT_BLACK);
-        }
-        
-        display->setTextDatum(MC_DATUM); // 中央基準
-        display->setTextColor(AMBER_COLOR, TFT_BLACK);
-        display->setTextFont(FONT_AUXILIARY);
-        display->drawText(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, "NO ALARMS", FONT_AUXILIARY);
+        // 空リスト表示
+        view->showNoAlarms();
     } else {
         // アラームリスト表示
-        
-        // 前回より項目が減った場合、減った分の領域をクリア
-        if (alarms.size() < lastDisplayedAlarms.size()) {
-            const int clearStartY = ALARM_DISPLAY_START_Y + alarms.size() * ALARM_LINE_HEIGHT - ALARM_BACKGROUND_OFFSET;
-            const int clearHeight = (std::min(static_cast<int>(lastDisplayedAlarms.size()), ALARM_MAX_DISPLAY) - static_cast<int>(alarms.size())) * ALARM_LINE_HEIGHT;
-            if (clearHeight > 0) {
-                display->fillRect(0, clearStartY, SCREEN_WIDTH, clearHeight, TFT_BLACK);
-            }
-        }
-        
-        for (size_t i = 0; i < alarms.size() && i < ALARM_MAX_DISPLAY; ++i) {
-            // 時刻文字列に変換
-            struct tm* tm_alarm = localtime(&alarms[i]);
-            std::array<char, ALARM_TIME_STR_SIZE> timeStr{};
-            snprintf(timeStr.data(), timeStr.size(), "%02d:%02d", tm_alarm->tm_hour, tm_alarm->tm_min);
-            
-            const int y_pos = ALARM_DISPLAY_START_Y + i * ALARM_LINE_HEIGHT;
-            
-            // 背景をクリア（選択状態に関係なく）
-            display->fillRect(0, y_pos - ALARM_BACKGROUND_OFFSET, SCREEN_WIDTH, ALARM_LINE_HEIGHT, TFT_BLACK);
-            
-            if (i == selectedIndex) {
-                // 選択中のアラーム（背景色反転）
-                display->fillRect(0, y_pos - ALARM_BACKGROUND_OFFSET, SCREEN_WIDTH, ALARM_LINE_HEIGHT, AMBER_COLOR); // アンバー背景
-                display->setTextColor(TFT_BLACK, AMBER_COLOR); // 黒文字、アンバー背景
-            } else {
-                // 通常表示
-                display->setTextColor(AMBER_COLOR, TFT_BLACK); // アンバー文字、黒背景
-            }
-            
-            display->setTextFont(FONT_AUXILIARY);
-            display->setTextDatum(TL_DATUM);
-            display->drawText(ALARM_TEXT_OFFSET, y_pos, timeStr.data(), FONT_AUXILIARY);
-        }
-        
-        // 色をリセット
-        display->setTextColor(AMBER_COLOR, TFT_BLACK);
+        view->showAlarmList(alarms, selectedIndex);
     }
     
     // 現在の状態を記憶

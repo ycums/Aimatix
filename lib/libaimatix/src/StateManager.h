@@ -17,7 +17,7 @@ public:
 class StateManager {
 public:
     StateManager();
-    void setState(IState* state);
+    virtual void setState(IState* state);
     IState* getCurrentState() const;
     void handleButtonA();
     void handleButtonB();
