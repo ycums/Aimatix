@@ -16,7 +16,7 @@ void AlarmDisplayState::onEnter() {
     if (display) {
         display->clear();
         // 共通のタイトルバーとボタンヒントを使用
-        drawTitleBar(display, "ALARMS", 100, false); // 仮のバッテリー値
+        drawTitleBar(display, "ALARMS", BATTERY_WARNING_THRESHOLD, false); // 仮のバッテリー値
         drawButtonHintsGrid(display, "UP", "DOWN", "DEL");
     }
     // 初期表示を即座に実行（鈍重さを解消）
@@ -28,7 +28,9 @@ void AlarmDisplayState::onExit() {
 }
 
 void AlarmDisplayState::onDraw() {
-    if (!display) return;
+    if (display == nullptr) {
+        return;
+    }
     
     // ハイブリッドアプローチ: リアルタイム更新の判定
     if (shouldUpdateRealTime()) {
@@ -38,11 +40,14 @@ void AlarmDisplayState::onDraw() {
 }
 
 void AlarmDisplayState::forceDraw() {
-    if (!display) return;
+    if (display == nullptr) {
+        return;
+    }
     
     // リアルタイム削除: 過去のアラームを削除
-    if (timeProvider) {
-        time_t now = timeProvider->now();
+    time_t now = 0;
+    if (timeProvider != nullptr) {
+        now = timeProvider->now();
         AlarmLogic::removePastAlarms(alarm_times, now);
     }
     
@@ -80,11 +85,8 @@ void AlarmDisplayState::forceDraw() {
         // 空リスト表示（中央配置）
         // 前回アラームがあった場合は、その領域をクリア
         if (!lastDisplayedAlarms.empty()) {
-            constexpr int START_Y = 40;
-            constexpr int LINE_HEIGHT = 30;
-            constexpr int MAX_DISPLAY = 5;
-            int clearHeight = std::min(static_cast<int>(lastDisplayedAlarms.size()), MAX_DISPLAY) * LINE_HEIGHT;
-            display->fillRect(0, START_Y - 5, SCREEN_WIDTH, clearHeight, TFT_BLACK);
+            const int clearHeight = std::min(static_cast<int>(lastDisplayedAlarms.size()), ALARM_MAX_DISPLAY) * ALARM_LINE_HEIGHT;
+            display->fillRect(0, ALARM_DISPLAY_START_Y - ALARM_BACKGROUND_OFFSET, SCREEN_WIDTH, clearHeight, TFT_BLACK);
         }
         
         display->setTextDatum(MC_DATUM); // 中央基準
@@ -93,33 +95,30 @@ void AlarmDisplayState::forceDraw() {
         display->drawText(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, "NO ALARMS", FONT_AUXILIARY);
     } else {
         // アラームリスト表示
-        constexpr int START_Y = 40;
-        constexpr int LINE_HEIGHT = 30;
-        constexpr int MAX_DISPLAY = 5;
         
         // 前回より項目が減った場合、減った分の領域をクリア
         if (alarms.size() < lastDisplayedAlarms.size()) {
-            int clearStartY = START_Y + alarms.size() * LINE_HEIGHT - 5;
-            int clearHeight = (std::min(static_cast<int>(lastDisplayedAlarms.size()), MAX_DISPLAY) - static_cast<int>(alarms.size())) * LINE_HEIGHT;
+            const int clearStartY = ALARM_DISPLAY_START_Y + alarms.size() * ALARM_LINE_HEIGHT - ALARM_BACKGROUND_OFFSET;
+            const int clearHeight = (std::min(static_cast<int>(lastDisplayedAlarms.size()), ALARM_MAX_DISPLAY) - static_cast<int>(alarms.size())) * ALARM_LINE_HEIGHT;
             if (clearHeight > 0) {
                 display->fillRect(0, clearStartY, SCREEN_WIDTH, clearHeight, TFT_BLACK);
             }
         }
         
-        for (size_t i = 0; i < alarms.size() && i < MAX_DISPLAY; ++i) {
+        for (size_t i = 0; i < alarms.size() && i < ALARM_MAX_DISPLAY; ++i) {
             // 時刻文字列に変換
             struct tm* tm_alarm = localtime(&alarms[i]);
-            char timeStr[16];
+            char timeStr[ALARM_TIME_STR_SIZE];
             snprintf(timeStr, sizeof(timeStr), "%02d:%02d", tm_alarm->tm_hour, tm_alarm->tm_min);
             
-            int y = START_Y + i * LINE_HEIGHT;
+            const int y_pos = ALARM_DISPLAY_START_Y + i * ALARM_LINE_HEIGHT;
             
             // 背景をクリア（選択状態に関係なく）
-            display->fillRect(0, y - 5, SCREEN_WIDTH, LINE_HEIGHT, TFT_BLACK);
+            display->fillRect(0, y_pos - ALARM_BACKGROUND_OFFSET, SCREEN_WIDTH, ALARM_LINE_HEIGHT, TFT_BLACK);
             
             if (i == selectedIndex) {
                 // 選択中のアラーム（背景色反転）
-                display->fillRect(0, y - 5, SCREEN_WIDTH, LINE_HEIGHT, AMBER_COLOR); // アンバー背景
+                display->fillRect(0, y_pos - ALARM_BACKGROUND_OFFSET, SCREEN_WIDTH, ALARM_LINE_HEIGHT, AMBER_COLOR); // アンバー背景
                 display->setTextColor(TFT_BLACK, AMBER_COLOR); // 黒文字、アンバー背景
             } else {
                 // 通常表示
@@ -128,7 +127,7 @@ void AlarmDisplayState::forceDraw() {
             
             display->setTextFont(FONT_AUXILIARY);
             display->setTextDatum(TL_DATUM);
-            display->drawText(10, y, timeStr, FONT_AUXILIARY);
+            display->drawText(ALARM_TEXT_OFFSET, y_pos, timeStr, FONT_AUXILIARY);
         }
         
         // 色をリセット
@@ -187,7 +186,7 @@ std::vector<time_t> AlarmDisplayState::getAlarmList() const {
 }
 
 void AlarmDisplayState::adjustSelectionIndex() {
-    std::vector<time_t> alarms = getAlarmList();
+    const std::vector<time_t> alarms = getAlarmList();
     if (alarms.empty()) {
         selectedIndex = 0;
         return;
@@ -201,12 +200,12 @@ void AlarmDisplayState::adjustSelectionIndex() {
 
 void AlarmDisplayState::deleteSelectedAlarm() {
     // 画面上で選択されている時刻を取得
-    std::vector<time_t> displayedAlarms = getAlarmList();
+    const std::vector<time_t> displayedAlarms = getAlarmList();
     if (selectedIndex >= displayedAlarms.size()) {
         return; // 選択位置が無効
     }
     
-    time_t selectedTime = displayedAlarms[selectedIndex];
+    const time_t selectedTime = displayedAlarms[selectedIndex];
     
     // 実体リストから一致するものを削除（valueベース削除）
     auto it = std::find(alarm_times.begin(), alarm_times.end(), selectedTime);
@@ -226,7 +225,7 @@ void AlarmDisplayState::moveUp() {
 }
 
 void AlarmDisplayState::moveDown() {
-    std::vector<time_t> alarms = getAlarmList();
+    const std::vector<time_t> alarms = getAlarmList();
     if (selectedIndex < alarms.size() - 1) {
         selectedIndex++;
     }
@@ -238,7 +237,7 @@ void AlarmDisplayState::moveToTop() {
 }
 
 void AlarmDisplayState::moveToBottom() {
-    std::vector<time_t> alarms = getAlarmList();
+    const std::vector<time_t> alarms = getAlarmList();
     if (!alarms.empty()) {
         selectedIndex = alarms.size() - 1;
     }

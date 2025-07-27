@@ -24,7 +24,7 @@ void drawTitleBar(IDisplay* disp, const char* modeName, int batteryLevel, bool i
     constexpr int BATTERY_STR_SIZE = 16;
     char batteryStr[BATTERY_STR_SIZE];
     snprintf(batteryStr, sizeof(batteryStr), "%s %d%%", isCharging ? "CHG" : "BAT", batteryLevel);
-    disp->drawText(SCREEN_WIDTH - BATTERY_OFFSET_X, TITLE_OFFSET_Y, batteryStr, FONT_AUXILIARY);
+    disp->drawText(SCREEN_WIDTH - BATTERY_OFFSET_X, TITLE_OFFSET_Y, static_cast<const char*>(batteryStr), FONT_AUXILIARY);
 }
 
 void drawButtonHintsGrid(IDisplay* disp, const char* btnA, const char* btnB, const char* btnC) {

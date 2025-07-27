@@ -236,5 +236,68 @@
     "pure_coverage": 83.51648351648352,
     "m5stack_coverage": 0.0,
     "quality_gate": true
+  },
+  {
+    "timestamp": "2025-07-27T17:07:04.438461",
+    "coverage": 84.18079096045197,
+    "pure_coverage": 84.18079096045197,
+    "m5stack_coverage": 0.0,
+    "quality_gate": true
+  },
+  {
+    "timestamp": "2025-07-27T17:09:39.069487",
+    "coverage": 84.18079096045197,
+    "pure_coverage": 84.18079096045197,
+    "m5stack_coverage": 0.0,
+    "quality_gate": true
+  },
+  {
+    "timestamp": "2025-07-27T17:12:47.713613",
+    "coverage": 84.18079096045197,
+    "pure_coverage": 84.18079096045197,
+    "m5stack_coverage": 0.0,
+    "quality_gate": true
+  },
+  {
+    "timestamp": "2025-07-27T17:15:32.114743",
+    "coverage": 84.10041841004184,
+    "pure_coverage": 84.10041841004184,
+    "m5stack_coverage": 0.0,
+    "quality_gate": true
+  },
+  {
+    "timestamp": "2025-07-27T17:20:31.618004",
+    "coverage": 84.48979591836735,
+    "pure_coverage": 84.48979591836735,
+    "m5stack_coverage": 0.0,
+    "quality_gate": true
+  },
+  {
+    "timestamp": "2025-07-27T17:31:59.976097",
+    "coverage": 84.18079096045197,
+    "pure_coverage": 84.18079096045197,
+    "m5stack_coverage": 0.0,
+    "quality_gate": true
+  },
+  {
+    "timestamp": "2025-07-27T17:42:31.346128",
+    "coverage": 83.97163120567376,
+    "pure_coverage": 83.97163120567376,
+    "m5stack_coverage": 0.0,
+    "quality_gate": false
+  },
+  {
+    "timestamp": "2025-07-27T17:56:51.170432",
+    "coverage": 84.10689170182842,
+    "pure_coverage": 84.10689170182842,
+    "m5stack_coverage": 0.0,
+    "quality_gate": false
+  },
+  {
+    "timestamp": "2025-07-27T18:00:43.272868",
+    "coverage": 83.97163120567376,
+    "pure_coverage": 83.97163120567376,
+    "m5stack_coverage": 0.0,
+    "quality_gate": false
   }
 ]
