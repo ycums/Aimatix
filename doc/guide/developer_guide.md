@@ -70,6 +70,8 @@ pio test -e native
 pio test -e native -f pure/test_button_manager_pure
 ```
 
+注意点: printf デバッグを行うときは `-v` オプションが必要です。
+
 #### 3.2.2 テストカバレッジ測定
 ```bash
 # カバレッジ測定

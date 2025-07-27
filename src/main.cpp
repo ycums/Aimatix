@@ -11,6 +11,7 @@
 #include "DisplayAdapter.h"
 #ifdef ARDUINO
 #include <M5Stack.h>
+#include <Arduino.h>
 #include <vector>
 #include <ctime>
 #include <M5Display.h>
@@ -53,6 +54,13 @@ void m5_set_text_datum_impl(int text_datum) {
 void m5_fill_rect_impl(int pos_x, int pos_y, int width, int height, int color) {
     M5.Lcd.fillRect(pos_x, pos_y, width, height, color);
 }
+
+// M5Stack用TimeManager実装
+class M5StackTimeManager : public ITimeManager {
+public:
+    unsigned long getCurrentMillis() const override { return millis(); }
+    time_t getCurrentTime() const override { return time(nullptr); }
+};
 #endif
 
 // --- アラームリスト ---
@@ -61,6 +69,7 @@ std::vector<time_t> alarm_times;
 // --- 状態管理クラスのグローバル生成 ---
 StateManager state_manager;
 std::shared_ptr<M5StackTimeProvider> m5_time_provider = std::make_shared<M5StackTimeProvider>();
+std::shared_ptr<M5StackTimeManager> m5_time_manager = std::make_shared<M5StackTimeManager>();
 InputLogic input_logic(m5_time_provider);
 DisplayAdapter display_adapter;
 InputDisplayViewImpl input_display_view_impl(&display_adapter);
@@ -69,7 +78,7 @@ TimeLogic time_logic;
 AlarmLogic alarm_logic;
 InputDisplayState input_display_state(&input_logic, &input_display_view_impl);
 MainDisplayState main_display_state(&state_manager, &input_display_state, &main_display_view_impl, &time_logic, &alarm_logic);
-AlarmDisplayState alarm_display_state(&state_manager, &display_adapter, &alarm_logic);
+AlarmDisplayState alarm_display_state(&state_manager, &display_adapter, m5_time_provider, m5_time_manager);
 ButtonManager button_manager; // 追加
 
 void setup() {

@@ -2,14 +2,20 @@
 #include "StateManager.h"
 #include "AlarmLogic.h"
 #include "IDisplay.h"
+#include "ITimeProvider.h"
+#include "ITimeManager.h"
 #include <vector>
 #include <string>
 #include <ctime>
+#include <memory>
 
 class AlarmDisplayState : public IState {
 public:
-    AlarmDisplayState(StateManager* mgr, IDisplay* display = nullptr, AlarmLogic* alarmLogic = nullptr)
-        : manager(mgr), display(display), alarmLogic(alarmLogic), selectedIndex(0), mainDisplayState(nullptr) {}
+    AlarmDisplayState(StateManager* mgr, IDisplay* display = nullptr, 
+                     std::shared_ptr<ITimeProvider> timeProvider = nullptr,
+                     std::shared_ptr<ITimeManager> timeManager = nullptr)
+        : manager(mgr), display(display), timeProvider(timeProvider), 
+          timeManager(timeManager), selectedIndex(0), mainDisplayState(nullptr), lastUserAction(0) {}
     
     void setMainDisplayState(IState* mainState) { mainDisplayState = mainState; }
     
@@ -24,14 +30,24 @@ public:
     void onButtonCLongPress() override;
     
     void setDisplay(IDisplay* d) { display = d; }
-    void setAlarmLogic(AlarmLogic* a) { alarmLogic = a; }
+    void setTimeProvider(std::shared_ptr<ITimeProvider> tp) { timeProvider = tp; }
+    void setTimeManager(std::shared_ptr<ITimeManager> tm) { timeManager = tm; }
+    
+    // テスト用のアクセサ
+    size_t getSelectedIndex() const { return selectedIndex; }
+    void setSelectedIndex(size_t index) { selectedIndex = index; }
     
 private:
     StateManager* manager;
     IDisplay* display;
-    AlarmLogic* alarmLogic;
+    std::shared_ptr<ITimeProvider> timeProvider;
+    std::shared_ptr<ITimeManager> timeManager;
     IState* mainDisplayState;
     size_t selectedIndex;
+    unsigned long lastUserAction;
+    
+    // ハイブリッドアプローチ用の定数
+    static constexpr unsigned long UPDATE_PAUSE_DURATION = 3000; // 3秒
     
     // アラームリストを取得（外部変数から）
     std::vector<time_t> getAlarmList() const;
@@ -39,7 +55,7 @@ private:
     // 選択位置の調整
     void adjustSelectionIndex();
     
-    // アラーム削除処理
+    // アラーム削除処理（valueベース）
     void deleteSelectedAlarm();
     
     // ナビゲーション処理
@@ -47,4 +63,9 @@ private:
     void moveDown();
     void moveToTop();
     void moveToBottom();
+    
+    // ハイブリッドアプローチ用のヘルパー
+    bool shouldUpdateRealTime() const;
+    void updateLastUserAction();
+    unsigned long getCurrentMillis() const;
 }; 
