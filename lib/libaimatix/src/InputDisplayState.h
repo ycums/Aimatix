@@ -32,6 +32,30 @@ public:
         errorStartTime = 0;
     }
     void onExit() override {}
+    // 相対値計算結果のプレビュー文字列を生成
+    void generateRelativePreview(char* preview, size_t previewSize) {
+        time_t relativeTime = inputLogic->getAbsoluteValue();
+        if (relativeTime != -1) {
+            struct tm result_tm;
+            struct tm now_tm;
+            struct tm* result_tm_ptr = localtime(&relativeTime);
+            result_tm = *result_tm_ptr;
+            time_t now = time(nullptr);
+            struct tm* now_tm_ptr = localtime(&now);
+            now_tm = *now_tm_ptr;
+            
+            // 日付跨ぎ判定
+            bool nextDay = (result_tm.tm_mday != now_tm.tm_mday);
+            
+            // プレビュー文字列生成
+            if (nextDay) {
+                snprintf(preview, previewSize, "+1d %02d:%02d", result_tm.tm_hour, result_tm.tm_min);
+            } else {
+                snprintf(preview, previewSize, "%02d:%02d", result_tm.tm_hour, result_tm.tm_min);
+            }
+        }
+    }
+
     void onDraw() override {
         if (inputLogic && view) {
             const int* digits = inputLogic->getDigits();
@@ -73,34 +97,15 @@ public:
                     preview[sizeof(preview) - 1] = '\0';
                 }
             } else if (value != InputLogic::EMPTY_VALUE) {
+                // 完全入力時のプレビュー表示（絶対値・相対値共通）
                 if (isRelativeMode) {
-                    // 相対値入力モードの場合は相対値計算結果を表示
-                    time_t relativeTime = inputLogic->getRelativeValue();
-                    if (relativeTime != -1) {
-                        struct tm result_tm;
-                        struct tm now_tm;
-                        struct tm* result_tm_ptr = localtime(&relativeTime);
-                        result_tm = *result_tm_ptr;
-                        time_t now = time(nullptr);
-                        struct tm* now_tm_ptr = localtime(&now);
-                        now_tm = *now_tm_ptr;
-                        
-                        // 日付跨ぎ判定
-                        bool nextDay = (result_tm.tm_mday != now_tm.tm_mday);
-                        
-                        // プレビュー文字列生成
-                        if (nextDay) {
-                            snprintf(preview, sizeof(preview), "+1d %02d:%02d", result_tm.tm_hour, result_tm.tm_min);
-                        } else {
-                            snprintf(preview, sizeof(preview), "%02d:%02d", result_tm.tm_hour, result_tm.tm_min);
-                        }
-                    }
+                    generateRelativePreview(preview, sizeof(preview));
                 } else {
                     // 絶対時刻入力モードの場合は従来通り
                     snprintf(preview, sizeof(preview), "%02d:%02d", value/100, value%100);
                 }
             } else {
-                // 部分入力時のプレビュー表示
+                // 部分入力時のプレビュー表示（絶対値・相対値共通）
                 const int* digits = inputLogic ? inputLogic->getDigits() : nullptr;
                 const bool* entered = inputLogic ? inputLogic->getEntered() : nullptr;
                 if (digits && entered) {
@@ -115,27 +120,7 @@ public:
                     }
                     if (hasInput) {
                         if (isRelativeMode) {
-                            // 相対値入力モードの場合は相対値計算結果を表示
-                            time_t relativeTime = inputLogic->getRelativeValue();
-                            if (relativeTime != -1) {
-                                struct tm result_tm;
-                                struct tm now_tm;
-                                struct tm* result_tm_ptr = localtime(&relativeTime);
-                                result_tm = *result_tm_ptr;
-                                time_t now = time(nullptr);
-                                struct tm* now_tm_ptr = localtime(&now);
-                                now_tm = *now_tm_ptr;
-                                
-                                // 日付跨ぎ判定
-                                bool nextDay = (result_tm.tm_mday != now_tm.tm_mday);
-                                
-                                // プレビュー文字列生成
-                                if (nextDay) {
-                                    snprintf(preview, sizeof(preview), "+1d %02d:%02d", result_tm.tm_hour, result_tm.tm_min);
-                                } else {
-                                    snprintf(preview, sizeof(preview), "%02d:%02d", result_tm.tm_hour, result_tm.tm_min);
-                                }
-                            }
+                            generateRelativePreview(preview, sizeof(preview));
                         } else {
                             // 絶対時刻入力モードの場合は部分入力を表示
                             snprintf(preview, sizeof(preview), "%02d:%02d", partialValue/100, partialValue%100);
@@ -214,7 +199,7 @@ public:
         
         if (isRelativeMode) {
             // 相対値入力モード: InputLogicから相対値を取得してアラーム追加
-            time_t relativeTime = inputLogic->getRelativeValue();
+            time_t relativeTime = inputLogic->getAbsoluteValue();
             if (relativeTime != -1) {
                 extern std::vector<time_t> alarm_times;
                 AlarmLogic::AddAlarmResult result;

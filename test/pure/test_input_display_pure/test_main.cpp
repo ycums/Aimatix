@@ -944,6 +944,92 @@ void test_initial_a_button_press_display_position() {
     TEST_ASSERT_EQUAL_STRING("00:01", view.lastPreview.c_str());
 }
 
+// 相対値入力での秒保持テスト
+void test_relative_input_seconds_preservation() {
+    InputLogic logic(testTimeProvider);
+    RelativeInputMockView view;
+    InputDisplayState state(&logic, &view);
+    
+    // 相対値入力モードに設定
+    state.setRelativeMode(true);
+    
+    // 05分の入力（__:05）
+    logic.incrementInput(0); // 分十の位に0を入力
+    logic.shiftDigits();
+    logic.incrementInput(5); // 分一の位に5を入力
+    
+    // アラーム追加を実行
+    extern std::vector<time_t> alarm_times;
+    alarm_times.clear(); // クリア
+    
+    // ボタンCを押してアラーム追加
+    state.onButtonC();
+    
+    // アラームが正しく追加されることを確認
+    TEST_ASSERT_EQUAL(1, alarm_times.size());
+    
+    // 追加されたアラーム時刻を確認（現在時刻 + 00:05）
+    time_t now = testTimeProvider->now();
+    struct tm* tm_now = testTimeProvider->localtime(&now);
+    struct tm expected_tm = *tm_now;
+    expected_tm.tm_isdst = -1;
+    expected_tm.tm_min += 5;
+    time_t expected_alarm = mktime(&expected_tm);
+    
+    // デバッグ情報を出力
+    struct tm* expected_tm_debug = localtime(&expected_alarm);
+    struct tm* actual_tm_debug = localtime(&alarm_times[0]);
+    printf("Expected: %02d:%02d:%02d (%ld), Actual: %02d:%02d:%02d (%ld), Diff: %ld\n", 
+           expected_tm_debug->tm_hour, expected_tm_debug->tm_min, expected_tm_debug->tm_sec, expected_alarm,
+           actual_tm_debug->tm_hour, actual_tm_debug->tm_min, actual_tm_debug->tm_sec, alarm_times[0],
+           abs(alarm_times[0] - expected_alarm));
+    
+    // 時刻の比較（秒単位の誤差を許容）
+    TEST_ASSERT_TRUE(abs(alarm_times[0] - expected_alarm) <= 1);
+}
+
+// 相対値入力での部分入力時の秒保持テスト
+void test_relative_input_seconds_preservation_partial() {
+    InputLogic logic(testTimeProvider);
+    RelativeInputMockView view;
+    InputDisplayState state(&logic, &view);
+    
+    // 相対値入力モードに設定
+    state.setRelativeMode(true);
+    
+    // 部分入力（__:5_）
+    logic.incrementInput(5); // 分一の位に5を入力
+    
+    // アラーム追加を実行
+    extern std::vector<time_t> alarm_times;
+    alarm_times.clear(); // クリア
+    
+    // ボタンCを押してアラーム追加
+    state.onButtonC();
+    
+    // アラームが正しく追加されることを確認
+    TEST_ASSERT_EQUAL(1, alarm_times.size());
+    
+    // 追加されたアラーム時刻を確認（現在時刻 + 00:05）
+    time_t now = testTimeProvider->now();
+    struct tm* tm_now = testTimeProvider->localtime(&now);
+    struct tm expected_tm = *tm_now;
+    expected_tm.tm_isdst = -1;
+    expected_tm.tm_min += 5;
+    time_t expected_alarm = mktime(&expected_tm);
+    
+    // デバッグ情報を出力
+    struct tm* expected_tm_debug = localtime(&expected_alarm);
+    struct tm* actual_tm_debug = localtime(&alarm_times[0]);
+    printf("Expected: %02d:%02d:%02d (%ld), Actual: %02d:%02d:%02d (%ld), Diff: %ld\n", 
+           expected_tm_debug->tm_hour, expected_tm_debug->tm_min, expected_tm_debug->tm_sec, expected_alarm,
+           actual_tm_debug->tm_hour, actual_tm_debug->tm_min, actual_tm_debug->tm_sec, alarm_times[0],
+           abs(alarm_times[0] - expected_alarm));
+    
+    // 時刻の比較（秒単位の誤差を許容）
+    TEST_ASSERT_TRUE(abs(alarm_times[0] - expected_alarm) <= 1);
+}
+
 
 int main(int argc, char **argv) {
     UNITY_BEGIN();
@@ -965,6 +1051,10 @@ int main(int argc, char **argv) {
     
     // 起動直後の最初のAボタン押下時の表示位置テストを追加
     RUN_TEST(test_initial_a_button_press_display_position);
+    
+    // 秒保持テストを追加
+    RUN_TEST(test_relative_input_seconds_preservation);
+    RUN_TEST(test_relative_input_seconds_preservation_partial);
     
     // 複雑な相対値計算テストは後で有効化
     // RUN_TEST(test_relative_time_calculation_basic);

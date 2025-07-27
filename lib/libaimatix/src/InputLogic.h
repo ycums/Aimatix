@@ -27,7 +27,7 @@ public:
     }
     
     // 相対値として現在の入力値を絶対時刻に変換
-    virtual time_t getRelativeValue() const {
+    virtual time_t getAbsoluteValue() const {
         int inputValue = 0;
         bool hasInput = false;
         for (int i = 0; i < 4; ++i) {
@@ -42,7 +42,7 @@ public:
         time_t now = timeProvider_->now();
         struct tm* tm_now = timeProvider_->localtime(&now);
         struct tm alarm_tm = *tm_now;
-        alarm_tm.tm_sec = 0; // ← おそらくこれが直接原因
+        alarm_tm.tm_sec = tm_now->tm_sec; // 現在時刻の秒を保持
         alarm_tm.tm_isdst = -1;
         if (inputMinute >= 60) { inputHour += inputMinute / 60; inputMinute = inputMinute % 60; }
         int add_day = inputHour / 24;
