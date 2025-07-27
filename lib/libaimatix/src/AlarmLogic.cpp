@@ -15,7 +15,7 @@ constexpr int SECONDS_60 = 60;
 constexpr int SECONDS_120 = 120;
 constexpr int PERCENT_100 = 100;
 
-void AlarmLogic::initAlarms(std::vector<time_t>& alarms, time_t now) {
+auto AlarmLogic::initAlarms(std::vector<time_t>& alarms, time_t now) -> void {
     alarms.clear();
     alarms.push_back(now + SECONDS_10);    // +10秒
     alarms.push_back(now + SECONDS_30);    // +30秒
@@ -23,21 +23,21 @@ void AlarmLogic::initAlarms(std::vector<time_t>& alarms, time_t now) {
     alarms.push_back(now + SECONDS_120);   // +2分
 }
 
-void AlarmLogic::removePastAlarms(std::vector<time_t>& alarms, time_t now) {
+auto AlarmLogic::removePastAlarms(std::vector<time_t>& alarms, time_t now) -> void {
     alarms.erase(
         alarms.begin(),
         std::find_if(alarms.begin(), alarms.end(), [now](time_t time_value) { return time_value > now; })
     );
 }
 
-int AlarmLogic::getRemainSec(const std::vector<time_t>& alarms, time_t now) {
+auto AlarmLogic::getRemainSec(const std::vector<time_t>& alarms, time_t now) -> int {
     if (alarms.empty()) {
         return 0;
     }
     return static_cast<int>(alarms.front() - now);
 }
 
-int AlarmLogic::getRemainPercent(int remainSec, int totalSec) {
+auto AlarmLogic::getRemainPercent(int remainSec, int totalSec) -> int {
     if (totalSec <= 0) {
         return 0;
     }
@@ -51,7 +51,7 @@ int AlarmLogic::getRemainPercent(int remainSec, int totalSec) {
     return percent;
 }
 
-void AlarmLogic::getAlarmTimeStrings(const std::vector<time_t>& alarms, std::vector<std::string>& out) {
+auto AlarmLogic::getAlarmTimeStrings(const std::vector<time_t>& alarms, std::vector<std::string>& out) -> void {
     out.clear();
     for (auto t : alarms) {
         std::tm* tm_alarm = std::localtime(&t);
@@ -63,7 +63,7 @@ void AlarmLogic::getAlarmTimeStrings(const std::vector<time_t>& alarms, std::vec
 } 
 
 // addAlarm: 入力値をアラームとして追加。エラー時はresult, errorMsgに理由を格納。
-bool AlarmLogic::addAlarm(std::vector<time_t>& alarms, time_t now, time_t input, AddAlarmResult& result, std::string& errorMsg) {
+auto AlarmLogic::addAlarm(std::vector<time_t>& alarms, time_t now, time_t input, AddAlarmResult& result, std::string& errorMsg) -> bool {
     if (input == -1) {
         result = AddAlarmResult::ErrorEmptyInput;
         errorMsg = "Input is empty.";
@@ -110,7 +110,7 @@ bool AlarmLogic::addAlarm(std::vector<time_t>& alarms, time_t now, time_t input,
         alarm_tm.tm_mday += add_day;
         
         // 過去時刻チェック（分のみ指定の場合も）
-        time_t candidate = mktime(&alarm_tm);
+        const time_t candidate = mktime(&alarm_tm);
         if (candidate <= now) {
             // 現在時刻より前なら翌日
             alarm_tm.tm_mday += 1;
@@ -127,13 +127,13 @@ bool AlarmLogic::addAlarm(std::vector<time_t>& alarms, time_t now, time_t input,
         alarm_tm.tm_hour = hour;
         alarm_tm.tm_min = minute;
         alarm_tm.tm_mday += add_day;
-        time_t candidate = mktime(&alarm_tm);
+        const time_t candidate = mktime(&alarm_tm);
         if (candidate <= now) {
             // 現在時刻より前なら翌日
             alarm_tm.tm_mday += 1;
         }
     }
-    time_t alarmTime = mktime(&alarm_tm);
+    const time_t alarmTime = mktime(&alarm_tm);
     
     // 最大数チェック
     constexpr int MAX_ALARMS = 5;
@@ -159,7 +159,7 @@ bool AlarmLogic::addAlarm(std::vector<time_t>& alarms, time_t now, time_t input,
 }
 
 // 絶対時刻（time_t）をアラームとして追加。エラー時はresult, errorMsgに理由を格納。
-bool AlarmLogic::addAlarmAtTime(std::vector<time_t>& alarms, time_t alarmTime, AddAlarmResult& result, std::string& errorMsg) {
+auto AlarmLogic::addAlarmAtTime(std::vector<time_t>& alarms, time_t alarmTime, AddAlarmResult& result, std::string& errorMsg) -> bool {
     // 最大数チェック
     constexpr int MAX_ALARMS = 5;
     if (alarms.size() >= MAX_ALARMS) {
@@ -184,14 +184,14 @@ bool AlarmLogic::addAlarmAtTime(std::vector<time_t>& alarms, time_t alarmTime, A
 }
 
 // 部分的な入力状態（digits[4], entered[4]）からアラームを追加
-bool AlarmLogic::addAlarmFromPartialInput(
+auto AlarmLogic::addAlarmFromPartialInput(
     std::vector<time_t>& alarms, 
     time_t now, 
     const int* digits, 
     const bool* entered, 
     AddAlarmResult& result, 
     std::string& errorMsg
-) {
+) -> bool {
     // 入力チェック
     if (!digits || !entered) {
         result = AddAlarmResult::ErrorInvalid;
@@ -200,7 +200,8 @@ bool AlarmLogic::addAlarmFromPartialInput(
     }
     
     // 部分的な入力状態を完全な時分に変換
-    int hour = 0, minute = 0;
+    int hour = 0;
+    int minute = 0;
     
     // 時の解釈（digits[0], digits[1]）
     if (entered[0] && entered[1]) {
@@ -248,13 +249,13 @@ bool AlarmLogic::addAlarmFromPartialInput(
     alarm_tm.tm_min = minute;
     alarm_tm.tm_mday += add_day;
     
-    time_t candidate = mktime(&alarm_tm);
+    const time_t candidate = mktime(&alarm_tm);
     if (candidate <= now) {
         // 現在時刻より前なら翌日
         alarm_tm.tm_mday += 1;
     }
     
-    time_t alarmTime = mktime(&alarm_tm);
+    const time_t alarmTime = mktime(&alarm_tm);
     
     // 最大数チェック
     constexpr int MAX_ALARMS_PARTIAL = 5;
@@ -280,7 +281,7 @@ bool AlarmLogic::addAlarmFromPartialInput(
 }
 
 // 指定インデックスのアラームを削除
-bool AlarmLogic::deleteAlarm(std::vector<time_t>& alarms, size_t index) {
+auto AlarmLogic::deleteAlarm(std::vector<time_t>& alarms, size_t index) -> bool {
     if (index >= alarms.size()) {
         return false;
     }
@@ -289,7 +290,7 @@ bool AlarmLogic::deleteAlarm(std::vector<time_t>& alarms, size_t index) {
 }
 
 // アラームリストを取得（時刻順でソート済み）
-std::vector<time_t> AlarmLogic::getAlarms(const std::vector<time_t>& alarms) {
+auto AlarmLogic::getAlarms(const std::vector<time_t>& alarms) -> std::vector<time_t> {
     std::vector<time_t> sortedAlarms = alarms;
     std::sort(sortedAlarms.begin(), sortedAlarms.end());
     return sortedAlarms;

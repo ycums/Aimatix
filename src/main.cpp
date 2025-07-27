@@ -88,7 +88,7 @@ void setup() {
 
     // アラームリスト初期化
     alarm_times.clear();
-    time_t now = time(nullptr);
+    const time_t now = time(nullptr);
     AlarmLogic::initAlarms(alarm_times, now);
 #endif
     // --- 状態遷移の依存注入（@/design/ui_state_management.md準拠） ---

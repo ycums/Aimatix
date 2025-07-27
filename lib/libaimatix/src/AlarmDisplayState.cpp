@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <cstring>
 #include <algorithm>
+#include <array>
 
 // 外部変数（既存のアラームリスト）
 extern std::vector<time_t> alarm_times;
@@ -52,7 +53,7 @@ void AlarmDisplayState::forceDraw() {
     }
     
     // アラームリストを取得（毎回最新の状態を取得）
-    std::vector<time_t> alarms = getAlarmList();
+    const std::vector<time_t> alarms = getAlarmList();
     
     // 選択位置の調整（アラーム消化後も適切に調整）
     adjustSelectionIndex();
@@ -108,8 +109,8 @@ void AlarmDisplayState::forceDraw() {
         for (size_t i = 0; i < alarms.size() && i < ALARM_MAX_DISPLAY; ++i) {
             // 時刻文字列に変換
             struct tm* tm_alarm = localtime(&alarms[i]);
-            char timeStr[ALARM_TIME_STR_SIZE];
-            snprintf(timeStr, sizeof(timeStr), "%02d:%02d", tm_alarm->tm_hour, tm_alarm->tm_min);
+            std::array<char, ALARM_TIME_STR_SIZE> timeStr{};
+            snprintf(timeStr.data(), timeStr.size(), "%02d:%02d", tm_alarm->tm_hour, tm_alarm->tm_min);
             
             const int y_pos = ALARM_DISPLAY_START_Y + i * ALARM_LINE_HEIGHT;
             
@@ -127,7 +128,7 @@ void AlarmDisplayState::forceDraw() {
             
             display->setTextFont(FONT_AUXILIARY);
             display->setTextDatum(TL_DATUM);
-            display->drawText(ALARM_TEXT_OFFSET, y_pos, timeStr, FONT_AUXILIARY);
+            display->drawText(ALARM_TEXT_OFFSET, y_pos, timeStr.data(), FONT_AUXILIARY);
         }
         
         // 色をリセット
@@ -180,7 +181,7 @@ void AlarmDisplayState::onButtonCLongPress() {
     }
 }
 
-std::vector<time_t> AlarmDisplayState::getAlarmList() const {
+auto AlarmDisplayState::getAlarmList() const -> std::vector<time_t> {
     // 外部変数からアラームリストを取得
     return AlarmLogic::getAlarms(alarm_times);
 }
@@ -208,9 +209,9 @@ void AlarmDisplayState::deleteSelectedAlarm() {
     const time_t selectedTime = displayedAlarms[selectedIndex];
     
     // 実体リストから一致するものを削除（valueベース削除）
-    auto it = std::find(alarm_times.begin(), alarm_times.end(), selectedTime);
-    if (it != alarm_times.end()) {
-        alarm_times.erase(it);
+    const auto iterator = std::find(alarm_times.begin(), alarm_times.end(), selectedTime);
+    if (iterator != alarm_times.end()) {
+        alarm_times.erase(iterator);
         // 削除成功 - 即座に画面を再描画
         forceDraw();
     }

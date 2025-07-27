@@ -3,6 +3,7 @@
 #include "ui_constants.h"
 #include <cstdio>
 #include <cstring>
+#include <array>
 
 // 定数定義
 constexpr int TITLE_OFFSET_X = 5;
@@ -22,9 +23,9 @@ void drawTitleBar(IDisplay* disp, const char* modeName, int batteryLevel, bool i
     disp->setTextDatum(TL_DATUM);
     disp->drawText(TITLE_OFFSET_X, TITLE_OFFSET_Y, modeName, FONT_AUXILIARY);
     constexpr int BATTERY_STR_SIZE = 16;
-    char batteryStr[BATTERY_STR_SIZE];
-    snprintf(batteryStr, sizeof(batteryStr), "%s %d%%", isCharging ? "CHG" : "BAT", batteryLevel);
-    disp->drawText(SCREEN_WIDTH - BATTERY_OFFSET_X, TITLE_OFFSET_Y, static_cast<const char*>(batteryStr), FONT_AUXILIARY);
+    std::array<char, BATTERY_STR_SIZE> batteryStr{};
+    snprintf(batteryStr.data(), batteryStr.size(), "%s %d%%", isCharging ? "CHG" : "BAT", batteryLevel);
+    disp->drawText(SCREEN_WIDTH - BATTERY_OFFSET_X, TITLE_OFFSET_Y, static_cast<const char*>(batteryStr.data()), FONT_AUXILIARY);
 }
 
 void drawButtonHintsGrid(IDisplay* disp, const char* btnA, const char* btnB, const char* btnC) {

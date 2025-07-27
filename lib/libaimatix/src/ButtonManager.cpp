@@ -1,10 +1,11 @@
 #include "ButtonManager.h"
+#include <cstddef>
 
 void ButtonManager::update(ButtonType btn, bool pressed, uint32_t now_ms) {
     if (btn < 0 || btn >= static_cast<ButtonType>(sizeof(btnStates)/sizeof(btnStates[0]))) {
         return; // 無効なボタンタイプ
     }
-    BtnState& btn_state = btnStates[btn];
+    BtnState& btn_state = btnStates[static_cast<size_t>(btn)];
     // デバウンス処理
     if (pressed != btn_state.pressed) {
         if ((now_ms - btn_state.lastChange) <= BM_DEBOUNCE_MS) {
@@ -39,8 +40,8 @@ auto ButtonManager::isShortPress(ButtonType btn) const -> bool {
     if (btn < 0 || btn >= static_cast<ButtonType>(sizeof(btnStates)/sizeof(btnStates[0]))) {
         return false; // 無効なボタンタイプ
     }
-    const bool ret = btnStates[btn].shortFired;
-    const_cast<BtnState&>(btnStates[btn]).shortFired = false;
+    const bool ret = btnStates[static_cast<size_t>(btn)].shortFired;
+    const_cast<BtnState&>(btnStates[static_cast<size_t>(btn)]).shortFired = false;
     return ret;
 }
 
@@ -48,8 +49,8 @@ auto ButtonManager::isLongPress(ButtonType btn) const -> bool {
     if (btn < 0 || btn >= static_cast<ButtonType>(sizeof(btnStates)/sizeof(btnStates[0]))) {
         return false; // 無効なボタンタイプ
     }
-    const bool ret = btnStates[btn].longFired;
-    const_cast<BtnState&>(btnStates[btn]).longFired = false;
+    const bool ret = btnStates[static_cast<size_t>(btn)].longFired;
+    const_cast<BtnState&>(btnStates[static_cast<size_t>(btn)]).longFired = false;
     return ret;
 }
 
@@ -57,5 +58,5 @@ void ButtonManager::reset(ButtonType btn) {
     if (btn < 0 || btn >= static_cast<ButtonType>(sizeof(btnStates)/sizeof(btnStates[0]))) {
         return; // 無効なボタンタイプ
     }
-    btnStates[btn] = BtnState();
+    btnStates[static_cast<size_t>(btn)] = BtnState();
 } 
