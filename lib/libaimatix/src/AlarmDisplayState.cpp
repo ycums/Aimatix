@@ -199,7 +199,7 @@ auto AlarmDisplayState::adjustSelectionIndex() -> void {
     }
 }
 
-void AlarmDisplayState::deleteSelectedAlarm() {
+auto AlarmDisplayState::deleteSelectedAlarm() -> void {
     // 画面上で選択されている時刻を取得
     const std::vector<time_t> displayedAlarms = getAlarmList();
     if (selectedIndex >= displayedAlarms.size()) {
@@ -218,14 +218,14 @@ void AlarmDisplayState::deleteSelectedAlarm() {
     // 既に消化済みの場合は何もしない（正常終了）
 }
 
-void AlarmDisplayState::moveUp() {
+auto AlarmDisplayState::moveUp() -> void {
     if (selectedIndex > 0) {
         selectedIndex--;
     }
     // 端で停止（循環なし）
 }
 
-void AlarmDisplayState::moveDown() {
+auto AlarmDisplayState::moveDown() -> void {
     const std::vector<time_t> alarms = getAlarmList();
     if (selectedIndex < alarms.size() - 1) {
         selectedIndex++;
@@ -233,23 +233,23 @@ void AlarmDisplayState::moveDown() {
     // 端で停止（循環なし）
 }
 
-void AlarmDisplayState::moveToTop() {
+auto AlarmDisplayState::moveToTop() -> void {
     selectedIndex = 0;
 }
 
-void AlarmDisplayState::moveToBottom() {
+auto AlarmDisplayState::moveToBottom() -> void {
     const std::vector<time_t> alarms = getAlarmList();
     if (!alarms.empty()) {
         selectedIndex = alarms.size() - 1;
     }
 }
 
-bool AlarmDisplayState::shouldUpdateRealTime() const {
+auto AlarmDisplayState::shouldUpdateRealTime() const -> bool {
     // ユーザー操作から一定時間経過していればリアルタイム更新
     return (getCurrentMillis() - lastUserAction) > UPDATE_PAUSE_DURATION;
 }
 
-void AlarmDisplayState::updateLastUserAction() {
+auto AlarmDisplayState::updateLastUserAction() -> void {
     lastUserAction = getCurrentMillis();
 }
 

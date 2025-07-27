@@ -58,8 +58,8 @@ auto m5_fill_rect_impl(int pos_x, int pos_y, int width, int height, int color) -
 // M5Stack用TimeManager実装
 class M5StackTimeManager : public ITimeManager {
 public:
-    unsigned long getCurrentMillis() const override { return millis(); }
-    time_t getCurrentTime() const override { return time(nullptr); }
+    auto getCurrentMillis() const -> unsigned long override { return millis(); }
+    auto getCurrentTime() const -> time_t override { return time(nullptr); }
 };
 #endif
 
