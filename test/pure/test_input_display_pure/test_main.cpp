@@ -577,6 +577,160 @@ void test_partial_input_preview_display_relative() {
     TEST_ASSERT_TRUE(strlen(view.lastPreview.c_str()) > 0);
 }
 
+// === ここからTDD: プレビュー表示のちらつき修正テスト ===
+void test_preview_no_flicker_same_content() {
+    InputLogic logic(testTimeProvider);
+    RelativeInputMockView view;
+    InputDisplayState state(&logic, &view);
+    
+    // 相対値入力モードに設定
+    state.setRelativeMode(true);
+    
+    // 12:34 の状態を作る
+    logic.incrementInput(1); // 時十の位に1を入力
+    logic.shiftDigits();
+    logic.incrementInput(2); // 時一の位に2を入力
+    logic.shiftDigits();
+    logic.incrementInput(3); // 分十の位に3を入力
+    logic.shiftDigits();
+    logic.incrementInput(4); // 分一の位に4を入力
+    
+    // 最初の描画
+    state.onDraw();
+    int firstPreviewCount = view.showPreviewCount;
+    std::string firstPreview = view.lastPreview;
+    
+    // 同じ内容で再度描画（入力値は変わらない）
+    state.onDraw();
+    int secondPreviewCount = view.showPreviewCount;
+    std::string secondPreview = view.lastPreview;
+    
+    // プレビュー内容は同じだが、showPreviewは1回だけ呼ばれることを確認
+    TEST_ASSERT_EQUAL_STRING(firstPreview.c_str(), secondPreview.c_str());
+    TEST_ASSERT_EQUAL(firstPreviewCount, secondPreviewCount);
+}
+
+void test_preview_update_when_content_changes() {
+    InputLogic logic(testTimeProvider);
+    RelativeInputMockView view;
+    InputDisplayState state(&logic, &view);
+    
+    // 相対値入力モードに設定
+    state.setRelativeMode(true);
+    
+    // 12:34 の状態を作る
+    logic.incrementInput(1);
+    logic.shiftDigits();
+    logic.incrementInput(2);
+    logic.shiftDigits();
+    logic.incrementInput(3);
+    logic.shiftDigits();
+    logic.incrementInput(4);
+    
+    // 最初の描画
+    state.onDraw();
+    int firstPreviewCount = view.showPreviewCount;
+    std::string firstPreview = view.lastPreview;
+    
+    // 入力値を変更（12:35 に変更）
+    logic.incrementInput(5); // 分一の位を5に変更
+    
+    // 変更後の描画
+    state.onDraw();
+    int secondPreviewCount = view.showPreviewCount;
+    std::string secondPreview = view.lastPreview;
+    
+    // プレビュー内容が変わり、showPreviewが追加で呼ばれることを確認
+    TEST_ASSERT_NOT_EQUAL(0, strcmp(firstPreview.c_str(), secondPreview.c_str()));
+    TEST_ASSERT_EQUAL(firstPreviewCount + 1, secondPreviewCount);
+}
+
+void test_preview_no_flicker_absolute_mode() {
+    InputLogic logic(testTimeProvider);
+    RelativeInputMockView view;
+    InputDisplayState state(&logic, &view);
+    
+    // 絶対時刻入力モードに設定
+    state.setRelativeMode(false);
+    
+    // 12:34 の状態を作る
+    logic.incrementInput(1);
+    logic.shiftDigits();
+    logic.incrementInput(2);
+    logic.shiftDigits();
+    logic.incrementInput(3);
+    logic.shiftDigits();
+    logic.incrementInput(4);
+    
+    // 最初の描画
+    state.onDraw();
+    int firstPreviewCount = view.showPreviewCount;
+    std::string firstPreview = view.lastPreview;
+    
+    // 同じ内容で再度描画
+    state.onDraw();
+    int secondPreviewCount = view.showPreviewCount;
+    std::string secondPreview = view.lastPreview;
+    
+    // プレビュー内容は同じだが、showPreviewは1回だけ呼ばれることを確認
+    TEST_ASSERT_EQUAL_STRING(firstPreview.c_str(), secondPreview.c_str());
+    TEST_ASSERT_EQUAL(firstPreviewCount, secondPreviewCount);
+}
+
+void test_preview_error_message_no_flicker() {
+    InputLogic logic(testTimeProvider);
+    RelativeInputMockView view;
+    InputDisplayState state(&logic, &view);
+    
+    // エラーメッセージを表示状態にする
+    state.setRelativeMode(true);
+    
+    // エラー状態を手動で設定（テスト用）
+    // 注意: 実際のエラー状態はonButtonC()で設定されるが、テストでは直接設定
+    extern std::vector<time_t> alarm_times;
+    alarm_times = {1000, 2000, 3000, 4000, 5000}; // 最大数に達している状態
+    
+    // 未入力状態でCボタンを押してエラーを発生させる
+    state.onButtonC();
+    
+    // 最初の描画
+    state.onDraw();
+    int firstPreviewCount = view.showPreviewCount;
+    std::string firstPreview = view.lastPreview;
+    
+    // 同じ内容で再度描画
+    state.onDraw();
+    int secondPreviewCount = view.showPreviewCount;
+    std::string secondPreview = view.lastPreview;
+    
+    // エラーメッセージが表示されていることを確認
+    TEST_ASSERT_TRUE(firstPreview.find("Max alarms") != std::string::npos || 
+                     firstPreview.find("Input is empty") != std::string::npos);
+    TEST_ASSERT_EQUAL_STRING(firstPreview.c_str(), secondPreview.c_str());
+    TEST_ASSERT_EQUAL(firstPreviewCount, secondPreviewCount);
+}
+
+void test_preview_initial_state_no_flicker() {
+    InputLogic logic(testTimeProvider);
+    RelativeInputMockView view;
+    InputDisplayState state(&logic, &view);
+    
+    // 初期状態（未入力）で描画
+    state.onDraw();
+    int firstPreviewCount = view.showPreviewCount;
+    std::string firstPreview = view.lastPreview;
+    
+    // 同じ状態で再度描画
+    state.onDraw();
+    int secondPreviewCount = view.showPreviewCount;
+    std::string secondPreview = view.lastPreview;
+    
+    // 初期状態ではプレビューが空であることを確認
+    TEST_ASSERT_EQUAL_STRING("", firstPreview.c_str());
+    TEST_ASSERT_EQUAL_STRING(firstPreview.c_str(), secondPreview.c_str());
+    TEST_ASSERT_EQUAL(firstPreviewCount, secondPreviewCount);
+}
+
 // 相対入力モード時の確定値計算テスト
 void test_relative_input_alarm_calculation_debug() {
     InputLogic logic(testTimeProvider);
@@ -737,6 +891,13 @@ int main(int argc, char **argv) {
     // RUN_TEST(test_partial_input_preview_display_relative);
     // RUN_TEST(test_relative_input_alarm_calculation_debug);
     // RUN_TEST(test_relative_input_partial_alarm_calculation);
+    
+    // プレビュー表示のちらつき修正テストを有効化
+    RUN_TEST(test_preview_no_flicker_same_content);
+    RUN_TEST(test_preview_update_when_content_changes);
+    RUN_TEST(test_preview_no_flicker_absolute_mode);
+    RUN_TEST(test_preview_error_message_no_flicker);
+    RUN_TEST(test_preview_initial_state_no_flicker);
     
     UNITY_END();
     return 0;

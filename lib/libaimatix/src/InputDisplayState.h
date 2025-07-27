@@ -142,7 +142,13 @@ public:
                     }
                 }
             }
-            view->showPreview(preview);
+            
+            // プレビュー内容の変化チェック
+            std::string currentPreview(preview);
+            if (currentPreview != lastPreview) {
+                view->showPreview(preview);
+                lastPreview = currentPreview;
+            }
             view->showColon();
         }
 #ifndef ARDUINO
@@ -295,5 +301,7 @@ private:
     bool showError;
     time_t errorStartTime;
     
+    // プレビュー内容の変化チェック用
+    std::string lastPreview;
 
 }; 

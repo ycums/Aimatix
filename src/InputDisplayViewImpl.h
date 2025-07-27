@@ -36,7 +36,7 @@ public:
     }
     void showHints(const char* btnA, const char* btnB, const char* btnC) override {
         drawButtonHintsGrid(disp, btnA, btnB, btnC);
-        drawGridLines(disp);
+        // drawGridLines(disp);
     }
     void showPreview(const char* preview) override {
         // プレビュー欄（下部中央、Font2、アンバー）
