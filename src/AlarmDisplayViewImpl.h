@@ -55,7 +55,7 @@ public:
             }
             
             disp->setTextFont(FONT_AUXILIARY);
-            disp->setTextDatum(TL_DATUM);
+            disp->setTextDatum(ML_DATUM);
             disp->drawText(ALARM_TEXT_OFFSET, y_pos, timeStr.data(), FONT_AUXILIARY);
         }
         
