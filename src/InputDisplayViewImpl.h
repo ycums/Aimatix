@@ -30,8 +30,12 @@ public:
             char d[2];
             d[0] = static_cast<char>('0' + (value % 10));
             d[1] = '\0';
+            // テキスト配置基準を明示的に設定
+            int prevDatum = disp->getTextDatum();
+            disp->setTextDatum(MC_DATUM);
             disp->setTextColor(AMBER_COLOR, TFT_BLACK);
             disp->drawText(x, y0, d, FONT_IMPORTANT);
+            disp->setTextDatum(prevDatum);
         } else {
             disp->fillRect(x - digitW/2, y0 - fontH/2, digitW, fontH, TFT_BLACK);
             disp->drawLine(x - digitW/2 + 4, underlineY, x + digitW/2 - 4, underlineY, AMBER_COLOR);
@@ -44,6 +48,8 @@ public:
     void showPreview(const char* preview) override {
         // プレビュー欄（下部中央、Font2、アンバー）
         int y = GRID_Y(7);
+        // テキスト配置基準を明示的に設定
+        int prevDatum = disp->getTextDatum();
         disp->setTextFont(FONT_AUXILIARY);
         disp->setTextColor(AMBER_COLOR, TFT_BLACK);
         disp->setTextDatum(MC_DATUM);
@@ -51,6 +57,7 @@ public:
         if (preview && preview[0]) {
             disp->drawText(SCREEN_WIDTH/2, y, preview, FONT_AUXILIARY);
         }
+        disp->setTextDatum(prevDatum);
     }
     void showColon() override {
         int fontH = 48;

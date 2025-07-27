@@ -919,6 +919,31 @@ void test_absolute_input_partial_preview_format() {
     TEST_ASSERT_EQUAL_STRING("01:23", view.lastPreview.c_str());
 }
 
+// 起動直後の最初のAボタン押下時の表示位置テスト
+void test_initial_a_button_press_display_position() {
+    InputLogic logic(testTimeProvider);
+    RelativeInputMockView view;
+    InputDisplayState state(&logic, &view);
+    
+    // 絶対値入力モードに設定
+    state.setRelativeMode(false);
+    
+    // onEnterで初期化
+    state.onEnter();
+    
+    // 最初のAボタン押下（右端に1を入力）
+    state.onButtonA();
+    
+    // 表示が正しく行われることを確認
+    // showDigitが4回呼ばれる（全ての桁の初期状態を描画）
+    TEST_ASSERT_EQUAL(4, view.showDigitCount);
+    
+    // プレビューが表示されることを確認
+    TEST_ASSERT_EQUAL(1, view.showPreviewCount);
+    // 期待: "00:01" (右端に1が入力された状態)
+    TEST_ASSERT_EQUAL_STRING("00:01", view.lastPreview.c_str());
+}
+
 
 int main(int argc, char **argv) {
     UNITY_BEGIN();
@@ -937,6 +962,9 @@ int main(int argc, char **argv) {
     // 絶対値入力モードのプレビュー表示書式テストを追加
     RUN_TEST(test_absolute_input_preview_format);
     RUN_TEST(test_absolute_input_partial_preview_format);
+    
+    // 起動直後の最初のAボタン押下時の表示位置テストを追加
+    RUN_TEST(test_initial_a_button_press_display_position);
     
     // 複雑な相対値計算テストは後で有効化
     // RUN_TEST(test_relative_time_calculation_basic);
