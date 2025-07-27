@@ -186,7 +186,7 @@ auto AlarmDisplayState::getAlarmList() const -> std::vector<time_t> {
     return AlarmLogic::getAlarms(alarm_times);
 }
 
-void AlarmDisplayState::adjustSelectionIndex() {
+auto AlarmDisplayState::adjustSelectionIndex() -> void {
     const std::vector<time_t> alarms = getAlarmList();
     if (alarms.empty()) {
         selectedIndex = 0;
@@ -253,7 +253,7 @@ void AlarmDisplayState::updateLastUserAction() {
     lastUserAction = getCurrentMillis();
 }
 
-unsigned long AlarmDisplayState::getCurrentMillis() const {
+auto AlarmDisplayState::getCurrentMillis() const -> unsigned long {
     // ITimeManager経由で時刻を取得
     if (timeManager) {
         return timeManager->getCurrentMillis();

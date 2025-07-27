@@ -27,13 +27,13 @@ extern void setFillProgressBarSpriteImpl(void (*impl)(int, int, int, int, int));
 
 #ifdef ARDUINO
 // --- M5Stack用描画関数 ---
-void m5_rect_impl(int pos_x, int pos_y, int width, int height) {
+auto m5_rect_impl(int pos_x, int pos_y, int width, int height) -> void {
     M5.Lcd.drawRect(pos_x, pos_y, width, height, AMBER_COLOR);
 }
-void m5_string_impl(const char* str, int pos_x, int pos_y) {
+auto m5_string_impl(const char* str, int pos_x, int pos_y) -> void {
     M5.Lcd.drawString(str, pos_x, pos_y);
 }
-void m5_progress_bar_impl(int pos_x, int pos_y, int width, int height, int percent) {
+auto m5_progress_bar_impl(int pos_x, int pos_y, int width, int height, int percent) -> void {
     const int BORDER_WIDTH = 1;
     const int PERCENT_DENOMINATOR = 100;
     
@@ -44,14 +44,14 @@ void m5_progress_bar_impl(int pos_x, int pos_y, int width, int height, int perce
         M5.Lcd.fillRect(pos_x + BORDER_WIDTH, pos_y + BORDER_WIDTH, fillW, height - 2 * BORDER_WIDTH, AMBER_COLOR);
     }
 }
-void m5_set_font_impl(int font_size) {
+auto m5_set_font_impl(int font_size) -> void {
     M5.Lcd.setTextFont(font_size);
     M5.Lcd.setTextColor(AMBER_COLOR, TFT_BLACK);
 }
-void m5_set_text_datum_impl(int text_datum) {
+auto m5_set_text_datum_impl(int text_datum) -> void {
     M5.Lcd.setTextDatum(text_datum);
 }
-void m5_fill_rect_impl(int pos_x, int pos_y, int width, int height, int color) {
+auto m5_fill_rect_impl(int pos_x, int pos_y, int width, int height, int color) -> void {
     M5.Lcd.fillRect(pos_x, pos_y, width, height, color);
 }
 
