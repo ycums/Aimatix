@@ -38,4 +38,10 @@ public:
         AddAlarmResult& result, 
         std::string& errorMsg
     );
+    
+    // 指定インデックスのアラームを削除
+    static bool deleteAlarm(std::vector<time_t>& alarms, size_t index);
+    
+    // アラームリストを取得（時刻順でソート済み）
+    static std::vector<time_t> getAlarms(const std::vector<time_t>& alarms);
 }; 

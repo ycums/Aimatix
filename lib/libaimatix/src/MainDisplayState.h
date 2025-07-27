@@ -12,6 +12,8 @@ class MainDisplayState : public IState {
 public:
     MainDisplayState(StateManager* mgr, InputDisplayState* inputState, IMainDisplayView* view = nullptr, TimeLogic* timeLogic = nullptr, AlarmLogic* alarmLogic = nullptr)
         : manager(mgr), inputDisplayState(inputState), view(view), timeLogic(timeLogic), alarmLogic(alarmLogic) {}
+    
+    void setAlarmDisplayState(IState* alarmState) { alarmDisplayState = alarmState; }
     void onEnter() override {
         if (view) {
             view->clear();
@@ -71,7 +73,12 @@ public:
             manager->setState(inputDisplayState);
         }
     }
-    void onButtonC() override {}
+    void onButtonC() override {
+        if (manager && alarmDisplayState) {
+            // アラーム管理画面に遷移
+            manager->setState(alarmDisplayState);
+        }
+    }
     void onButtonALongPress() override {}
     void onButtonCLongPress() override {}
     void onButtonBLongPress() override {}
@@ -81,6 +88,7 @@ public:
 private:
     StateManager* manager;
     InputDisplayState* inputDisplayState;
+    IState* alarmDisplayState;
     IMainDisplayView* view;
     TimeLogic* timeLogic;
     AlarmLogic* alarmLogic;

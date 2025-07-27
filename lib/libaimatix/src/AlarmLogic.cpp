@@ -277,4 +277,20 @@ bool AlarmLogic::addAlarmFromPartialInput(
     std::sort(alarms.begin(), alarms.end());
     result = AddAlarmResult::Success;
     return true;
+}
+
+// 指定インデックスのアラームを削除
+bool AlarmLogic::deleteAlarm(std::vector<time_t>& alarms, size_t index) {
+    if (index >= alarms.size()) {
+        return false;
+    }
+    alarms.erase(alarms.begin() + index);
+    return true;
+}
+
+// アラームリストを取得（時刻順でソート済み）
+std::vector<time_t> AlarmLogic::getAlarms(const std::vector<time_t>& alarms) {
+    std::vector<time_t> sortedAlarms = alarms;
+    std::sort(sortedAlarms.begin(), sortedAlarms.end());
+    return sortedAlarms;
 } 

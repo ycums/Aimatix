@@ -2,6 +2,7 @@
 #include "StateManager.h"
 #include "MainDisplayState.h"
 #include "InputDisplayState.h"
+#include "AlarmDisplayState.h"
 #include "InputLogic.h"
 #include "InputDisplayViewImpl.h"
 #include "MainDisplayViewImpl.h"
@@ -68,6 +69,7 @@ TimeLogic time_logic;
 AlarmLogic alarm_logic;
 InputDisplayState input_display_state(&input_logic, &input_display_view_impl);
 MainDisplayState main_display_state(&state_manager, &input_display_state, &main_display_view_impl, &time_logic, &alarm_logic);
+AlarmDisplayState alarm_display_state(&state_manager, &display_adapter, &alarm_logic);
 ButtonManager button_manager; // 追加
 
 void setup() {
@@ -83,6 +85,8 @@ void setup() {
     // --- 状態遷移の依存注入（@/design/ui_state_management.md準拠） ---
     input_display_state.setManager(&state_manager);
     input_display_state.setMainDisplayState(&main_display_state);
+    main_display_state.setAlarmDisplayState(&alarm_display_state);
+    alarm_display_state.setMainDisplayState(&main_display_state);
     // 状態遷移の初期状態をMainDisplayに
     state_manager.setState(&main_display_state);
 }
