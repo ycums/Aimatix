@@ -10,6 +10,8 @@ extern std::vector<time_t> alarm_times;
 
 void AlarmDisplayState::onEnter() {
     selectedIndex = 0;
+    lastSelectedIndex = 0; // 初期状態をリセット
+    lastDisplayedAlarms.clear(); // 初期状態をリセット
     updateLastUserAction();
     if (display) {
         display->clear();
@@ -17,6 +19,8 @@ void AlarmDisplayState::onEnter() {
         drawTitleBar(display, "ALARMS", 100, false); // 仮のバッテリー値
         drawButtonHintsGrid(display, "UP", "DOWN", "DEL");
     }
+    // 初期表示を即座に実行（鈍重さを解消）
+    forceDraw();
 }
 
 void AlarmDisplayState::onExit() {
@@ -28,28 +32,79 @@ void AlarmDisplayState::onDraw() {
     
     // ハイブリッドアプローチ: リアルタイム更新の判定
     if (shouldUpdateRealTime()) {
-        // アラームリストを取得（毎回最新の状態を取得）
-        std::vector<time_t> alarms = getAlarmList();
-        
-        // 選択位置の調整（アラーム消化後も適切に調整）
-        adjustSelectionIndex();
-        
-        // ちらつき防止：画面全体をクリア
-        display->fillRect(0, TITLE_HEIGHT, SCREEN_WIDTH, SCREEN_HEIGHT - TITLE_HEIGHT - HINT_HEIGHT, TFT_BLACK);
-        
-        if (alarms.empty()) {
-            // 空リスト表示（中央配置）
-            display->setTextDatum(MC_DATUM); // 中央基準
-            display->setTextColor(AMBER_COLOR, TFT_BLACK);
-            display->setTextFont(FONT_AUXILIARY);
-            display->drawText(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, "NO ALARMS", FONT_AUXILIARY);
-            return;
+        forceDraw();
+    }
+    // 更新抑制中は前回の表示を維持（何もしない）
+}
+
+void AlarmDisplayState::forceDraw() {
+    if (!display) return;
+    
+    // リアルタイム削除: 過去のアラームを削除
+    if (timeProvider) {
+        time_t now = timeProvider->now();
+        AlarmLogic::removePastAlarms(alarm_times, now);
+    }
+    
+    // アラームリストを取得（毎回最新の状態を取得）
+    std::vector<time_t> alarms = getAlarmList();
+    
+    // 選択位置の調整（アラーム消化後も適切に調整）
+    adjustSelectionIndex();
+    
+    // ちらつき防止：変更があった場合のみ更新
+    bool needsUpdate = false;
+    
+    // 初期表示時は強制的に更新
+    if (lastDisplayedAlarms.empty()) {
+        needsUpdate = true;
+    } else {
+        // アラームリストの変更をチェック
+        if (alarms != lastDisplayedAlarms) {
+            needsUpdate = true;
         }
         
+        // 選択位置の変更をチェック
+        if (selectedIndex != lastSelectedIndex) {
+            needsUpdate = true;
+        }
+    }
+    
+    // 変更がない場合は何もしない（ちらつき防止）
+    if (!needsUpdate) {
+        return;
+    }
+    
+    // 変更があった場合のみ画面を更新
+    if (alarms.empty()) {
+        // 空リスト表示（中央配置）
+        // 前回アラームがあった場合は、その領域をクリア
+        if (!lastDisplayedAlarms.empty()) {
+            constexpr int START_Y = 40;
+            constexpr int LINE_HEIGHT = 30;
+            constexpr int MAX_DISPLAY = 5;
+            int clearHeight = std::min(static_cast<int>(lastDisplayedAlarms.size()), MAX_DISPLAY) * LINE_HEIGHT;
+            display->fillRect(0, START_Y - 5, SCREEN_WIDTH, clearHeight, TFT_BLACK);
+        }
+        
+        display->setTextDatum(MC_DATUM); // 中央基準
+        display->setTextColor(AMBER_COLOR, TFT_BLACK);
+        display->setTextFont(FONT_AUXILIARY);
+        display->drawText(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, "NO ALARMS", FONT_AUXILIARY);
+    } else {
         // アラームリスト表示
         constexpr int START_Y = 40;
         constexpr int LINE_HEIGHT = 30;
         constexpr int MAX_DISPLAY = 5;
+        
+        // 前回より項目が減った場合、減った分の領域をクリア
+        if (alarms.size() < lastDisplayedAlarms.size()) {
+            int clearStartY = START_Y + alarms.size() * LINE_HEIGHT - 5;
+            int clearHeight = (std::min(static_cast<int>(lastDisplayedAlarms.size()), MAX_DISPLAY) - static_cast<int>(alarms.size())) * LINE_HEIGHT;
+            if (clearHeight > 0) {
+                display->fillRect(0, clearStartY, SCREEN_WIDTH, clearHeight, TFT_BLACK);
+            }
+        }
         
         for (size_t i = 0; i < alarms.size() && i < MAX_DISPLAY; ++i) {
             // 時刻文字列に変換
@@ -79,17 +134,24 @@ void AlarmDisplayState::onDraw() {
         // 色をリセット
         display->setTextColor(AMBER_COLOR, TFT_BLACK);
     }
-    // 更新抑制中は前回の表示を維持（何もしない）
+    
+    // 現在の状態を記憶
+    lastDisplayedAlarms = alarms;
+    lastSelectedIndex = selectedIndex;
 }
 
 void AlarmDisplayState::onButtonA() {
     updateLastUserAction();
     moveUp();
+    // 選択位置変更後に画面を再描画
+    forceDraw();
 }
 
 void AlarmDisplayState::onButtonB() {
     updateLastUserAction();
     moveDown();
+    // 選択位置変更後に画面を再描画
+    forceDraw();
 }
 
 void AlarmDisplayState::onButtonC() {
@@ -100,11 +162,15 @@ void AlarmDisplayState::onButtonC() {
 void AlarmDisplayState::onButtonALongPress() {
     updateLastUserAction();
     moveToTop();
+    // 選択位置変更後に画面を再描画
+    forceDraw();
 }
 
 void AlarmDisplayState::onButtonBLongPress() {
     updateLastUserAction();
     moveToBottom();
+    // 選択位置変更後に画面を再描画
+    forceDraw();
 }
 
 void AlarmDisplayState::onButtonCLongPress() {
@@ -146,7 +212,8 @@ void AlarmDisplayState::deleteSelectedAlarm() {
     auto it = std::find(alarm_times.begin(), alarm_times.end(), selectedTime);
     if (it != alarm_times.end()) {
         alarm_times.erase(it);
-        // 削除成功 - 選択位置の調整は次回のonDrawで行われる
+        // 削除成功 - 即座に画面を再描画
+        forceDraw();
     }
     // 既に消化済みの場合は何もしない（正常終了）
 }

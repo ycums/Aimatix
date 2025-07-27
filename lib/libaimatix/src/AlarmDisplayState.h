@@ -15,7 +15,8 @@ public:
                      std::shared_ptr<ITimeProvider> timeProvider = nullptr,
                      std::shared_ptr<ITimeManager> timeManager = nullptr)
         : manager(mgr), display(display), timeProvider(timeProvider), 
-          timeManager(timeManager), selectedIndex(0), mainDisplayState(nullptr), lastUserAction(0) {}
+          timeManager(timeManager), selectedIndex(0), mainDisplayState(nullptr), 
+          lastUserAction(0), lastSelectedIndex(0) {}
     
     void setMainDisplayState(IState* mainState) { mainDisplayState = mainState; }
     
@@ -46,6 +47,10 @@ private:
     size_t selectedIndex;
     unsigned long lastUserAction;
     
+    // ちらつき防止用：前回の表示状態を記憶
+    std::vector<time_t> lastDisplayedAlarms;
+    size_t lastSelectedIndex;
+    
     // ハイブリッドアプローチ用の定数
     static constexpr unsigned long UPDATE_PAUSE_DURATION = 3000; // 3秒
     
@@ -68,4 +73,7 @@ private:
     bool shouldUpdateRealTime() const;
     void updateLastUserAction();
     unsigned long getCurrentMillis() const;
+    
+    // 強制描画（初期表示とリアルタイム更新用）
+    void forceDraw();
 }; 
