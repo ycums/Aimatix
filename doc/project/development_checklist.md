@@ -95,20 +95,41 @@
   - [x] 相対時間→絶対時間の変換時に秒以下が反映されていない。
     - [x] now: 15:34:12 & input: __:05 なら expected: 15:39:12
       - [x] actual: 15:39:00
-- [ ] 3-0-11.6: アラームリストの行高さの修正
-  - [ ] 
+- [x] 3-0-11.6: アラームリストの行高さの修正
 - [ ] 3-0-12: 設定画面（SettingsDisplay）雛形追加・遷移（SettingsLogic stub、設定値の表示・編集雛形）
   - [ ] 静的解析実行（Clang-Tidy）
-- [ ] 3-0-13: 項目選択・アラーム削除（AlarmLogic/AlarmDisplayの機能拡張、副作用コマンド一元管理）
+- [ ] 3-0-13: 日時手動設定画面の追加（EEPROM非依存）
+  - [ ] 設定画面に「Set Date/Time」項目を追加
+  - [ ] 日付・時刻入力画面の実装（YYYY/MM/DD HH:MM形式）
+  - [ ] 入力値のバリデーション（日付範囲、時刻範囲）
+  - [ ] 確定時にシステム時刻を更新（揮発性、電源OFFでリセット）
   - [ ] 静的解析実行（Clang-Tidy）
-- [ ] 3-0-14: 設定保存・復元・バリデーション（SettingsLogic本実装＋MockEEPROMAdapter連携、設定保存/復元/バリデーションのUI・副作用コマンド）
+- [ ] 3-0-14: 設定画面の項目選択・値変更UI/UXの作成 (項目選択モード、値変更モードの行き来)
+  - [ ] この時点では設定保存/復元/バリデーション等の副作用コマンドは実装しない。UI上動いているように見えるだけ
   - [ ] 静的解析実行（Clang-Tidy）
-- [ ] 3-0-15: 警告・エラー表示、副作用コマンド拡張（ShowWarningコマンド、エラー時のUI反映）
+- [ ] 3-0-15: 設定保存・復元・バリデーション（SettingsLogic本実装＋MockEEPROMAdapter連携、設定保存/復元/バリデーションのUI・副作用コマンド）
+  - [ ] 静的解析実行（Clang-Tidy）
+- [ ] 3-0-16: EEPROM 保存値の起動時読み出し part 1 (Set Date/Time)
+- [ ] 3-0-17: EEPROM 保存値の起動時読み出し part 2 (LCD Brightness)
+- [ ] 3-0-18: 警告・エラー表示、副作用コマンド拡張（ShowWarningコマンド、エラー時のUI反映）
   - [ ] 入力画面の桁送り失敗時に何らかのリアクションを追加する。
   - [ ] 静的解析実行（Clang-Tidy）
-- [ ] 3-0-16: すべての主要コンポーネント・全仕様網羅（MainDisplay, InputDisplay, AlarmDisplay, SettingsDisplay, TimeLogic, AlarmLogic, InputLogic, SettingsLogic, ButtonManager, DebounceManager, 各Adapter/Hardware層）
+- [ ] 3-0-19: EEPROM 保存値の起動時読み出し part 3 (Sound設定)
+- [ ] 3-0-20: すべての主要コンポーネント・全仕様網羅（MainDisplay, InputDisplay, AlarmDisplay, SettingsDisplay, TimeLogic, AlarmLogic, InputLogic, SettingsLogic, ButtonManager, DebounceManager, 各Adapter/Hardware層）
     - [ ] すべての画面・機能・副作用コマンドが連携し、全仕様を満たす
     - [ ] 静的解析実行（Clang-Tidy）
+- [ ] 3-0-21: WiFi設定機能（EEPROM機能完成後）
+  - [ ] 設定画面に「WiFi Settings」項目を追加
+  - [ ] SSID/パスワード入力画面
+  - [ ] WiFi接続テスト機能
+  - [ ] EEPROMへの設定保存
+  - [ ] 静的解析実行（Clang-Tidy）
+- [ ] 3-0-22: NTP自動同期機能
+  - [ ] 起動時の自動NTP同期
+  - [ ] 定期的な時刻同期（24時間間隔）
+  - [ ] 手動設定との優先順位管理
+  - [ ] 同期失敗時のフォールバック
+  - [ ] 静的解析実行（Clang-Tidy）
 
 ---
 
@@ -120,6 +141,7 @@
 | InputDisplay         | 3-0-4         | 3-0-15        |
 | AlarmDisplay         | 3-0-8/10      | 3-0-15        |
 | SettingsDisplay      | 3-0-11        | 3-0-15        |
+| DateTimeInputState   | 3-0-11.7      | 3-0-11.7      |
 | TimeLogic            | 3-0-1/3       | 3-1-1/3-0-15  |
 | AlarmLogic           | 3-0-3/8       | 3-1-1/3-0-15  |
 | InputLogic           | 3-0-4/7       | 3-1-1/3-0-15  |
