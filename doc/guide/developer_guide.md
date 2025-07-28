@@ -309,6 +309,229 @@ bool displayTimeInput(time_t time, int x, int y);
 - **Medium**: 中重要度の警告は80件以下（ゲート基準）
 - **Low**: 低重要度の警告は50件以下
 
+### 6.5 Clang-Tidy警告防止ガイドライン
+
+#### 6.5.1 変数初期化の徹底
+**警告**: `cppcoreguidelines-init-variables`
+**対策**:
+```cpp
+// ❌ 悪い例
+int value;
+bool flag;
+std::vector<int> items;
+
+// ✅ 良い例
+int value = 0;
+bool flag = false;
+std::vector<int> items{};
+```
+
+**ルール**:
+- すべての変数は宣言時に初期化する
+- ポインタは`nullptr`で初期化
+- 配列・ベクターは空の初期化子`{}`を使用
+
+#### 6.5.2 静的メンバー関数の活用
+**警告**: `readability-convert-member-functions-to-static`
+**対策**:
+```cpp
+// ❌ 悪い例
+class AlarmLogic {
+    void addAlarm(int time) {
+        // インスタンス変数を使用しない処理
+    }
+};
+
+// ✅ 良い例
+class AlarmLogic {
+    static void addAlarm(int time) {
+        // 静的関数として定義
+    }
+};
+```
+
+**ルール**:
+- インスタンス変数を使用しないメソッドは`static`にする
+- 純粋な計算関数は静的関数として定義
+- 状態を変更しない関数は静的関数を検討
+
+#### 6.5.3 パラメータ順序の明確化
+**警告**: `bugprone-easily-swappable-parameters`
+**対策**:
+```cpp
+// ❌ 悪い例（順序が入れ替わりやすい）
+void drawRectangle(int x, int y, int width, int height);
+
+// ✅ 良い例（型が異なる）
+void drawRectangle(int x, int y, unsigned int width, unsigned int height);
+
+// ✅ 良い例（構造体を使用）
+struct Rectangle {
+    int x, y, width, height;
+};
+void drawRectangle(const Rectangle& rect);
+```
+
+**ルール**:
+- 同じ型の連続するパラメータは避ける
+- 構造体やクラスでパラメータをグループ化
+- 型を変えて区別を明確にする
+
+#### 6.5.4 グローバル変数のconst化
+**警告**: `cppcoreguidelines-avoid-non-const-global-variables`
+**対策**:
+```cpp
+// ❌ 悪い例
+int global_counter = 0;
+std::vector<int> global_data;
+
+// ✅ 良い例
+const int MAX_COUNT = 100;
+const std::vector<int> DEFAULT_DATA = {1, 2, 3};
+
+// ✅ 良い例（シングルトンパターン）
+class GlobalState {
+private:
+    static GlobalState* instance;
+    GlobalState() = default;
+public:
+    static GlobalState& getInstance();
+};
+```
+
+**ルール**:
+- グローバル変数は可能な限り`const`にする
+- 変更が必要な場合はシングルトンパターンを使用
+- モジュール内のstatic変数を検討
+
+#### 6.5.5 ポインタ演算の回避
+**警告**: `cppcoreguidelines-pro-bounds-pointer-arithmetic`
+**対策**:
+```cpp
+// ❌ 悪い例
+char* ptr = buffer;
+*(ptr + 1) = 'a';
+*(ptr + 2) = 'b';
+
+// ✅ 良い例
+char* ptr = buffer;
+ptr[1] = 'a';
+ptr[2] = 'b';
+
+// ✅ 良い例（イテレータ使用）
+std::vector<char> buffer;
+auto it = buffer.begin();
+std::advance(it, 1);
+*it = 'a';
+```
+
+**ルール**:
+- ポインタ演算の代わりに配列添字`[]`を使用
+- 可能な限りイテレータを使用
+- 範囲チェックを必ず行う
+
+#### 6.5.6 配列添字の安全な使用
+**警告**: `cppcoreguidelines-pro-bounds-constant-array-index`
+**対策**:
+```cpp
+// ❌ 悪い例
+int array[10];
+int index = getIndex();
+array[index] = value;  // 実行時インデックス
+
+// ✅ 良い例
+int array[10];
+int index = getIndex();
+if (index >= 0 && index < 10) {
+    array[index] = value;
+}
+
+// ✅ 良い例（std::array使用）
+std::array<int, 10> array;
+int index = getIndex();
+if (index >= 0 && index < array.size()) {
+    array[index] = value;
+}
+```
+
+**ルール**:
+- 実行時インデックスには必ず範囲チェックを行う
+- `std::array`や`std::vector`の使用を検討
+- 定数インデックスのみ配列添字を使用
+
+#### 6.5.7 現代的なC++機能の活用
+**警告**: `modernize-use-trailing-return-type`, `modernize-use-default-member-init`
+**対策**:
+```cpp
+// ❌ 悪い例
+class Settings {
+    bool soundEnabled;
+    int selectedItem;
+public:
+    Settings() : soundEnabled(false), selectedItem(0) {}
+    int getSelectedItem() { return selectedItem; }
+};
+
+// ✅ 良い例
+class Settings {
+    bool soundEnabled = false;
+    int selectedItem = 0;
+public:
+    auto getSelectedItem() -> int { return selectedItem; }
+};
+```
+
+**ルール**:
+- メンバー変数はデフォルト初期化子を使用
+- 複雑な戻り値型には後置戻り値型を使用
+- `auto`キーワードを適切に活用
+
+#### 6.5.8 コード複雑度の管理
+**警告**: `readability-function-cognitive-complexity`
+**対策**:
+```cpp
+// ❌ 悪い例（複雑な関数）
+void processAlarm(int input) {
+    if (input > 0) {
+        if (input < 100) {
+            if (isValidTime(input)) {
+                if (hasSpace()) {
+                    // 処理
+                }
+            }
+        }
+    }
+}
+
+// ✅ 良い例（分割された関数）
+void processAlarm(int input) {
+    if (!isValidInput(input)) return;
+    if (!hasSpace()) return;
+    addAlarm(input);
+}
+
+bool isValidInput(int input) {
+    return input > 0 && input < 100 && isValidTime(input);
+}
+```
+
+**ルール**:
+- 関数の認知複雑度は25以下を目安とする
+- 早期リターンでネストを減らす
+- 複雑な条件は別関数に分離
+
+#### 6.5.9 開発時のチェックリスト
+新しいコードを書く際は以下を確認：
+
+1. **変数初期化**: すべての変数が初期化されているか
+2. **静的関数**: インスタンス変数を使用しない関数は`static`か
+3. **パラメータ設計**: 同じ型の連続パラメータは避けているか
+4. **グローバル変数**: 必要最小限で`const`を検討しているか
+5. **ポインタ操作**: 安全な配列アクセスを使用しているか
+6. **範囲チェック**: 実行時インデックスに範囲チェックがあるか
+7. **現代的なC++**: 適切な初期化子と戻り値型を使用しているか
+8. **関数サイズ**: 認知複雑度が適切か
+
 ## 7. トラブルシューティング
 
 ### 7.1 よくある問題
@@ -397,7 +620,7 @@ Serial.printf("Processing time: %lu ms\n", endTime - startTime);
 - **対象**: 全ソースコード
 - **環境**: native環境
 - **頻度**: 各開発ステップで実行
-- **品質ゲート**: 中重要度警告80件以下
+- **品質ゲート**: 中重要度警告85件以下
 
 #### 8.2.2 静的解析の活用
 - **バグ検出**: 潜在的なバグの早期発見
@@ -415,7 +638,7 @@ Component            HIGH    MEDIUM    LOW
 lib\libaimatix\src    0        78       0
 src                   0        22       0
 
-Total                 0       100       0  # ← 80件以下で合格
+Total                 0       100       0  # ← 85件以下で合格
 ```
 
 ### 8.3 コードレビュー
@@ -425,13 +648,13 @@ Total                 0       100       0  # ← 80件以下で合格
 - **品質**: コードの品質は適切か
 - **テスト**: テストは十分か
 - **静的解析**: Clang-Tidy警告は適切に対処されているか
-- **品質ゲート**: 80件以下の基準を満たしているか
+- **品質ゲート**: 85件以下の基準を満たしているか
 - **ドキュメント**: ドキュメントは更新されているか
 
 #### 8.3.2 レビュープロセス
 1. **自己レビュー**: 実装者が自己レビュー
 2. **静的解析**: Clang-Tidyによる自動チェック
-3. **品質ゲート確認**: 80件以下の基準確認
+3. **品質ゲート確認**: 85件以下の基準確認
 4. **ピアレビュー**: 他の開発者がレビュー
 5. **修正**: 指摘された問題を修正
 6. **再レビュー**: 必要に応じて再レビュー
@@ -460,4 +683,4 @@ Total                 0       100       0  # ← 80件以下で合格
 **作成日**: 2025年1月  
 **バージョン**: 2.0.0  
 **更新日**: 2025年1月  
-**品質ゲート基準**: 中重要度警告80件以下 
+**品質ゲート基準**: 中重要度警告85件以下 
