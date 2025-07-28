@@ -1,16 +1,10 @@
 #include "SettingsLogic.h"
 #include <cassert>
 
-// 定数定義
-constexpr int DEFAULT_LCD_BRIGHTNESS = 150;
-constexpr int MIN_LCD_BRIGHTNESS = 50;
-constexpr int MAX_LCD_BRIGHTNESS = 250;
-constexpr int SETTINGS_ITEM_COUNT = 4;
-
 class SettingsLogic : public ISettingsLogic {
 public:
     SettingsLogic() 
-        : lcdBrightness_(DEFAULT_LCD_BRIGHTNESS), soundEnabled_(true), selectedItem_(SettingsItem::SOUND), 
+        : lcdBrightness_(150), soundEnabled_(true), selectedItem_(SettingsItem::SOUND), 
           valueEditMode_(false) {
         resetSettings();
     }
@@ -18,7 +12,7 @@ public:
     // 設定値のgetter/setter
     int getLcdBrightness() const override { return lcdBrightness_; }
     void setLcdBrightness(int value) override { 
-        if (value >= MIN_LCD_BRIGHTNESS && value <= MAX_LCD_BRIGHTNESS) {
+        if (value >= 50 && value <= 250) {
             lcdBrightness_ = value;
         }
     }
@@ -28,7 +22,7 @@ public:
     // 設定項目の管理（論理的識別子ベース）
     SettingsItem getSelectedItem() const override { return selectedItem_; }
     void setSelectedItem(SettingsItem item) override { selectedItem_ = item; }
-    int getItemCount() const override { return SETTINGS_ITEM_COUNT; } // SOUND, LCD_BRIGHTNESS, SET_DATE_TIME, INFO
+    int getItemCount() const override { return 4; } // SOUND, LCD_BRIGHTNESS, SET_DATE_TIME, INFO
     
     SettingsItem getItemByIndex(int index) const override {
         if (index < 0 || index >= getItemCount()) {
@@ -82,14 +76,14 @@ public:
     }
     
     void resetSettings() override {
-        lcdBrightness_ = DEFAULT_LCD_BRIGHTNESS;
+        lcdBrightness_ = 150;
         soundEnabled_ = true;
         selectedItem_ = SettingsItem::SOUND;
         valueEditMode_ = false;
     }
     
     bool validateSettings() const override {
-        return lcdBrightness_ >= MIN_LCD_BRIGHTNESS && lcdBrightness_ <= MAX_LCD_BRIGHTNESS;
+        return lcdBrightness_ >= 50 && lcdBrightness_ <= 250;
     }
 
 private:
