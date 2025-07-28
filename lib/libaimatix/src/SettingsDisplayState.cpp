@@ -1,14 +1,17 @@
 #include "SettingsDisplayState.h"
 #include <cassert>
 
+// 定数定義
+constexpr int SETTINGS_BATTERY_LEVEL = 42;
+
 void SettingsDisplayState::onEnter() {
     // ちらつき防止用の状態をリセット
     lastDisplayedItems.clear();
     lastSelectedIndex = -1;
     
-    if (view) {
+    if (view != nullptr) {
         view->clear();
-        view->showTitle("SETTINGS", 42, false);
+        view->showTitle("SETTINGS", SETTINGS_BATTERY_LEVEL, false);
         view->showHints("UP", "DOWN", "SELECT");
     }
     onDraw();
@@ -19,12 +22,12 @@ void SettingsDisplayState::onExit() {
 }
 
 void SettingsDisplayState::onDraw() {
-    if (!view || !settingsLogic) {
+    if (view == nullptr || settingsLogic == nullptr) {
         return;
     }
     
     std::vector<std::string> settingsList = generateSettingsList();
-    int selectedIndex = settingsLogic->getIndexByItem(settingsLogic->getSelectedItem());
+    const int selectedIndex = settingsLogic->getIndexByItem(settingsLogic->getSelectedItem());
     
     // ちらつき防止：変更があった場合のみ更新
     bool needsUpdate = false;
@@ -53,31 +56,37 @@ void SettingsDisplayState::onDraw() {
 }
 
 void SettingsDisplayState::onButtonA() {
-    if (!settingsLogic) return;
+    if (settingsLogic == nullptr) {
+        return;
+    }
     
     // 前項目（上に移動）- 端で停止
-    int currentIndex = settingsLogic->getIndexByItem(settingsLogic->getSelectedItem());
+    const int currentIndex = settingsLogic->getIndexByItem(settingsLogic->getSelectedItem());
     if (currentIndex > 0) {
-        int newIndex = currentIndex - 1;
+        const int newIndex = currentIndex - 1;
         settingsLogic->setSelectedItem(settingsLogic->getItemByIndex(newIndex));
         onDraw();
     }
 }
 
 void SettingsDisplayState::onButtonB() {
-    if (!settingsLogic) return;
+    if (settingsLogic == nullptr) {
+        return;
+    }
     
     // 次項目（下に移動）- 端で停止
-    int currentIndex = settingsLogic->getIndexByItem(settingsLogic->getSelectedItem());
+    const int currentIndex = settingsLogic->getIndexByItem(settingsLogic->getSelectedItem());
     if (currentIndex < settingsLogic->getItemCount() - 1) {
-        int newIndex = currentIndex + 1;
+        const int newIndex = currentIndex + 1;
         settingsLogic->setSelectedItem(settingsLogic->getItemByIndex(newIndex));
         onDraw();
     }
 }
 
 void SettingsDisplayState::onButtonC() {
-    if (!settingsLogic) return;
+    if (settingsLogic == nullptr) {
+        return;
+    }
     
     // 選択確定（値変更モードに入る）
     // 3-0-12フェーズでは値変更モードは実装しない
@@ -87,7 +96,7 @@ void SettingsDisplayState::onButtonC() {
 
 void SettingsDisplayState::onButtonALongPress() {
     // 一番上に移動
-    if (settingsLogic) {
+    if (settingsLogic != nullptr) {
         settingsLogic->setSelectedItem(SettingsItem::SOUND);
         onDraw();
     }
@@ -95,7 +104,7 @@ void SettingsDisplayState::onButtonALongPress() {
 
 void SettingsDisplayState::onButtonBLongPress() {
     // 一番下に移動
-    if (settingsLogic) {
+    if (settingsLogic != nullptr) {
         settingsLogic->setSelectedItem(SettingsItem::INFO);
         onDraw();
     }
@@ -103,18 +112,22 @@ void SettingsDisplayState::onButtonBLongPress() {
 
 void SettingsDisplayState::onButtonCLongPress() {
     // メイン画面に戻る
-    if (manager && mainDisplayState) {
+    if (manager != nullptr && mainDisplayState != nullptr) {
         manager->setState(mainDisplayState);
     }
 }
 
 int SettingsDisplayState::getSelectedIndex() const {
-    if (!settingsLogic) return 0;
+    if (settingsLogic == nullptr) {
+        return 0;
+    }
     return settingsLogic->getIndexByItem(settingsLogic->getSelectedItem());
 }
 
 void SettingsDisplayState::setSelectedIndex(int index) {
-    if (!settingsLogic) return;
+    if (settingsLogic == nullptr) {
+        return;
+    }
     if (index >= 0 && index < settingsLogic->getItemCount()) {
         settingsLogic->setSelectedItem(settingsLogic->getItemByIndex(index));
     }
@@ -122,14 +135,14 @@ void SettingsDisplayState::setSelectedIndex(int index) {
 
 std::vector<std::string> SettingsDisplayState::generateSettingsList() const {
     std::vector<std::string> list;
-    if (!settingsLogic) {
+    if (settingsLogic == nullptr) {
         return list;
     }
     
     for (int i = 0; i < settingsLogic->getItemCount(); ++i) {
-        SettingsItem item = settingsLogic->getItemByIndex(i);
-        std::string displayName = settingsLogic->getItemDisplayName(item);
-        std::string valueString = settingsLogic->getItemValueString(item);
+        const SettingsItem item = settingsLogic->getItemByIndex(i);
+        const std::string displayName = settingsLogic->getItemDisplayName(item);
+        const std::string valueString = settingsLogic->getItemValueString(item);
         
         if (!valueString.empty()) {
             list.push_back(displayName + ": " + valueString);

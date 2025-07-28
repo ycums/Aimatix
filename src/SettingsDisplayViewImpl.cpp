@@ -5,7 +5,9 @@
 #endif
 
 void SettingsDisplayViewImpl::showSettingsList(const std::vector<std::string>& items, size_t selectedIndex) {
-    if (!disp) return;
+    if (disp == nullptr) {
+        return;
+    }
     
     // アラーム管理画面と同様のレイアウト
     const int startY = ALARM_DISPLAY_START_Y;
