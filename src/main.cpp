@@ -3,10 +3,14 @@
 #include "MainDisplayState.h"
 #include "InputDisplayState.h"
 #include "AlarmDisplayState.h"
+#include "SettingsDisplayState.h"
 #include "InputLogic.h"
+#include "SettingsLogic.h"
+#include "SettingsLogic.cpp"
 #include "InputDisplayViewImpl.h"
 #include "MainDisplayViewImpl.h"
 #include "AlarmDisplayViewImpl.h"
+#include "SettingsDisplayViewImpl.h"
 #include "TimeLogic.h"
 #include "AlarmLogic.h"
 #include "DisplayAdapter.h"
@@ -76,11 +80,14 @@ DisplayAdapter display_adapter;
 InputDisplayViewImpl input_display_view_impl(&display_adapter);
 MainDisplayViewImpl main_display_view_impl(&display_adapter);
 AlarmDisplayViewImpl alarm_display_view_impl(&display_adapter);
+SettingsDisplayViewImpl settings_display_view_impl(&display_adapter);
 TimeLogic time_logic;
 AlarmLogic alarm_logic;
+SettingsLogic settings_logic;
 InputDisplayState input_display_state(&input_logic, &input_display_view_impl);
 MainDisplayState main_display_state(&state_manager, &input_display_state, &main_display_view_impl, &time_logic, &alarm_logic);
 AlarmDisplayState alarm_display_state(&state_manager, &alarm_display_view_impl, m5_time_provider, m5_time_manager);
+SettingsDisplayState settings_display_state(&settings_logic, &settings_display_view_impl);
 ButtonManager button_manager; // 追加
 
 void setup() {
@@ -98,6 +105,9 @@ void setup() {
     input_display_state.setMainDisplayState(&main_display_state);
     main_display_state.setAlarmDisplayState(&alarm_display_state);
     alarm_display_state.setMainDisplayState(&main_display_state);
+    settings_display_state.setManager(&state_manager);
+    settings_display_state.setMainDisplayState(&main_display_state);
+    main_display_state.setSettingsDisplayState(&settings_display_state);
     // 状態遷移の初期状態をMainDisplayに
     state_manager.setState(&main_display_state);
 }

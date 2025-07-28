@@ -14,6 +14,7 @@ public:
         : manager(mgr), inputDisplayState(inputState), view(view), timeLogic(timeLogic), alarmLogic(alarmLogic) {}
     
     void setAlarmDisplayState(IState* alarmState) { alarmDisplayState = alarmState; }
+    void setSettingsDisplayState(IState* settingsState) { settingsDisplayState = settingsState; }
     void onEnter() override {
         if (view) {
             view->clear();
@@ -80,7 +81,12 @@ public:
         }
     }
     void onButtonALongPress() override {}
-    void onButtonCLongPress() override {}
+    void onButtonCLongPress() override {
+        if (manager && settingsDisplayState) {
+            // 設定画面に遷移
+            manager->setState(settingsDisplayState);
+        }
+    }
     void onButtonBLongPress() override {}
     void setView(IMainDisplayView* v) { view = v; }
     void setTimeLogic(TimeLogic* t) { timeLogic = t; }
@@ -89,6 +95,7 @@ private:
     StateManager* manager;
     InputDisplayState* inputDisplayState;
     IState* alarmDisplayState;
+    IState* settingsDisplayState;
     IMainDisplayView* view;
     TimeLogic* timeLogic;
     AlarmLogic* alarmLogic;
