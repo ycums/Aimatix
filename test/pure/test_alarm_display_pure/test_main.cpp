@@ -97,7 +97,7 @@ public:
 
 // テスト用のアラームリスト
 std::vector<time_t> test_alarm_times;
-std::vector<time_t> alarm_times; // 外部変数の定義
+extern std::vector<time_t> alarm_times; // 外部変数の宣言
 
 void setUp(void) {
     test_alarm_times.clear();
