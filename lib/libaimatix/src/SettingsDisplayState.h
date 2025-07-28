@@ -36,6 +36,10 @@ private:
     StateManager* manager;
     IState* mainDisplayState;
     
+    // ちらつき防止用の状態記憶
+    std::vector<std::string> lastDisplayedItems;
+    int lastSelectedIndex = -1;
+    
     // 表示用の設定項目リストを生成
     std::vector<std::string> generateSettingsList() const;
 }; 

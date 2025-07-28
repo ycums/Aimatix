@@ -137,15 +137,15 @@ void test_SettingsDisplayState_BoundaryNavigation() {
     MockSettingsDisplayView mockView;
     SettingsDisplayState state(&testSettingsLogic, &mockView);
     
-    // 一番上からAボタンで下に移動（循環）
+    // 一番上からAボタンで移動しない（端で停止）
     testSettingsLogic.setSelectedItem(SettingsItem::SOUND);
     state.onButtonA();
-    TEST_ASSERT_EQUAL(SettingsItem::INFO, testSettingsLogic.getSelectedItem());
+    TEST_ASSERT_EQUAL(SettingsItem::SOUND, testSettingsLogic.getSelectedItem());
     
-    // 一番下からBボタンで上に移動（循環）
+    // 一番下からBボタンで移動しない（端で停止）
     testSettingsLogic.setSelectedItem(SettingsItem::INFO);
     state.onButtonB();
-    TEST_ASSERT_EQUAL(SettingsItem::SOUND, testSettingsLogic.getSelectedItem());
+    TEST_ASSERT_EQUAL(SettingsItem::INFO, testSettingsLogic.getSelectedItem());
 }
 
 void test_SettingsDisplayState_LongPressNavigation() {

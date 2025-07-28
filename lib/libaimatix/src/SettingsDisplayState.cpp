@@ -15,31 +15,61 @@ void SettingsDisplayState::onExit() {
 }
 
 void SettingsDisplayState::onDraw() {
-    if (!view || !settingsLogic) return;
+    if (!view || !settingsLogic) {
+        return;
+    }
     
     std::vector<std::string> settingsList = generateSettingsList();
     int selectedIndex = settingsLogic->getIndexByItem(settingsLogic->getSelectedItem());
+    
+    // ちらつき防止：変更があった場合のみ更新
+    bool needsUpdate = false;
+    
+    // 初期表示時は強制的に更新
+    if (lastDisplayedItems.empty()) {
+        needsUpdate = true;
+    } else {
+        // 選択位置の変更をチェック
+        if (selectedIndex != lastSelectedIndex) {
+            needsUpdate = true;
+        }
+    }
+    
+    // 変更がない場合は何もしない（ちらつき防止）
+    if (!needsUpdate) {
+        return;
+    }
+    
+    // 変更があった場合のみ画面を更新
     view->showSettingsList(settingsList, selectedIndex);
+    
+    // 現在の状態を記憶
+    lastDisplayedItems = settingsList;
+    lastSelectedIndex = selectedIndex;
 }
 
 void SettingsDisplayState::onButtonA() {
     if (!settingsLogic) return;
     
-    // 前項目（上に移動）
+    // 前項目（上に移動）- 端で停止
     int currentIndex = settingsLogic->getIndexByItem(settingsLogic->getSelectedItem());
-    int newIndex = (currentIndex - 1 + settingsLogic->getItemCount()) % settingsLogic->getItemCount();
-    settingsLogic->setSelectedItem(settingsLogic->getItemByIndex(newIndex));
-    onDraw();
+    if (currentIndex > 0) {
+        int newIndex = currentIndex - 1;
+        settingsLogic->setSelectedItem(settingsLogic->getItemByIndex(newIndex));
+        onDraw();
+    }
 }
 
 void SettingsDisplayState::onButtonB() {
     if (!settingsLogic) return;
     
-    // 次項目（下に移動）
+    // 次項目（下に移動）- 端で停止
     int currentIndex = settingsLogic->getIndexByItem(settingsLogic->getSelectedItem());
-    int newIndex = (currentIndex + 1) % settingsLogic->getItemCount();
-    settingsLogic->setSelectedItem(settingsLogic->getItemByIndex(newIndex));
-    onDraw();
+    if (currentIndex < settingsLogic->getItemCount() - 1) {
+        int newIndex = currentIndex + 1;
+        settingsLogic->setSelectedItem(settingsLogic->getItemByIndex(newIndex));
+        onDraw();
+    }
 }
 
 void SettingsDisplayState::onButtonC() {
@@ -88,7 +118,9 @@ void SettingsDisplayState::setSelectedIndex(int index) {
 
 std::vector<std::string> SettingsDisplayState::generateSettingsList() const {
     std::vector<std::string> list;
-    if (!settingsLogic) return list;
+    if (!settingsLogic) {
+        return list;
+    }
     
     for (int i = 0; i < settingsLogic->getItemCount(); ++i) {
         SettingsItem item = settingsLogic->getItemByIndex(i);
