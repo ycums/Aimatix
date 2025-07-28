@@ -38,10 +38,123 @@ void test_basic_state_manager() {
     TEST_ASSERT_NOT_NULL(&sm);
 }
 
+// 未テスト関数のテストケース追加
+void test_input_logic_shift_digits() {
+    InputLogic logic(testTimeProvider);
+    logic.reset();
+    
+    // 初期状態では桁送りできない
+    TEST_ASSERT_FALSE(logic.shiftDigits());
+    
+    // 値を入力してから桁送り
+    logic.incrementInput(5); // 分一の位に5を入力
+    TEST_ASSERT_TRUE(logic.shiftDigits());
+    
+    // 桁送り後の状態確認
+    TEST_ASSERT_EQUAL(5, logic.getDigit(2)); // 分十の位に移動
+    TEST_ASSERT_FALSE(logic.isEntered(3));   // 分一の位はクリア
+    TEST_ASSERT_TRUE(logic.isEntered(2));    // 分十の位は入力済み
+}
+
+void test_input_logic_get_absolute_value() {
+    InputLogic logic(testTimeProvider);
+    logic.reset();
+    
+    // 未入力状態では-1を返す
+    time_t result = logic.getAbsoluteValue();
+    TEST_ASSERT_EQUAL(-1, result);
+    
+    // 部分入力（05分）
+    logic.incrementInput(0); // 分十の位
+    logic.shiftDigits();
+    logic.incrementInput(5); // 分一の位
+    
+    result = logic.getAbsoluteValue();
+    TEST_ASSERT_NOT_EQUAL(-1, result);
+    
+    // 完全入力（12:34）
+    logic.reset();
+    logic.incrementInput(1); // 時十の位
+    logic.shiftDigits();
+    logic.incrementInput(2); // 時一の位
+    logic.shiftDigits();
+    logic.incrementInput(3); // 分十の位
+    logic.shiftDigits();
+    logic.incrementInput(4); // 分一の位
+    
+    result = logic.getAbsoluteValue();
+    TEST_ASSERT_NOT_EQUAL(-1, result);
+}
+
+void test_input_logic_complete_input_value() {
+    InputLogic logic(testTimeProvider);
+    logic.reset();
+    
+    // 完全入力（12:34）
+    logic.incrementInput(1); // 時十の位
+    logic.shiftDigits();
+    logic.incrementInput(2); // 時一の位
+    logic.shiftDigits();
+    logic.incrementInput(3); // 分十の位
+    logic.shiftDigits();
+    logic.incrementInput(4); // 分一の位
+    
+    // 完全入力時の値確認
+    int value = logic.getValue();
+    TEST_ASSERT_EQUAL(1234, value);
+    
+    // 各桁の値確認
+    TEST_ASSERT_EQUAL(1, logic.getDigit(0)); // 時十の位
+    TEST_ASSERT_EQUAL(2, logic.getDigit(1)); // 時一の位
+    TEST_ASSERT_EQUAL(3, logic.getDigit(2)); // 分十の位
+    TEST_ASSERT_EQUAL(4, logic.getDigit(3)); // 分一の位
+    
+    // 各桁の入力済み状態確認
+    TEST_ASSERT_TRUE(logic.isEntered(0));
+    TEST_ASSERT_TRUE(logic.isEntered(1));
+    TEST_ASSERT_TRUE(logic.isEntered(2));
+    TEST_ASSERT_TRUE(logic.isEntered(3));
+}
+
+void test_input_logic_shift_digits_edge_cases() {
+    InputLogic logic(testTimeProvider);
+    logic.reset();
+    
+    // 全桁入力済み状態で桁送りを試行
+    logic.incrementInput(1); // 時十の位
+    logic.shiftDigits();
+    logic.incrementInput(2); // 時一の位
+    logic.shiftDigits();
+    logic.incrementInput(3); // 分十の位
+    logic.shiftDigits();
+    logic.incrementInput(4); // 分一の位
+    
+    // 全桁入力済み状態では桁送りできない
+    TEST_ASSERT_FALSE(logic.shiftDigits());
+    
+    // 左端が入力済みの状態で桁送りを試行
+    logic.reset();
+    logic.incrementInput(1); // 時十の位
+    logic.shiftDigits();
+    logic.incrementInput(2); // 時一の位
+    logic.shiftDigits();
+    logic.incrementInput(3); // 分十の位
+    logic.shiftDigits();
+    logic.incrementInput(4); // 分一の位
+    logic.shiftDigits(); // 左端まで移動
+    
+    // 左端が入力済み状態では桁送りできない
+    TEST_ASSERT_FALSE(logic.shiftDigits());
+}
+
 int main(int argc, char **argv) {
     UNITY_BEGIN();
     RUN_TEST(test_basic_input_logic);
     RUN_TEST(test_basic_state_manager);
+    RUN_TEST(test_input_logic_shift_digits);
+    RUN_TEST(test_input_logic_get_absolute_value);
+    RUN_TEST(test_input_logic_complete_input_value);
+    RUN_TEST(test_input_logic_shift_digits_edge_cases);
     UNITY_END();
     return 0;
 } 
