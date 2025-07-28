@@ -2,6 +2,10 @@
 #include <cassert>
 
 void SettingsDisplayState::onEnter() {
+    // ちらつき防止用の状態をリセット
+    lastDisplayedItems.clear();
+    lastSelectedIndex = -1;
+    
     if (view) {
         view->clear();
         view->showTitle("SETTINGS", 42, false);
