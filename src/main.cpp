@@ -1,214 +1,137 @@
+#include "DisplayCommon.h"
+#include "StateManager.h"
+#include "MainDisplayState.h"
+#include "InputDisplayState.h"
+#include "AlarmDisplayState.h"
+#include "SettingsDisplayState.h"
+#include "InputLogic.h"
+#include "SettingsLogic.h"
+#include "SettingsLogic.cpp"
+#include "InputDisplayViewImpl.h"
+#include "MainDisplayViewImpl.h"
+#include "AlarmDisplayViewImpl.h"
+#include "SettingsDisplayViewImpl.h"
+#include "TimeLogic.h"
+#include "AlarmLogic.h"
+#include "DisplayAdapter.h"
+#ifdef ARDUINO
 #include <M5Stack.h>
-#include "ui.h"
-#include <settings.h>
-#include "m5stack_adapters.h"
-#include <IButtonManager.h>
-#include <ui_state_transition.h>
-#include <button_manager.h>
-#include <types.h>
-#include <alarm.h>
-#include <input.h>
-#include <ui_logic.h>
-#include <command.h>
+#include <Arduino.h>
 #include <vector>
+#include <ctime>
+#include <M5Display.h>
+#include "M5StackTimeProvider.h"
+#endif
+#include "ButtonManager.h"
 
-// drawMainDisplay用ダミー変数
-#include <time.h>
-time_t lastReleaseTime = 0;
+// 定数定義
+constexpr int LOOP_DELAY_MS = 50;
 
-// モード管理
-Mode currentMode = MAIN_DISPLAY;
-// settingsMenuの唯一の定義
-SettingsMenu settingsMenu;
+extern void setFillRectImpl(void (*impl)(int, int, int, int, int));
+extern void setFillProgressBarSpriteImpl(void (*impl)(int, int, int, int, int));
 
-// ButtonManagerインスタンス生成（millisをDI）
-ButtonManager buttonManager(millis);
-
-extern DigitEditTimeInputState digitEditInput;
-
-Settings appSettings;
-
-int scheduleSelectedIndex = 0;
-
-std::vector<Command> commandQueue;
-
-// Effect Handlerクラス例
-namespace UiEffectHandler {
-    void setBrightness(int value) {
-        M5.Lcd.setBrightness(value);
-    }
-    void showWarning(const char* msg) {
-        showWarningMessage(msg);
+#ifdef ARDUINO
+// --- M5Stack用描画関数 ---
+auto m5_rect_impl(int pos_x, int pos_y, int width, int height) -> void {
+    M5.Lcd.drawRect(pos_x, pos_y, width, height, AMBER_COLOR);
+}
+auto m5_string_impl(const char* str, int pos_x, int pos_y) -> void {
+    M5.Lcd.drawString(str, pos_x, pos_y);
+}
+auto m5_progress_bar_impl(int pos_x, int pos_y, int width, int height, int percent) -> void {
+    constexpr int BORDER_WIDTH = 1;
+    constexpr int PERCENT_DENOMINATOR = 100;
+    
+    M5.Lcd.drawRect(pos_x, pos_y, width, height, AMBER_COLOR);
+    M5.Lcd.fillRect(pos_x + BORDER_WIDTH, pos_y + BORDER_WIDTH, width - 2 * BORDER_WIDTH, height - 2 * BORDER_WIDTH, TFT_BLACK);
+    const int fillW = (width - 2 * BORDER_WIDTH) * percent / PERCENT_DENOMINATOR;
+    if (fillW > 0) {
+        M5.Lcd.fillRect(pos_x + BORDER_WIDTH, pos_y + BORDER_WIDTH, fillW, height - 2 * BORDER_WIDTH, AMBER_COLOR);
     }
 }
-namespace SettingsEffectHandler {
-    void save(const Settings& s) {
-        saveSettings(&eepromAdapter, s);
-    }
+auto m5_set_font_impl(int font_size) -> void {
+    M5.Lcd.setTextFont(font_size);
+    M5.Lcd.setTextColor(AMBER_COLOR, TFT_BLACK);
+}
+auto m5_set_text_datum_impl(int text_datum) -> void {
+    M5.Lcd.setTextDatum(text_datum);
+}
+auto m5_fill_rect_impl(int pos_x, int pos_y, int width, int height, int color) -> void {
+    M5.Lcd.fillRect(pos_x, pos_y, width, height, color);
 }
 
-void processCommands() {
-    for (const auto& cmd : commandQueue) {
-        switch (cmd.type) {
-            case CommandType::SetBrightness:
-                UiEffectHandler::setBrightness(cmd.intValue);
-                break;
-            case CommandType::SaveSettings:
-                SettingsEffectHandler::save(appSettings);
-                break;
-            case CommandType::ShowWarning:
-                UiEffectHandler::showWarning(cmd.message);
-                break;
-            case CommandType::UpdateUI:
-                // 必要に応じて再描画
-                break;
-        }
-    }
-    commandQueue.clear();
-}
+// M5Stack用TimeManager実装
+class M5StackTimeManager : public ITimeManager {
+public:
+    auto getCurrentMillis() const -> unsigned long override { return millis(); }
+    auto getCurrentTime() const -> time_t override { return time(nullptr); }
+};
+#endif
+
+// --- アラームリスト ---
+std::vector<time_t> alarm_times;
+
+// --- 状態管理クラスのグローバル生成 ---
+StateManager state_manager;
+std::shared_ptr<M5StackTimeProvider> m5_time_provider = std::make_shared<M5StackTimeProvider>();
+std::shared_ptr<M5StackTimeManager> m5_time_manager = std::make_shared<M5StackTimeManager>();
+InputLogic input_logic(m5_time_provider);
+DisplayAdapter display_adapter;
+InputDisplayViewImpl input_display_view_impl(&display_adapter);
+MainDisplayViewImpl main_display_view_impl(&display_adapter);
+AlarmDisplayViewImpl alarm_display_view_impl(&display_adapter);
+SettingsDisplayViewImpl settings_display_view_impl(&display_adapter);
+TimeLogic time_logic;
+AlarmLogic alarm_logic;
+SettingsLogic settings_logic;
+InputDisplayState input_display_state(&input_logic, &input_display_view_impl);
+MainDisplayState main_display_state(&state_manager, &input_display_state, &main_display_view_impl, &time_logic, &alarm_logic);
+AlarmDisplayState alarm_display_state(&state_manager, &alarm_display_view_impl, m5_time_provider, m5_time_manager);
+SettingsDisplayState settings_display_state(&settings_logic, &settings_display_view_impl);
+ButtonManager button_manager; // 追加
 
 void setup() {
-  M5.begin();
-  M5.Power.begin();
-  Serial.begin(115200);
-  // 設定値ロード
-  loadSettings(&eepromAdapter, appSettings);
-  Serial.print("lcd_brightness: ");
-  Serial.println(appSettings.lcd_brightness);
-  // LCD明度を設定値で反映
-  M5.Lcd.setBrightness(appSettings.lcd_brightness);
-  // UI初期化
-  initUI();
-  buttonManager.initialize();
+#ifdef ARDUINO
+    M5.begin();
+    M5.Lcd.setTextColor(AMBER_COLOR, TFT_BLACK);
 
-  Serial.println("Initialised.");
+    // アラームリスト初期化
+    alarm_times.clear();
+    time_t now = time(nullptr);
+    AlarmLogic::initAlarms(alarm_times, now);
+#endif
+    // --- 状態遷移の依存注入（@/design/ui_state_management.md準拠） ---
+    input_display_state.setManager(&state_manager);
+    input_display_state.setMainDisplayState(&main_display_state);
+    main_display_state.setAlarmDisplayState(&alarm_display_state);
+    alarm_display_state.setMainDisplayState(&main_display_state);
+    settings_display_state.setManager(&state_manager);
+    settings_display_state.setMainDisplayState(&main_display_state);
+    settings_display_state.setSettingsLogic(&settings_logic);
+    main_display_state.setSettingsDisplayState(&settings_display_state);
+    // 状態遷移の初期状態をMainDisplayに
+    state_manager.setState(&main_display_state);
 }
-
-// ボタンイベント定義をループ外に移動
-struct ButtonEvent {
-  ButtonType type;
-  ButtonAction action;
-  const char* testMsg;
-};
-const ButtonEvent eventOrder[] = {
-  {BUTTON_TYPE_A, SHORT_PRESS, "[TEST] Aボタン短押し検出"},
-  {BUTTON_TYPE_B, SHORT_PRESS, "[TEST] Bボタン短押し検出"},
-  {BUTTON_TYPE_C, SHORT_PRESS, "[TEST] Cボタン短押し検出"},
-  {BUTTON_TYPE_A, LONG_PRESS,  "[TEST] Aボタン長押し検出"},
-  {BUTTON_TYPE_B, LONG_PRESS,  "[TEST] Bボタン長押し検出"},
-  {BUTTON_TYPE_C, LONG_PRESS,  "[TEST] Cボタン長押し検出"},
-};
 
 void loop() {
-  M5.update();
-  buttonManager.update();
-  // 物理ボタン状態をButtonManagerに反映
-  buttonManager.setButtonState(BUTTON_TYPE_A, M5.BtnA.isPressed());
-  buttonManager.setButtonState(BUTTON_TYPE_B, M5.BtnB.isPressed());
-  buttonManager.setButtonState(BUTTON_TYPE_C, M5.BtnC.isPressed());
- 
-  // ボタンイベント検出・画面遷移・テスト出力を一元化
-  bool eventHandled = false;
-  for (const auto& ev : eventOrder) {
-    bool pressed = (ev.action == SHORT_PRESS)
-      ? buttonManager.isShortPress(ev.type)
-      : buttonManager.isLongPressed(ev.type);
-    if (pressed) {
-      Serial.println(ev.testMsg);
-      currentMode = nextMode(currentMode, ev.type, ev.action);
-      eventHandled = true;
-      break; // 1ループ1イベントのみ処理
+#ifdef ARDUINO
+    M5.update();
+    // 物理ボタン状態をButtonManagerに渡す
+    button_manager.update(ButtonManager::BtnA, M5.BtnA.isPressed(), millis());
+    button_manager.update(ButtonManager::BtnB, M5.BtnB.isPressed(), millis());
+    button_manager.update(ButtonManager::BtnC, M5.BtnC.isPressed(), millis());
+    // 論理イベントでStateManagerに伝搬
+    if (button_manager.isShortPress(ButtonManager::BtnA)) { state_manager.handleButtonA(); }
+    if (button_manager.isShortPress(ButtonManager::BtnB)) { state_manager.handleButtonB(); }
+    if (button_manager.isShortPress(ButtonManager::BtnC)) { state_manager.handleButtonC(); }
+    if (button_manager.isLongPress(ButtonManager::BtnA)) { state_manager.handleButtonALongPress(); }
+    if (button_manager.isLongPress(ButtonManager::BtnB)) { state_manager.handleButtonBLongPress(); }
+    if (button_manager.isLongPress(ButtonManager::BtnC)) { state_manager.handleButtonCLongPress(); }
+    // 現在の状態の描画
+    IState* current = state_manager.getCurrentState();
+    if (current != nullptr) {
+        current->onDraw();
     }
-  }
- 
-  // 入力モード時はInputLogicのボタン処理を呼ぶ
-  if (currentMode == ABS_TIME_INPUT || currentMode == REL_PLUS_TIME_INPUT) {
-    InputEventResult inputResult = handleDigitEditInput(&buttonManager, (TimeFunction)millis, digitEditInput);
-    if (inputResult == InputEventResult::Confirmed || inputResult == InputEventResult::Cancelled) {
-      currentMode = MAIN_DISPLAY;
-    }
-  }
-  // 設定メニューの選択・決定・保存・反映・画面遷移をmain.cppで一元管理
-  if (currentMode == SETTINGS_MENU) {
-    if (buttonManager.isShortPress(BUTTON_TYPE_C)) {
-      switch (settingsMenu.selectedItem) {
-        case 0: // SOUND
-          appSettings.sound_enabled = !appSettings.sound_enabled;
-          {
-            Command cmd;
-            cmd.type = CommandType::SaveSettings;
-            commandQueue.push_back(cmd);
-          }
-          break;
-        case 1: // LCD BRIGHTNESS
-          appSettings.lcd_brightness = (appSettings.lcd_brightness + 50) % 256;
-          if (appSettings.lcd_brightness == 0) appSettings.lcd_brightness = 1;
-          {
-            Command cmd;
-            cmd.type = CommandType::SetBrightness;
-            cmd.intValue = appSettings.lcd_brightness;
-            commandQueue.push_back(cmd);
-          }
-          {
-            Command cmd;
-            cmd.type = CommandType::SaveSettings;
-            commandQueue.push_back(cmd);
-          }
-          break;
-        case 2: // WARNING COLOR TEST
-          currentMode = WARNING_COLOR_TEST;
-          break;
-        case 3: // ALL CLEAR
-          resetSettings(&eepromAdapter, appSettings);
-          {
-            Command cmd;
-            cmd.type = CommandType::SetBrightness;
-            cmd.intValue = appSettings.lcd_brightness;
-            commandQueue.push_back(cmd);
-          }
-          {
-            Command cmd;
-            cmd.type = CommandType::SaveSettings;
-            commandQueue.push_back(cmd);
-          }
-          break;
-        case 4: // INFO
-          currentMode = INFO_DISPLAY;
-          break;
-      }
-    }
-    // A/Bボタンで項目移動
-    if (buttonManager.isShortPress(BUTTON_TYPE_A)) {
-      settingsMenu.selectedItem = prevMenuIndex(settingsMenu.selectedItem, settingsMenu.itemCount);
-    }
-    if (buttonManager.isShortPress(BUTTON_TYPE_B)) {
-      settingsMenu.selectedItem = nextMenuIndex(settingsMenu.selectedItem, settingsMenu.itemCount);
-    }
-  }
-  // 画面更新のみ（100ms間隔）
-  static unsigned long lastScreenUpdate = 0;
-  if (millis() - lastScreenUpdate >= 100) {
-    lastScreenUpdate = millis();
-    switch (currentMode) {
-      case MAIN_DISPLAY:
-        drawMainDisplay(appSettings);
-        break;
-      case SETTINGS_MENU:
-        drawSettingsMenu(appSettings);
-        break;
-      case INFO_DISPLAY:
-        drawInfoDisplay();
-        break;
-      case ABS_TIME_INPUT:
-      case REL_PLUS_TIME_INPUT:
-        drawInputMode(digitEditInput); // 状態を渡して描画
-        break;
-      default:
-        drawMainDisplay(appSettings);
-        break;
-    }
-    sprite.pushSprite(0, 0);
-  }
-  processCommands();
-  delay(10);
-}
+    delay(LOOP_DELAY_MS);
+#endif
+} 

@@ -1,0 +1,45 @@
+#include <unity.h>
+#include "StateManager.h"
+#include "MainDisplayState.h"
+#include "InputDisplayState.h"
+#include "InputLogic.h"
+#include <cstdio>
+#include <cstring>
+#include <vector>
+#include <ctime>
+#include "../mock/MockTimeProvider.h"
+#include <memory>
+
+extern std::vector<time_t> alarm_times;
+
+const time_t kFixedTestTime = 1700000000;
+std::shared_ptr<MockTimeProvider> testTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+
+void setUp(void) {}
+void tearDown(void) {}
+
+// 基本的なテストのみ
+void test_basic_state_manager() {
+    StateManager sm;
+    TEST_ASSERT_NOT_NULL(&sm);
+}
+
+void test_basic_input_logic() {
+    InputLogic logic(testTimeProvider);
+    logic.reset();
+    
+    // 初期状態確認
+    TEST_ASSERT_EQUAL(-1, logic.getValue());
+    
+    // 基本的な入力テスト
+    logic.incrementInput(5);
+    TEST_ASSERT_EQUAL(5, logic.getDigit(3));
+}
+
+int main(int argc, char **argv) {
+    UNITY_BEGIN();
+    RUN_TEST(test_basic_state_manager);
+    RUN_TEST(test_basic_input_logic);
+    UNITY_END();
+    return 0;
+} 

@@ -7,6 +7,8 @@
 - 開発中の継続的な品質監視とリリース前の品質保証
 - 効率的な開発フローとの統合
 
+詳細な品質ゲート基準については [品質ゲート基準](quality_gates.md) を参照してください。
+
 ### 1.2 対象読者
 - **個人開発者**: 日常的な開発と品質管理
 - **品質保証**: リリース前の品質確認
@@ -32,15 +34,19 @@ python scripts/test_coverage.py --release
 ```bash
 # 1. 機能開発開始時
 python scripts/test_coverage.py --baseline
+pio check -e native  # 静的解析実行
 
 # 2. 開発中の継続監視
 python scripts/test_coverage.py --quick --watch
+pio check -e native  # 静的解析実行
 
 # 3. 機能完成時の品質確認
 python scripts/test_coverage.py --full
+pio check -e native  # 静的解析実行
 
 # 4. リリース前の最終確認
 python scripts/test_coverage.py --release --strict
+pio check -e native  # 静的解析実行
 ```
 
 ### 2.2 実行モード詳細
@@ -87,14 +93,15 @@ python scripts/test_coverage.py --release
 ```bash
 # ファイル変更監視（開発中）
 fswatch -o . | xargs -n1 -I{} python scripts/test_coverage.py --quick
+fswatch -o . | xargs -n1 -I{} pio check -e native  # 静的解析実行
 
 # 定期実行（日次）
 crontab -e
 # 毎日午前9時に実行
-0 9 * * * cd /path/to/project && python scripts/test_coverage.py --full
+0 9 * * * cd /path/to/project && python scripts/test_coverage.py --full && pio check -e native
 
 # 週次実行（週末）
-0 18 * * 6 cd /path/to/project && python scripts/test_coverage.py --release
+0 18 * * 6 cd /path/to/project && python scripts/test_coverage.py --release && pio check -e native
 ```
 
 #### 2.3.2 IDE統合

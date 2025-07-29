@@ -153,7 +153,8 @@ test_framework = unity
 
 - **includeエラー時**
   - ヘッダの配置場所・記法・lib/xxx/src/構成を再確認
-  - platformio.iniのbuild_src_filter, build_flagsを確認
+  - platformio.ini は原則変更不可。`unity_config.h` も追加不可。
+    - それ以外の箇所に問題が必ず問題があります。
   - `pio run --target clean` でキャッシュクリア
 - **テストエラー時**
   - テストディレクトリ構造が正しいか（test_main.cppが1つ/ディレクトリ）
@@ -170,8 +171,25 @@ test_framework = unity
 コーディング規約の詳細は `../guide/developer_guide.md` を参照してください。
 特に、ファイル名の命名規則（クラス名をスネークケースに変換）を遵守してください。 
 
-## 7. 今後のポイント
+## 7. 静的解析・品質管理
+
+### 7.1 Clang-Tidy静的解析
+- **実行環境**: native環境での静的解析を推奨
+- **実行タイミング**: 各開発ステップで実行
+- **設定ファイル**: `.clang-tidy`でプロジェクト固有の設定を管理
+- **警告管理**: 高重要度警告は0件、中重要度警告は適切に管理
+
+### 7.2 品質管理フロー
+```bash
+# 開発中の品質チェック
+pio test -e native  # テスト実行
+pio check -e native  # 静的解析実行
+python scripts/test_coverage.py --quick  # カバレッジ測定
+```
+
+## 8. 今後のポイント
 
 - enumや構造体の定義はlib配下で一元管理し、src/や他のlibからは必ずそのヘッダをインクルードすること
 - プロジェクト全体で重複定義を絶対に避けること（特にButtonAction等のenumはlibで一元化）
-- PlatformIOのlib/include解決の癖に注意し、相対パスや<>の使い分けを徹底すること 
+- PlatformIOのlib/include解決の癖に注意し、相対パスや<>の使い分けを徹底すること
+- 静的解析とカバレッジ測定を開発フローに統合し、継続的な品質向上を図ること 
