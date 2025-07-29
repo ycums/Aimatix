@@ -1,11 +1,13 @@
 #include "ButtonManager.h"
 #include <cstddef>
+#include <cstdint>
 
 void ButtonManager::update(ButtonType btn, bool pressed, uint32_t now_ms) {
-    if (btn < 0 || btn >= static_cast<ButtonType>(sizeof(btnStates)/sizeof(btnStates[0]))) {
+    auto btn_index = static_cast<size_t>(btn);
+    if (btn < 0 || btn_index >= sizeof(btnStates)/sizeof(btnStates[0])) {
         return; // 無効なボタンタイプ
     }
-    BtnState& btn_state = btnStates[static_cast<size_t>(btn)];
+    BtnState& btn_state = btnStates[btn_index];
     // デバウンス処理
     if (pressed != btn_state.pressed) {
         if ((now_ms - btn_state.lastChange) <= BM_DEBOUNCE_MS) {
@@ -37,26 +39,29 @@ void ButtonManager::update(ButtonType btn, bool pressed, uint32_t now_ms) {
 }
 
 auto ButtonManager::isShortPress(ButtonType btn) const -> bool {
-    if (btn < 0 || btn >= static_cast<ButtonType>(sizeof(btnStates)/sizeof(btnStates[0]))) {
+    auto btn_index = static_cast<size_t>(btn);
+    if (btn < 0 || btn_index >= sizeof(btnStates)/sizeof(btnStates[0])) {
         return false; // 無効なボタンタイプ
     }
-    const bool ret = btnStates[static_cast<size_t>(btn)].shortFired;
-    const_cast<BtnState&>(btnStates[static_cast<size_t>(btn)]).shortFired = false;
+    const bool ret = btnStates[btn_index].shortFired;
+    const_cast<BtnState&>(btnStates[btn_index]).shortFired = false;
     return ret;
 }
 
 auto ButtonManager::isLongPress(ButtonType btn) const -> bool {
-    if (btn < 0 || btn >= static_cast<ButtonType>(sizeof(btnStates)/sizeof(btnStates[0]))) {
+    auto btn_index = static_cast<size_t>(btn);
+    if (btn < 0 || btn_index >= sizeof(btnStates)/sizeof(btnStates[0])) {
         return false; // 無効なボタンタイプ
     }
-    const bool ret = btnStates[static_cast<size_t>(btn)].longFired;
-    const_cast<BtnState&>(btnStates[static_cast<size_t>(btn)]).longFired = false;
+    const bool ret = btnStates[btn_index].longFired;
+    const_cast<BtnState&>(btnStates[btn_index]).longFired = false;
     return ret;
 }
 
 void ButtonManager::reset(ButtonType btn) {
-    if (btn < 0 || btn >= static_cast<ButtonType>(sizeof(btnStates)/sizeof(btnStates[0]))) {
+    auto btn_index = static_cast<size_t>(btn);
+    if (btn < 0 || btn_index >= sizeof(btnStates)/sizeof(btnStates[0])) {
         return; // 無効なボタンタイプ
     }
-    btnStates[static_cast<size_t>(btn)] = BtnState();
+    btnStates[btn_index] = BtnState();
 } 

@@ -39,8 +39,8 @@ auto m5_string_impl(const char* str, int pos_x, int pos_y) -> void {
     M5.Lcd.drawString(str, pos_x, pos_y);
 }
 auto m5_progress_bar_impl(int pos_x, int pos_y, int width, int height, int percent) -> void {
-    const int BORDER_WIDTH = 1;
-    const int PERCENT_DENOMINATOR = 100;
+    constexpr int BORDER_WIDTH = 1;
+    constexpr int PERCENT_DENOMINATOR = 100;
     
     M5.Lcd.drawRect(pos_x, pos_y, width, height, AMBER_COLOR);
     M5.Lcd.fillRect(pos_x + BORDER_WIDTH, pos_y + BORDER_WIDTH, width - 2 * BORDER_WIDTH, height - 2 * BORDER_WIDTH, TFT_BLACK);
@@ -97,7 +97,7 @@ void setup() {
 
     // アラームリスト初期化
     alarm_times.clear();
-    const time_t now = time(nullptr);
+    time_t now = time(nullptr);
     AlarmLogic::initAlarms(alarm_times, now);
 #endif
     // --- 状態遷移の依存注入（@/design/ui_state_management.md準拠） ---
