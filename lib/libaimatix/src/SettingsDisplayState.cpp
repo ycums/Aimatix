@@ -89,8 +89,14 @@ void SettingsDisplayState::onButtonC() {
     }
     
     // 選択確定（値変更モードに入る）
-    // 3-0-12フェーズでは値変更モードは実装しない
-    // 後続フェーズで実装予定
+    SettingsItem selectedItem = settingsLogic->getSelectedItem();
+    
+    if (selectedItem == SettingsItem::SET_DATE_TIME) {
+        // 日時設定画面に遷移
+        // この実装では、DateTimeInputStateへの遷移は外部で管理される
+        // 実際の遷移処理は、main.cppでStateManagerに登録された状態を使用
+    }
+    
     onDraw();
 }
 
