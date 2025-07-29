@@ -10,6 +10,14 @@ void DateTimeInputState::onEnter() {
     // 初期カーソル位置を年千の位に設定
     cursorPosition = 0;
     isEditMode = false;
+    
+    if (view) {
+        view->clear();
+        constexpr int BATTERY_WARNING_THRESHOLD = 42;
+        view->showTitle("SET DATE/TIME", BATTERY_WARNING_THRESHOLD, false);
+        view->showHints("INC", "NEXT", "SET");
+        onDraw();
+    }
 }
 
 void DateTimeInputState::onExit() {
@@ -17,8 +25,10 @@ void DateTimeInputState::onExit() {
 }
 
 void DateTimeInputState::onDraw() {
-    // この実装では、描画は外部のViewクラスに委譲される
-    // 実際の描画処理は、Viewクラスがこの状態クラスのデータを参照して行う
+    if (view) {
+        std::string dateTimeStr = formatDateTimeString();
+        view->showDateTimeString(dateTimeStr, cursorPosition);
+    }
 }
 
 void DateTimeInputState::onButtonA() {

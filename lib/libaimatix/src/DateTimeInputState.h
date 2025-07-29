@@ -1,14 +1,15 @@
 #pragma once
 #include "StateManager.h"
 #include "ITimeProvider.h"
+#include "IDateTimeInputView.h"
 #include <string>
 #include <vector>
 
 // 日時入力画面の状態クラス
 class DateTimeInputState : public IState {
 public:
-    DateTimeInputState(ITimeProvider* timeProvider = nullptr)
-        : timeProvider(timeProvider), manager(nullptr), settingsDisplayState(nullptr),
+    DateTimeInputState(ITimeProvider* timeProvider = nullptr, IDateTimeInputView* view = nullptr)
+        : timeProvider(timeProvider), view(view), manager(nullptr), settingsDisplayState(nullptr),
           cursorPosition(0), isEditMode(false) {
         resetDateTime();
     }
@@ -26,6 +27,7 @@ public:
     void setManager(StateManager* m) { manager = m; }
     void setSettingsDisplayState(IState* settingsState) { settingsDisplayState = settingsState; }
     void setTimeProvider(ITimeProvider* provider) { timeProvider = provider; }
+    void setView(IDateTimeInputView* v) { view = v; }
     
     // テスト用のアクセサ
     int getCursorPosition() const { return cursorPosition; }
@@ -41,6 +43,7 @@ public:
     
 private:
     ITimeProvider* timeProvider;
+    IDateTimeInputView* view;
     StateManager* manager;
     IState* settingsDisplayState;
     

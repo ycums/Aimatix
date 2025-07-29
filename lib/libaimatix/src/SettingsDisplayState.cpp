@@ -93,8 +93,9 @@ void SettingsDisplayState::onButtonC() {
     
     if (selectedItem == SettingsItem::SET_DATE_TIME) {
         // 日時設定画面に遷移
-        // この実装では、DateTimeInputStateへの遷移は外部で管理される
-        // 実際の遷移処理は、main.cppでStateManagerに登録された状態を使用
+        if (manager && datetimeInputState) {
+            manager->setState(datetimeInputState);
+        }
     }
     
     onDraw();

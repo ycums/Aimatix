@@ -4,6 +4,7 @@
 #include "InputDisplayState.h"
 #include "AlarmDisplayState.h"
 #include "SettingsDisplayState.h"
+#include "DateTimeInputState.h"
 #include "InputLogic.h"
 #include "SettingsLogic.h"
 #include "SettingsLogic.cpp"
@@ -11,6 +12,7 @@
 #include "MainDisplayViewImpl.h"
 #include "AlarmDisplayViewImpl.h"
 #include "SettingsDisplayViewImpl.h"
+#include "DateTimeInputViewImpl.h"
 #include "TimeLogic.h"
 #include "AlarmLogic.h"
 #include "DisplayAdapter.h"
@@ -81,6 +83,7 @@ InputDisplayViewImpl input_display_view_impl(&display_adapter);
 MainDisplayViewImpl main_display_view_impl(&display_adapter);
 AlarmDisplayViewImpl alarm_display_view_impl(&display_adapter);
 SettingsDisplayViewImpl settings_display_view_impl(&display_adapter);
+DateTimeInputViewImpl datetime_input_view_impl(&display_adapter);
 TimeLogic time_logic;
 AlarmLogic alarm_logic;
 SettingsLogic settings_logic;
@@ -88,6 +91,7 @@ InputDisplayState input_display_state(&input_logic, &input_display_view_impl);
 MainDisplayState main_display_state(&state_manager, &input_display_state, &main_display_view_impl, &time_logic, &alarm_logic);
 AlarmDisplayState alarm_display_state(&state_manager, &alarm_display_view_impl, m5_time_provider, m5_time_manager);
 SettingsDisplayState settings_display_state(&settings_logic, &settings_display_view_impl);
+DateTimeInputState datetime_input_state(m5_time_provider.get(), &datetime_input_view_impl);
 ButtonManager button_manager; // 追加
 
 void setup() {
@@ -108,7 +112,11 @@ void setup() {
     settings_display_state.setManager(&state_manager);
     settings_display_state.setMainDisplayState(&main_display_state);
     settings_display_state.setSettingsLogic(&settings_logic);
+    settings_display_state.setDateTimeInputState(&datetime_input_state);
     main_display_state.setSettingsDisplayState(&settings_display_state);
+    datetime_input_state.setManager(&state_manager);
+    datetime_input_state.setSettingsDisplayState(&settings_display_state);
+    datetime_input_state.setView(&datetime_input_view_impl);
     // 状態遷移の初期状態をMainDisplayに
     state_manager.setState(&main_display_state);
 }

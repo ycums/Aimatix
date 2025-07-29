@@ -25,6 +25,7 @@ public:
     void setManager(StateManager* m) { manager = m; }
     void setMainDisplayState(IState* mainState) { mainDisplayState = mainState; }
     void setSettingsLogic(ISettingsLogic* logic) { settingsLogic = logic; }
+    void setDateTimeInputState(IState* datetimeState) { datetimeInputState = datetimeState; }
     
     // テスト用のアクセサ
     int getSelectedIndex() const;
@@ -35,6 +36,7 @@ private:
     ISettingsDisplayView* view;
     StateManager* manager;
     IState* mainDisplayState;
+    IState* datetimeInputState;
     
     // ちらつき防止用の状態記憶
     std::vector<std::string> lastDisplayedItems;
