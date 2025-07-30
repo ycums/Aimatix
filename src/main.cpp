@@ -22,7 +22,7 @@
 #include <vector>
 #include <ctime>
 #include <M5Display.h>
-#include "M5StackTimeProvider.h"
+#include "DateTimeAdapter.h"
 #endif
 #include "ButtonManager.h"
 
@@ -75,7 +75,7 @@ std::vector<time_t> alarm_times;
 
 // --- 状態管理クラスのグローバル生成 ---
 StateManager state_manager;
-std::shared_ptr<M5StackTimeProvider> m5_time_provider = std::make_shared<M5StackTimeProvider>();
+std::shared_ptr<DateTimeAdapter> m5_time_provider = std::make_shared<DateTimeAdapter>();
 std::shared_ptr<M5StackTimeManager> m5_time_manager = std::make_shared<M5StackTimeManager>();
 InputLogic input_logic(m5_time_provider);
 DisplayAdapter display_adapter;

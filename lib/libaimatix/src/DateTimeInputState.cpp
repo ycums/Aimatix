@@ -265,9 +265,14 @@ void DateTimeInputState::commitDateTime() {
     // time_tに変換
     time_t newTime = mktime(&timeInfo);
     
-    // システム時刻を更新（この実装ではITimeProviderに更新機能がないため、
-    // 実際の更新は外部で行う必要がある）
-    // ここでは、更新可能なITimeProviderの実装を想定
+    // システム時刻を更新
+    bool success = timeProvider->setSystemTime(newTime);
+    
+    // 更新結果をログ出力（デバッグ用）
+    if (success) {
+        // 正常に更新された場合の処理
+        // 実際のプロダクションでは必要に応じてログ出力
+    }
 }
 
 std::string DateTimeInputState::formatDateTimeString() const {

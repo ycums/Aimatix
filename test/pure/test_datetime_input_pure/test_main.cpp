@@ -10,6 +10,10 @@ public:
     struct tm* localtime(time_t* time) const override { 
         return ::localtime(time); 
     }
+    bool setSystemTime(time_t time) override { 
+        testTime = time; 
+        return true; 
+    }
     
     void setTestTime(time_t time) { testTime = time; }
     
@@ -111,6 +115,57 @@ void test_DateTimeInputState_FormatString() {
     TEST_ASSERT_EQUAL_STRING("2025/01/15 14:30", formatted.c_str());
 }
 
+void test_DateTimeInputState_CommitDateTime() {
+    TestTimeProvider timeProvider;
+    DateTimeInputState state(&timeProvider);
+    
+    // 初期時刻を設定
+    timeProvider.setTestTime(1000);
+    
+    // 有効な日時を設定: 2025/01/15 14:30
+    state.setDateTimeDigits({2, 0, 2, 5, 0, 1, 1, 5, 1, 4, 3, 0});
+    
+    // commitDateTime()を実行
+    // onButtonCを直接呼ぶことでcommitDateTime()をテスト
+    state.onButtonC();
+    
+    // システム時刻が更新されたかを確認
+    time_t updatedTime = timeProvider.now();
+    
+    // 設定した日時（2025/01/15 14:30）のtime_tを計算
+    struct tm expectedTime = {};
+    expectedTime.tm_year = 2025 - 1900;  // 年は1900からのオフセット
+    expectedTime.tm_mon = 1 - 1;         // 月は0ベース
+    expectedTime.tm_mday = 15;
+    expectedTime.tm_hour = 14;
+    expectedTime.tm_min = 30;
+    expectedTime.tm_sec = 0;
+    expectedTime.tm_isdst = -1;
+    
+    time_t expectedTimeT = mktime(&expectedTime);
+    
+    // システム時刻が正しく更新されたかを確認
+    TEST_ASSERT_EQUAL(expectedTimeT, updatedTime);
+}
+
+void test_DateTimeInputState_CommitDateTime_InvalidTime() {
+    TestTimeProvider timeProvider;
+    DateTimeInputState state(&timeProvider);
+    
+    // 初期時刻を設定
+    time_t initialTime = 1000;
+    timeProvider.setTestTime(initialTime);
+    
+    // 無効な日時を設定: 2025/02/30 (2月30日は存在しない)
+    state.setDateTimeDigits({2, 0, 2, 5, 0, 2, 3, 0, 1, 4, 3, 0});
+    
+    // commitDateTime()を実行
+    state.onButtonC();
+    
+    // 無効な日時のため、システム時刻は更新されないはず
+    TEST_ASSERT_EQUAL(initialTime, timeProvider.now());
+}
+
 int main() {
     UNITY_BEGIN();
     
@@ -119,6 +174,8 @@ int main() {
     RUN_TEST(test_DateTimeInputState_Increment);
     RUN_TEST(test_DateTimeInputState_Validation);
     RUN_TEST(test_DateTimeInputState_FormatString);
+    RUN_TEST(test_DateTimeInputState_CommitDateTime);
+    RUN_TEST(test_DateTimeInputState_CommitDateTime_InvalidTime);
     
     return UNITY_END();
 } 

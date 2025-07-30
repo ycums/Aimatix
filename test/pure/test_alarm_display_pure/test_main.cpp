@@ -13,12 +13,18 @@ class MockTimeProvider : public ITimeProvider {
 public:
     time_t mockTime = 1000;
     unsigned long mockMillis = 0;
+    bool lastSetSystemTimeResult = true;
     
     time_t now() const override { return mockTime; }
     struct tm* localtime(time_t* t) const override { return ::localtime(t); }
+    bool setSystemTime(time_t time) override { 
+        mockTime = time; 
+        return lastSetSystemTimeResult; 
+    }
     
     void setTime(time_t time) { mockTime = time; }
     void setMillis(unsigned long millis) { mockMillis = millis; }
+    void setSetSystemTimeResult(bool result) { lastSetSystemTimeResult = result; }
 };
 
 // モックTimeManagerクラス
