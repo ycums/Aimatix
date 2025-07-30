@@ -69,6 +69,7 @@ private:
     void incrementCurrentDigit();
     void moveCursorRight();
     void moveCursorLeft();
+    int dataPositionToStringPosition(int dataPos) const;
     bool validateYear() const;
     bool validateMonth() const;
     bool validateDay() const;

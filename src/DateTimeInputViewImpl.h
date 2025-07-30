@@ -2,11 +2,12 @@
 #include "IDateTimeInputView.h"
 #include "DisplayCommon.h"
 #include "IDisplay.h"
+#include <string>
 
 // 日時入力画面のView実装（M5Stack依存）
 class DateTimeInputViewImpl : public IDateTimeInputView {
 public:
-    explicit DateTimeInputViewImpl(IDisplay* disp) : disp(disp) {}
+    explicit DateTimeInputViewImpl(IDisplay* disp) : disp(disp), lastCursorPosition(-1), lastDateTimeStr("") {}
     
     void clear() override;
     void showTitle(const char* title, int batteryLevel, bool isWarning) override;
@@ -17,7 +18,15 @@ public:
 private:
     IDisplay* disp;
     
+    // ちらつき防止用の状態管理
+    int lastCursorPosition;
+    std::string lastDateTimeStr;
+    
     // 内部ヘルパーメソッド
+    void drawDateTimeGrid(const std::string& dateTimeStr);
     void drawCursorHighlight(const std::string& dateTimeStr, int cursorPosition);
+    void clearCursorHighlight(int cursorPosition);
     int getCursorPixelPosition(int cursorPosition) const;
+    int getCharWidth(char c) const;
+    void drawCharAtPosition(char c, int x, int y, bool isHighlighted = false);
 }; 

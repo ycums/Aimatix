@@ -7,8 +7,8 @@
 
 void DateTimeInputState::onEnter() {
     resetDateTime();
-    // 初期カーソル位置を年千の位に設定
-    cursorPosition = 0;
+    // 初期カーソル位置を年十の位に設定（年千の位、年百の位は入力不可のため）
+    cursorPosition = 2;
     isEditMode = false;
     
     if (view) {
@@ -27,7 +27,8 @@ void DateTimeInputState::onExit() {
 void DateTimeInputState::onDraw() {
     if (view) {
         std::string dateTimeStr = formatDateTimeString();
-        view->showDateTimeString(dateTimeStr, cursorPosition);
+        int stringPosition = dataPositionToStringPosition(cursorPosition);
+        view->showDateTimeString(dateTimeStr, stringPosition);
     }
 }
 
@@ -77,15 +78,16 @@ void DateTimeInputState::incrementCurrentDigit() {
         return;
     }
     
+    // 年千の位、年百の位は入力不可
+    if (cursorPosition == 0 || cursorPosition == 1) {
+        return;
+    }
+    
     int& currentDigit = dateTimeDigits[cursorPosition];
     
     // 位置に応じて最大値を設定
     int maxValue = 9;
-    if (cursorPosition == 0) { // 年千の位
-        maxValue = 2;
-    } else if (cursorPosition == 1) { // 年百の位
-        maxValue = 0;
-    } else if (cursorPosition == 2) { // 年十の位
+    if (cursorPosition == 2) { // 年十の位
         maxValue = 3;
     } else if (cursorPosition == 3) { // 年一の位
         maxValue = 0;
@@ -112,14 +114,50 @@ void DateTimeInputState::incrementCurrentDigit() {
 }
 
 void DateTimeInputState::moveCursorRight() {
-    if (cursorPosition < static_cast<int>(dateTimeDigits.size()) - 1) {
-        cursorPosition++;
+    // 入力可能な位置のリスト（年千の位、年百の位、記号は除く）
+    const int validPositions[] = {2, 3, 4, 5, 6, 7, 8, 9, 10, 11}; // 年十の位から分一の位まで
+    const int numValidPositions = sizeof(validPositions) / sizeof(validPositions[0]);
+    
+    // 現在位置のインデックスを取得
+    int currentIndex = -1;
+    for (int i = 0; i < numValidPositions; ++i) {
+        if (validPositions[i] == cursorPosition) {
+            currentIndex = i;
+            break;
+        }
+    }
+    
+    // 次の有効位置に移動（循環）
+    if (currentIndex >= 0) {
+        int nextIndex = (currentIndex + 1) % numValidPositions;
+        cursorPosition = validPositions[nextIndex];
+    } else {
+        // 現在位置が無効の場合、最初の有効位置に移動
+        cursorPosition = validPositions[0];
     }
 }
 
 void DateTimeInputState::moveCursorLeft() {
-    if (cursorPosition > 0) {
-        cursorPosition--;
+    // 入力可能な位置のリスト（年千の位、年百の位、記号は除く）
+    const int validPositions[] = {2, 3, 4, 5, 6, 7, 8, 9, 10, 11}; // 年十の位から分一の位まで
+    const int numValidPositions = sizeof(validPositions) / sizeof(validPositions[0]);
+    
+    // 現在位置のインデックスを取得
+    int currentIndex = -1;
+    for (int i = 0; i < numValidPositions; ++i) {
+        if (validPositions[i] == cursorPosition) {
+            currentIndex = i;
+            break;
+        }
+    }
+    
+    // 前の有効位置に移動（循環）
+    if (currentIndex >= 0) {
+        int prevIndex = (currentIndex - 1 + numValidPositions) % numValidPositions;
+        cursorPosition = validPositions[prevIndex];
+    } else {
+        // 現在位置が無効の場合、最初の有効位置に移動
+        cursorPosition = validPositions[0];
     }
 }
 
@@ -204,6 +242,32 @@ std::string DateTimeInputState::formatDateTimeString() const {
         << (getDigitValue(10) * 10 + getDigitValue(11));
     
     return oss.str();
+}
+
+int DateTimeInputState::dataPositionToStringPosition(int dataPos) const {
+    // データ位置から表示文字列位置への変換
+    // データ: [年千,年百,年十,年一,月十,月一,日十,日一,時十,時一,分十,分一]
+    // 文字列: "2025/01/01 00:00"
+    //         0123456789012345
+    const int stringPositions[] = {
+        0,  // 年千の位 -> 0
+        1,  // 年百の位 -> 1
+        2,  // 年十の位 -> 2
+        3,  // 年一の位 -> 3
+        5,  // 月十の位 -> 5 ("/の後")
+        6,  // 月一の位 -> 6
+        8,  // 日十の位 -> 8 ("/の後")
+        9,  // 日一の位 -> 9
+        11, // 時十の位 -> 11 (" の後")
+        12, // 時一の位 -> 12
+        14, // 分十の位 -> 14 (":の後")
+        15  // 分一の位 -> 15
+    };
+    
+    if (dataPos >= 0 && dataPos < 12) {
+        return stringPositions[dataPos];
+    }
+    return 0;
 }
 
 int DateTimeInputState::getDigitValue(int position) const {

@@ -55,19 +55,19 @@ void test_DateTimeInputState_Initialization() {
 void test_DateTimeInputState_CursorMovement() {
     TestTimeProvider timeProvider;
     DateTimeInputState state(&timeProvider);
+    state.onEnter(); // 初期化処理を実行
     
-    // 初期位置の確認
-    TEST_ASSERT_EQUAL(0, state.getCursorPosition());
+    // 初期位置の確認（年十の位）
+    TEST_ASSERT_EQUAL(2, state.getCursorPosition());
     
     // 右移動テスト
     state.onButtonB(); // カーソルを右に移動
-    TEST_ASSERT_EQUAL(1, state.getCursorPosition());
+    TEST_ASSERT_EQUAL(3, state.getCursorPosition()); // 年一の位
     
-    // 最大位置での右移動テスト
-    for (int i = 0; i < 15; i++) {
-        state.onButtonB();
-    }
-    TEST_ASSERT_EQUAL(11, state.getCursorPosition()); // 最大位置で停止
+    // 循環移動テスト - 最後の位置から最初の位置に戻る
+    state.setCursorPosition(11); // 分一の位に設定
+    state.onButtonB(); // 次に移動
+    TEST_ASSERT_EQUAL(2, state.getCursorPosition()); // 年十の位に戻る
 }
 
 // 値インクリメントテスト
@@ -75,10 +75,10 @@ void test_DateTimeInputState_Increment() {
     TestTimeProvider timeProvider;
     DateTimeInputState state(&timeProvider);
     
-    // 年千の位のテスト
+    // 年千の位のテスト（入力不可）
     state.setCursorPosition(0);
-    state.onButtonA(); // 2 -> 0 (最大値2を超えて0に戻る)
-    TEST_ASSERT_EQUAL(0, state.getDateTimeDigits()[0]);
+    state.onButtonA(); // 入力不可のため変化なし
+    TEST_ASSERT_EQUAL(2, state.getDateTimeDigits()[0]); // 初期値のまま
     
     // 月十の位のテスト
     state.setCursorPosition(4);
