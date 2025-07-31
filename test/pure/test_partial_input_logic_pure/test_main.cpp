@@ -11,7 +11,7 @@ void tearDown(void) {
 
 // バグレポート3-0-14-2の修正対象：分一桁のみ入力
 void test_parsePartialInput_minute_only_digit() {
-    // __:5_ → 00:50
+    // __:_5 → 00:05 (直感的な解釈：分一桁として扱う)
     int digits[4] = {0, 0, 0, 5};
     bool entered[4] = {false, false, false, true};
     
@@ -19,7 +19,7 @@ void test_parsePartialInput_minute_only_digit() {
     
     TEST_ASSERT_TRUE(result.isValid);
     TEST_ASSERT_EQUAL(0, result.hour);
-    TEST_ASSERT_EQUAL(50, result.minute);
+    TEST_ASSERT_EQUAL(5, result.minute);
 }
 
 // 時一桁のみ入力
@@ -89,7 +89,7 @@ void test_parsePartialInput_partial_tens() {
 
 // 部分入力（時分一桁のみ）
 void test_parsePartialInput_partial_units() {
-    // _2:_4 → 20:40
+    // _2:_4 → 20:04 (直感的な解釈：各桁をそのまま解釈)
     int digits[4] = {0, 2, 0, 4};
     bool entered[4] = {false, true, false, true};
     
@@ -97,7 +97,7 @@ void test_parsePartialInput_partial_units() {
     
     TEST_ASSERT_TRUE(result.isValid);
     TEST_ASSERT_EQUAL(20, result.hour);
-    TEST_ASSERT_EQUAL(40, result.minute);
+    TEST_ASSERT_EQUAL(4, result.minute);
 }
 
 // 未入力（確定拒絶）
@@ -148,17 +148,17 @@ void test_isValidTime() {
     TEST_ASSERT_FALSE(PartialInputLogic::isValidTime(0, 60));
 }
 
-// バグレポートの具体例との一致確認
+// バグレポートの具体例との一致確認（修正後の期待値）
 void test_bugreport_3_0_14_2_examples() {
-    // __:5_ → 00:50 （バグレポートの期待値）
+    // __:_5 → 00:05 （修正後の期待値：分一桁として解釈）
     int digits1[4] = {0, 0, 0, 5};
     bool entered1[4] = {false, false, false, true};
     auto result1 = PartialInputLogic::parsePartialInput(digits1, entered1);
     TEST_ASSERT_EQUAL(0, result1.hour);
-    TEST_ASSERT_EQUAL(50, result1.minute);
-    TEST_ASSERT_EQUAL_STRING("00:50", PartialInputLogic::formatTime(result1.hour, result1.minute).c_str());
+    TEST_ASSERT_EQUAL(5, result1.minute);
+    TEST_ASSERT_EQUAL_STRING("00:05", PartialInputLogic::formatTime(result1.hour, result1.minute).c_str());
     
-    // _1:__ → 10:00
+    // _1:__ → 10:00 （時一桁のみの場合は時十桁として解釈するのが妥当）
     int digits2[4] = {0, 1, 0, 0};
     bool entered2[4] = {false, true, false, false};
     auto result2 = PartialInputLogic::parsePartialInput(digits2, entered2);

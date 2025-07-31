@@ -45,8 +45,8 @@ PartialInputLogic::ParsedTime PartialInputLogic::parsePartialInput(const int* di
         // 分十桁のみ入力済み → 分一桁を0として補完
         minute = digits[2] * HOURS_10 + 0;
     } else if (!entered[2] && entered[3]) {
-        // 分一桁のみ入力済み → その値を分十桁として解釈、分一桁は0
-        minute = digits[3] * HOURS_10 + 0;
+        // 分一桁のみ入力済み → 直感的に分一桁として解釈（桁送りによる移動ではない場合）
+        minute = 0 * HOURS_10 + digits[3];
     } else {
         // 分が未入力
         minute = 0;

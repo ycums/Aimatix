@@ -148,6 +148,48 @@ void test_input_logic_shift_digits_edge_cases() {
     TEST_ASSERT_FALSE(logic.shiftDigits());
 }
 
+// バグレポートのBA操作問題を再現・修正確認するテストケース
+void test_ba_operation_bug_reproduction() {
+    InputLogic logic(testTimeProvider);
+    logic.reset();
+    
+    // バグレポートの状況を再現
+    // 前提: 絶対値入力画面 初期状態（__:__）
+    // 操作: BA
+    // 0. 初期状態: __:__
+    // 1. 無効な桁送りを試行 (Button B)
+    bool shiftResult = logic.shiftDigits();
+    TEST_ASSERT_FALSE(shiftResult); // 初期状態では桁送りは失敗すべき
+    
+    // 2. 数値を+1 (Button A)
+    logic.incrementInput(1);
+    
+    // Expected: 00:01が表示されるべき
+    // つまり、digits[3] = 1, その他は0のはず
+    TEST_ASSERT_EQUAL(0, logic.getDigit(0)); // 時十の位
+    TEST_ASSERT_EQUAL(0, logic.getDigit(1)); // 時一の位
+    TEST_ASSERT_EQUAL(0, logic.getDigit(2)); // 分十の位
+    TEST_ASSERT_EQUAL(1, logic.getDigit(3)); // 分一の位 - ここが1であるべき
+    
+    // 入力済み状態の確認
+    TEST_ASSERT_FALSE(logic.isEntered(0)); // 時十の位
+    TEST_ASSERT_FALSE(logic.isEntered(1)); // 時一の位
+    TEST_ASSERT_FALSE(logic.isEntered(2)); // 分十の位
+    TEST_ASSERT_TRUE(logic.isEntered(3));  // 分一の位のみ入力済み
+    
+    // PartialInputLogicによるプレビュー表示の確認（修正後の期待値）
+    const int* digits = logic.getDigits();
+    const bool* entered = logic.getEntered();
+    auto parsedTime = PartialInputLogic::parsePartialInput(digits, entered);
+    
+    TEST_ASSERT_TRUE(parsedTime.isValid);
+    TEST_ASSERT_EQUAL(0, parsedTime.hour);    // 時: 0
+    TEST_ASSERT_EQUAL(1, parsedTime.minute);  // 分: 1 (修正後は00:01)
+    
+    std::string timeStr = PartialInputLogic::formatTime(parsedTime.hour, parsedTime.minute);
+    TEST_ASSERT_EQUAL_STRING("00:01", timeStr.c_str()); // Expected: 00:01
+}
+
 int main(int argc, char **argv) {
     UNITY_BEGIN();
     RUN_TEST(test_basic_input_logic);
@@ -156,6 +198,7 @@ int main(int argc, char **argv) {
     RUN_TEST(test_input_logic_get_absolute_value);
     RUN_TEST(test_input_logic_complete_input_value);
     RUN_TEST(test_input_logic_shift_digits_edge_cases);
+    RUN_TEST(test_ba_operation_bug_reproduction);
     UNITY_END();
     return 0;
 } 

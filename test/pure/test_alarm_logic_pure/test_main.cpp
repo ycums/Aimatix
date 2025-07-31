@@ -269,7 +269,7 @@ void test_partial_input_minute_only() {
     struct tm* tm = localtime(&alarms[0]);
     TEST_ASSERT_EQUAL(2, tm->tm_mday); // 翌日
     TEST_ASSERT_EQUAL(0, tm->tm_hour);
-    TEST_ASSERT_EQUAL(10, tm->tm_min); // 分一桁のみ入力時は分十桁として解釈
+    TEST_ASSERT_EQUAL(1, tm->tm_min); // 修正後：分一桁のみ入力時は分一桁として解釈
 }
 
 void test_partial_input_hour_minute_partial() {
@@ -448,11 +448,11 @@ void test_bugreport_3_0_14_minute_only_5() {
     TEST_ASSERT_TRUE(ok);
     TEST_ASSERT_EQUAL((int)AlarmLogic::AddAlarmResult::Success, (int)result);
     
-    // 期待値: 00:50
+    // 期待値: 00:05 (修正後)
     struct tm* tm = localtime(&alarms[0]);
-    TEST_ASSERT_EQUAL(1, tm->tm_mday); // 同日（00:50は未来時刻のため）
+    TEST_ASSERT_EQUAL(1, tm->tm_mday); // 同日（00:05は未来時刻のため）
     TEST_ASSERT_EQUAL(0, tm->tm_hour);
-    TEST_ASSERT_EQUAL(50, tm->tm_min); // バグレポートの期待値
+    TEST_ASSERT_EQUAL(5, tm->tm_min); // 修正後の期待値：分一桁として解釈
 }
 
 void test_alarmlogic_delete_alarm() {
