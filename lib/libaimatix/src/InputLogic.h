@@ -101,13 +101,9 @@ public:
             digits[i] = tempDigits[i + 1];
             entered[i] = tempEntered[i + 1];
         }
-        // 右端のみ0/未入力にする
+        // 右端のみ0/入力済みにする
         digits[3] = 0;
-        entered[3] = false;
-        // 右から2番目（digits[2]）は0だが入力済みとする
-        if (digits[2] == 0) {
-            entered[2] = true;
-        }
+        entered[3] = true;
         return true;
     }
     // 各桁の値・入力済み状態を取得

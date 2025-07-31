@@ -1,4 +1,5 @@
 #include "AlarmLogic.h"
+#include "PartialInputLogic.h"
 #include <algorithm>
 #include <sstream>
 #include <iomanip>
@@ -199,39 +200,16 @@ auto AlarmLogic::addAlarmFromPartialInput(
         return false;
     }
     
-    // 部分的な入力状態を完全な時分に変換
-    int hour = 0;
-    int minute = 0;
-    
-    // 時の解釈（digits[0], digits[1]）
-    if (entered[0] && entered[1]) {
-        // 両方入力済み
-        hour = digits[0] * HOURS_10 + digits[1];
-    } else if (entered[0] && !entered[1]) {
-        // 時十桁のみ入力済み → 時一桁を0として補完
-        hour = digits[0] * HOURS_10 + 0;
-    } else if (!entered[0] && entered[1]) {
-        // 時一桁のみ入力済み → 時十桁を0として補完
-        hour = 0 * HOURS_10 + digits[1];
-    } else {
-        // 時が未入力
-        hour = 0;
+    // 部分的な入力状態を完全な時分に変換（PartialInputLogicを使用）
+    auto parsedTime = PartialInputLogic::parsePartialInput(digits, entered);
+    if (!parsedTime.isValid) {
+        result = AddAlarmResult::ErrorInvalid;
+        errorMsg = "Invalid time format";
+        return false;
     }
     
-    // 分の解釈（digits[2], digits[3]）
-    if (entered[2] && entered[3]) {
-        // 両方入力済み
-        minute = digits[2] * HOURS_10 + digits[3];
-    } else if (entered[2] && !entered[3]) {
-        // 分十桁のみ入力済み → 分一桁を0として補完
-        minute = digits[2] * HOURS_10 + 0;
-    } else if (!entered[2] && entered[3]) {
-        // 分一桁のみ入力済み → 分十桁を0として補完
-        minute = 0 * HOURS_10 + digits[3];
-    } else {
-        // 分が未入力
-        minute = 0;
-    }
+    int hour = parsedTime.hour;
+    int minute = parsedTime.minute;
     
     // 時分を直接指定してアラーム追加（既存のaddAlarm関数を拡張して使用）
     struct tm* now_tm = localtime(&now);

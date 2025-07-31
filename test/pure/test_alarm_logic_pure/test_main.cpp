@@ -269,7 +269,7 @@ void test_partial_input_minute_only() {
     struct tm* tm = localtime(&alarms[0]);
     TEST_ASSERT_EQUAL(2, tm->tm_mday); // 翌日
     TEST_ASSERT_EQUAL(0, tm->tm_hour);
-    TEST_ASSERT_EQUAL(1, tm->tm_min);
+    TEST_ASSERT_EQUAL(10, tm->tm_min); // 分一桁のみ入力時は分十桁として解釈
 }
 
 void test_partial_input_hour_minute_partial() {
@@ -402,6 +402,36 @@ void test_add_alarm_at_time_multiple_success() {
 }
 
 // deleteAlarm()のテスト
+// バグレポート3-0-14の具体的ケース: __:5_ → 00:50
+void test_bugreport_3_0_14_minute_only_5() {
+    std::vector<time_t> alarms;
+    time_t now;
+    AlarmLogic::AddAlarmResult result;
+    std::string msg;
+    
+    // 現在時刻: 00:00 を設定
+    struct tm base_tm = {};
+    base_tm.tm_year = 124; base_tm.tm_mon = 0; base_tm.tm_mday = 1; 
+    base_tm.tm_hour = 0; base_tm.tm_min = 0; base_tm.tm_sec = 0;
+    now = mktime(&base_tm);
+    
+    // __:5_ → 分一桁のみに5を入力
+    int digits[4] = {0, 0, 0, 0};
+    bool entered[4] = {false, false, false, false};
+    digits[3] = 5; entered[3] = true; // 分一桁のみ入力
+    
+    alarms.clear();
+    bool ok = AlarmLogic::addAlarmFromPartialInput(alarms, now, digits, entered, result, msg);
+    TEST_ASSERT_TRUE(ok);
+    TEST_ASSERT_EQUAL((int)AlarmLogic::AddAlarmResult::Success, (int)result);
+    
+    // 期待値: 00:50
+    struct tm* tm = localtime(&alarms[0]);
+    TEST_ASSERT_EQUAL(1, tm->tm_mday); // 同日（00:50は未来時刻のため）
+    TEST_ASSERT_EQUAL(0, tm->tm_hour);
+    TEST_ASSERT_EQUAL(50, tm->tm_min); // バグレポートの期待値
+}
+
 void test_alarmlogic_delete_alarm() {
     std::vector<time_t> alarms = {1000, 2000, 3000, 4000};
     
@@ -464,6 +494,7 @@ int main(int argc, char **argv) {
     RUN_TEST(test_add_alarm_at_time_max_reached);
     RUN_TEST(test_add_alarm_at_time_sorting);
     RUN_TEST(test_add_alarm_at_time_multiple_success);
+    RUN_TEST(test_bugreport_3_0_14_minute_only_5);
     RUN_TEST(test_alarmlogic_delete_alarm);
     UNITY_END();
     return 0;

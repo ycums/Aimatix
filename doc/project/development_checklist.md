@@ -110,32 +110,33 @@
   - [x] カーソル移動の循環化
   - [x] システム時刻更新の実装
   - [x] 表示品質の改善（ちらつき解消）
-  - [ ] エラー表示機能の実装
-- [ ] 3-0-13.2: アラーム一覧が2度目以降正しく表示されないバグ
+- [x] 3-0-14:  bug: 絶対時刻入力、相対時刻入力で1桁目が未入力のときの設定値が間違っている
+- [ ] 3-0-15: アラーム一覧が2度目以降正しく表示されないバグ
   - [ ] 実際には アラームリストは空ではないがアラーム一覧に0項目表示される
     - [ ] "NO ARARMS" とも表示されずただ空欄になっている。
   - [ ] 初回表示時には正しく表示される
-- [ ] 3-0-14: 設定画面の項目選択・値変更UI/UXの作成 (項目選択モード、値変更モードの行き来)
+- [ ] 3-0-16: 設定画面の項目選択・値変更UI/UXの作成 (項目選択モード、値変更モードの行き来)
   - [ ] この時点では設定保存/復元/バリデーション等の副作用コマンドは実装しない。UI上動いているように見えるだけ
   - [ ] 静的解析実行（Clang-Tidy）
-- [ ] 3-0-15: 設定保存・復元・バリデーション（SettingsLogic本実装＋MockEEPROMAdapter連携、設定保存/復元/バリデーションのUI・副作用コマンド）
+- [ ] 3-0-17: 設定保存・復元・バリデーション（SettingsLogic本実装＋MockEEPROMAdapter連携、設定保存/復元/バリデーションのUI・副作用コマンド）
   - [ ] 静的解析実行（Clang-Tidy）
-- [ ] 3-0-16: EEPROM 保存値の起動時読み出し part 1 (Set Date/Time)
-- [ ] 3-0-17: EEPROM 保存値の起動時読み出し part 2 (LCD Brightness)
-- [ ] 3-0-18: 警告・エラー表示、副作用コマンド拡張（ShowWarningコマンド、エラー時のUI反映）
+- [ ] 3-0-18: EEPROM 保存値の起動時読み出し part 1 (Set Date/Time)
+- [ ] 3-0-19: EEPROM 保存値の起動時読み出し part 2 (LCD Brightness)
+- [ ] 3-0-20: 警告・エラー表示、副作用コマンド拡張（ShowWarningコマンド、エラー時のUI反映）
   - [ ] 入力画面の桁送り失敗時に何らかのリアクションを追加する。
   - [ ] 静的解析実行（Clang-Tidy）
-- [ ] 3-0-19: EEPROM 保存値の起動時読み出し part 3 (Sound設定)
-- [ ] 3-0-20: すべての主要コンポーネント・全仕様網羅（MainDisplay, InputDisplay, AlarmDisplay, SettingsDisplay, TimeLogic, AlarmLogic, InputLogic, SettingsLogic, ButtonManager, DebounceManager, 各Adapter/Hardware層）
+- [ ] 3-0-21: EEPROM 保存値の起動時読み出し part 3 (Sound設定)
+- [ ] 3-0-22: 日付入力画面 エラー表示機能の実装
+- [ ] 3-0-23: すべての主要コンポーネント・全仕様網羅（MainDisplay, InputDisplay, AlarmDisplay, SettingsDisplay, TimeLogic, AlarmLogic, InputLogic, SettingsLogic, ButtonManager, DebounceManager, 各Adapter/Hardware層）
     - [ ] すべての画面・機能・副作用コマンドが連携し、全仕様を満たす
     - [ ] 静的解析実行（Clang-Tidy）
-- [ ] 3-0-21: WiFi設定機能（EEPROM機能完成後）
+- [ ] 3-0-24: WiFi設定機能（EEPROM機能完成後）
   - [ ] 設定画面に「WiFi Settings」項目を追加
   - [ ] SSID/パスワード入力画面
   - [ ] WiFi接続テスト機能
   - [ ] EEPROMへの設定保存
   - [ ] 静的解析実行（Clang-Tidy）
-- [ ] 3-0-22: NTP自動同期機能
+- [ ] 3-0-25: NTP自動同期機能
   - [ ] 起動時の自動NTP同期
   - [ ] 定期的な時刻同期（24時間間隔）
   - [ ] 手動設定との優先順位管理

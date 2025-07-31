@@ -52,7 +52,8 @@ void test_input_logic_shift_digits() {
     
     // 桁送り後の状態確認
     TEST_ASSERT_EQUAL(5, logic.getDigit(2)); // 分十の位に移動
-    TEST_ASSERT_FALSE(logic.isEntered(3));   // 分一の位はクリア
+    TEST_ASSERT_TRUE(logic.isEntered(3));    // 分一の位は0で入力済み
+    TEST_ASSERT_EQUAL(0, logic.getDigit(3)); // 分一の位は0
     TEST_ASSERT_TRUE(logic.isEntered(2));    // 分十の位は入力済み
 }
 

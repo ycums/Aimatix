@@ -2,6 +2,7 @@
 #include "StateManager.h"
 #include "InputLogic.h"
 #include "IInputDisplayView.h"
+#include "PartialInputLogic.h"
 #include <stdio.h>
 #include <vector>
 #include "AlarmLogic.h"
@@ -109,21 +110,23 @@ public:
                 const int* digits = inputLogic ? inputLogic->getDigits() : nullptr;
                 const bool* entered = inputLogic ? inputLogic->getEntered() : nullptr;
                 if (digits && entered) {
-                    // 入力済みの桁から値を構築
-                    int partialValue = 0;
+                    // PartialInputLogicを使用して確定処理と同じロジックでプレビュー生成
+                    auto parsedTime = PartialInputLogic::parsePartialInput(digits, entered);
                     bool hasInput = false;
                     for (int i = 0; i < 4; ++i) {
                         if (entered[i]) {
-                            partialValue = partialValue * 10 + digits[i];
                             hasInput = true;
+                            break;
                         }
                     }
-                    if (hasInput) {
+                    if (hasInput && parsedTime.isValid) {
                         if (isRelativeMode) {
                             generateRelativePreview(preview, sizeof(preview));
                         } else {
-                            // 絶対時刻入力モードの場合は部分入力を表示
-                            snprintf(preview, sizeof(preview), "%02d:%02d", partialValue/100, partialValue%100);
+                            // 絶対時刻入力モードの場合：確定処理と同じロジックで表示
+                            std::string timeStr = PartialInputLogic::formatTime(parsedTime.hour, parsedTime.minute);
+                            strncpy(preview, timeStr.c_str(), sizeof(preview) - 1);
+                            preview[sizeof(preview) - 1] = '\0';
                         }
                     }
                 }
