@@ -2,6 +2,7 @@
 #include "StateManager.h"
 #include "ITimeProvider.h"
 #include "IDateTimeInputView.h"
+#include <array>
 #include <string>
 #include <vector>
 
@@ -63,6 +64,19 @@ private:
     static constexpr int HOUR_MAX = 23;
     static constexpr int MINUTE_MIN = 0;
     static constexpr int MINUTE_MAX = 59;
+    
+    // 最小システム時刻設定（2025/01/01 00:00）
+    static constexpr int MIN_SYSTEM_YEAR = 2025;
+    static constexpr int MIN_SYSTEM_MONTH = 1;
+    static constexpr int MIN_SYSTEM_DAY = 1;
+    static constexpr int MIN_SYSTEM_HOUR = 0;
+    static constexpr int MIN_SYSTEM_MINUTE = 0;
+    static constexpr int MIN_SYSTEM_SECOND = 0;
+    
+    // デフォルト日時の桁配列：{2,0,2,5,0,1,0,1,0,0,0,0} (2025/01/01 00:00)
+    static std::array<int, 12> getDefaultDateTimeDigits() {
+        return {2, 0, 2, 5, 0, 1, 0, 1, 0, 0, 0, 0};
+    }
     
     // 内部メソッド
     void resetDateTime();

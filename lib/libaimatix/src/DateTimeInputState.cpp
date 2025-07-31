@@ -69,8 +69,43 @@ void DateTimeInputState::onButtonCLongPress() {
 }
 
 void DateTimeInputState::resetDateTime() {
-    // 初期値: 2025/01/01 00:00
-    dateTimeDigits = {2, 0, 2, 5, 0, 1, 0, 1, 0, 0, 0, 0};
+    if (timeProvider) {
+        // システム時刻から初期値を設定
+        time_t currentTime = timeProvider->now();
+        struct tm* timeInfo = timeProvider->localtime(&currentTime);
+        
+        if (timeInfo) {
+            int year = timeInfo->tm_year + 1900;  // tm_yearは1900からのオフセット
+            int month = timeInfo->tm_mon + 1;     // tm_monは0ベース
+            int day = timeInfo->tm_mday;
+            int hour = timeInfo->tm_hour;
+            int minute = timeInfo->tm_min;
+            
+            // 各桁に分解して設定
+            dateTimeDigits = {
+                year / 1000,        // 年千の位
+                (year / 100) % 10,  // 年百の位
+                (year / 10) % 10,   // 年十の位
+                year % 10,          // 年一の位
+                month / 10,         // 月十の位
+                month % 10,         // 月一の位
+                day / 10,           // 日十の位
+                day % 10,           // 日一の位
+                hour / 10,          // 時十の位
+                hour % 10,          // 時一の位
+                minute / 10,        // 分十の位
+                minute % 10         // 分一の位
+            };
+        } else {
+            // timeInfoがnullの場合はデフォルト値を使用
+            auto defaultDigits = getDefaultDateTimeDigits();
+            dateTimeDigits = std::vector<int>(defaultDigits.begin(), defaultDigits.end());
+        }
+    } else {
+        // timeProviderがnullの場合はデフォルト値を使用
+        auto defaultDigits = getDefaultDateTimeDigits();
+        dateTimeDigits = std::vector<int>(defaultDigits.begin(), defaultDigits.end());
+    }
 }
 
 void DateTimeInputState::incrementCurrentDigit() {

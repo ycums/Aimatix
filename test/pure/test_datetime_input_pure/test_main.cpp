@@ -32,6 +32,20 @@ void tearDown(void) {
 // 初期化テスト
 void test_DateTimeInputState_Initialization() {
     TestTimeProvider timeProvider;
+    
+    // 期待される時刻を設定: 2025/01/01 00:00:00
+    struct tm testTime = {};
+    testTime.tm_year = 2025 - 1900;  // 年は1900からのオフセット
+    testTime.tm_mon = 1 - 1;         // 月は0ベース
+    testTime.tm_mday = 1;
+    testTime.tm_hour = 0;
+    testTime.tm_min = 0;
+    testTime.tm_sec = 0;
+    testTime.tm_isdst = -1;
+    
+    time_t testTimeT = mktime(&testTime);
+    timeProvider.setTestTime(testTimeT);
+    
     DateTimeInputState state(&timeProvider);
     
     // 初期値の確認
@@ -77,6 +91,20 @@ void test_DateTimeInputState_CursorMovement() {
 // 値インクリメントテスト
 void test_DateTimeInputState_Increment() {
     TestTimeProvider timeProvider;
+    
+    // 期待される時刻を設定: 2025/01/01 00:00:00
+    struct tm testTime = {};
+    testTime.tm_year = 2025 - 1900;  // 年は1900からのオフセット
+    testTime.tm_mon = 1 - 1;         // 月は0ベース
+    testTime.tm_mday = 1;
+    testTime.tm_hour = 0;
+    testTime.tm_min = 0;
+    testTime.tm_sec = 0;
+    testTime.tm_isdst = -1;
+    
+    time_t testTimeT = mktime(&testTime);
+    timeProvider.setTestTime(testTimeT);
+    
     DateTimeInputState state(&timeProvider);
     
     // 年千の位のテスト（入力不可）
@@ -166,6 +194,45 @@ void test_DateTimeInputState_CommitDateTime_InvalidTime() {
     TEST_ASSERT_EQUAL(initialTime, timeProvider.now());
 }
 
+void test_DateTimeInputState_InitializeWithSystemTime() {
+    TestTimeProvider timeProvider;
+    DateTimeInputState state(&timeProvider);
+    
+    // 特定の時刻を設定: 2023/12/25 15:45:00
+    struct tm testTime = {};
+    testTime.tm_year = 2023 - 1900;  // 年は1900からのオフセット
+    testTime.tm_mon = 12 - 1;        // 月は0ベース
+    testTime.tm_mday = 25;
+    testTime.tm_hour = 15;
+    testTime.tm_min = 45;
+    testTime.tm_sec = 0;
+    testTime.tm_isdst = -1;
+    
+    time_t testTimeT = mktime(&testTime);
+    timeProvider.setTestTime(testTimeT);
+    
+    // onEnter()を呼ぶことで、システム時刻から初期値が設定される
+    state.onEnter();
+    
+    // 期待される桁数値: [2,0,2,3,1,2,2,5,1,5,4,5] (2023/12/25 15:45)
+    std::vector<int> expectedDigits = {2, 0, 2, 3, 1, 2, 2, 5, 1, 5, 4, 5};
+    
+    // システム時刻から正しく初期値が設定されたかを確認
+    TEST_ASSERT_EQUAL_INT32_ARRAY(expectedDigits.data(), state.getDateTimeDigits().data(), expectedDigits.size());
+}
+
+void test_DateTimeInputState_InitializeWithNullProvider() {
+    DateTimeInputState state(nullptr);  // timeProviderをnullに設定
+    
+    // onEnter()を呼ぶ
+    state.onEnter();
+    
+    // timeProviderがnullの場合、デフォルト値が設定されるはず: [2,0,2,5,0,1,0,1,0,0,0,0]
+    std::vector<int> expectedDigits = {2, 0, 2, 5, 0, 1, 0, 1, 0, 0, 0, 0};
+    
+    TEST_ASSERT_EQUAL_INT32_ARRAY(expectedDigits.data(), state.getDateTimeDigits().data(), expectedDigits.size());
+}
+
 int main() {
     UNITY_BEGIN();
     
@@ -176,6 +243,8 @@ int main() {
     RUN_TEST(test_DateTimeInputState_FormatString);
     RUN_TEST(test_DateTimeInputState_CommitDateTime);
     RUN_TEST(test_DateTimeInputState_CommitDateTime_InvalidTime);
+    RUN_TEST(test_DateTimeInputState_InitializeWithSystemTime);
+    RUN_TEST(test_DateTimeInputState_InitializeWithNullProvider);
     
     return UNITY_END();
 } 

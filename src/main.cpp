@@ -16,6 +16,7 @@
 #include "TimeLogic.h"
 #include "AlarmLogic.h"
 #include "DisplayAdapter.h"
+#include "TimeValidationLogic.h"
 #ifdef ARDUINO
 #include <M5Stack.h>
 #include <Arduino.h>
@@ -103,6 +104,12 @@ void setup() {
     alarm_times.clear();
     time_t now = time(nullptr);
     AlarmLogic::initAlarms(alarm_times, now);
+    
+    // システム時刻の検証と補正（起動時処理）
+    if (TimeValidationLogic::validateAndCorrectSystemTime(m5_time_provider.get())) {
+        // 時刻補正が実行された場合のログ出力（デバッグ用）
+        // プロダクション環境では必要に応じて削除可能
+    }
 #endif
     // --- 状態遷移の依存注入（@/design/ui_state_management.md準拠） ---
     input_display_state.setManager(&state_manager);
