@@ -100,17 +100,16 @@ void test_parsePartialInput_partial_units() {
     TEST_ASSERT_EQUAL(40, result.minute);
 }
 
-// 未入力
+// 未入力（確定拒絶）
 void test_parsePartialInput_no_input() {
-    // __:__ → 00:00
+    // __:__ → 無効（確定拒絶）
     int digits[4] = {0, 0, 0, 0};
     bool entered[4] = {false, false, false, false};
     
     auto result = PartialInputLogic::parsePartialInput(digits, entered);
     
-    TEST_ASSERT_TRUE(result.isValid);
-    TEST_ASSERT_EQUAL(0, result.hour);
-    TEST_ASSERT_EQUAL(0, result.minute);
+    TEST_ASSERT_FALSE(result.isValid);
+    // hour, minuteの値は無効なので確認しない
 }
 
 // nullptrエラーハンドリング

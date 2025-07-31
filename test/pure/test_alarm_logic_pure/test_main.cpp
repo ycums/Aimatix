@@ -401,6 +401,29 @@ void test_add_alarm_at_time_multiple_success() {
     TEST_ASSERT_EQUAL(3000, alarms[2]);
 }
 
+// 完全未入力時の確定拒絶テスト（バグレポート修正確認）
+void test_partial_input_no_input_rejection() {
+    std::vector<time_t> alarms;
+    time_t now;
+    AlarmLogic::AddAlarmResult result;
+    std::string msg;
+    struct tm base_tm = {};
+    base_tm.tm_year = 124; base_tm.tm_mon = 0; base_tm.tm_mday = 1; 
+    base_tm.tm_hour = 14; base_tm.tm_min = 35; base_tm.tm_sec = 0;
+    now = mktime(&base_tm);
+    
+    // __:__ → 完全未入力（確定拒絶されるべき）
+    int digits[4] = {0, 0, 0, 0};
+    bool entered[4] = {false, false, false, false};
+    
+    alarms.clear();
+    bool ok = AlarmLogic::addAlarmFromPartialInput(alarms, now, digits, entered, result, msg);
+    TEST_ASSERT_FALSE(ok);
+    TEST_ASSERT_EQUAL((int)AlarmLogic::AddAlarmResult::ErrorInvalid, (int)result);
+    TEST_ASSERT_EQUAL_STRING("Invalid time format", msg.c_str());
+    TEST_ASSERT_EQUAL(0, alarms.size()); // アラームは追加されない
+}
+
 // deleteAlarm()のテスト
 // バグレポート3-0-14の具体的ケース: __:5_ → 00:50
 void test_bugreport_3_0_14_minute_only_5() {
@@ -494,6 +517,7 @@ int main(int argc, char **argv) {
     RUN_TEST(test_add_alarm_at_time_max_reached);
     RUN_TEST(test_add_alarm_at_time_sorting);
     RUN_TEST(test_add_alarm_at_time_multiple_success);
+    RUN_TEST(test_partial_input_no_input_rejection);
     RUN_TEST(test_bugreport_3_0_14_minute_only_5);
     RUN_TEST(test_alarmlogic_delete_alarm);
     UNITY_END();

@@ -6,6 +6,19 @@ PartialInputLogic::ParsedTime PartialInputLogic::parsePartialInput(const int* di
         return ParsedTime(0, 0, false);
     }
     
+    // 完全未入力チェック（確定拒絶のため）
+    bool hasAnyInput = false;
+    for (int i = 0; i < 4; ++i) {
+        if (entered[i]) {
+            hasAnyInput = true;
+            break;
+        }
+    }
+    if (!hasAnyInput) {
+        // 完全未入力の場合は無効とする（確定拒絶）
+        return ParsedTime(0, 0, false);
+    }
+    
     int hour = 0;
     int minute = 0;
     
