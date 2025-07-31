@@ -19,7 +19,9 @@ void AlarmDisplayState::onEnter() {
 }
 
 void AlarmDisplayState::onExit() {
-    // クリーンアップ処理（必要に応じて）
+    // 状態をクリアして次回のonEnter時に強制更新を有効にする
+    lastDisplayedAlarms.clear();
+    lastSelectedIndex = 0;
 }
 
 void AlarmDisplayState::onDraw() {

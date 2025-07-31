@@ -451,6 +451,37 @@ void test_AlarmDisplayState_OnButtonCLongPress() {
     TEST_ASSERT_NOT_NULL(mockManager.lastSetState);
 }
 
+// テストケース: 複数回遷移での表示バグ（3-0-15）
+void test_AlarmDisplayState_MultipleEntryDisplayBug() {
+    MockAlarmDisplayView mockView;
+    MockStateManager mockManager;
+    auto timeProvider = std::make_shared<MockTimeProvider>();
+    auto timeManager = std::make_shared<MockTimeManager>();
+    AlarmDisplayState state(&mockManager, &mockView, timeProvider, timeManager);
+    
+    // アラームを追加
+    alarm_times.clear();
+    alarm_times.push_back(time(nullptr) + 3600); // 1時間後
+    alarm_times.push_back(time(nullptr) + 7200); // 2時間後
+    
+    // 初回表示 - 正しく表示される
+    state.onEnter();
+    TEST_ASSERT_EQUAL(2, mockView.lastShownAlarms.size());
+    TEST_ASSERT_FALSE(mockView.noAlarmsShown);
+    
+    // 画面遷移をシミュレート
+    state.onExit();
+    mockView.reset();
+    
+    // 2度目の表示 - バグにより表示されない
+    state.onEnter();
+    
+    // 期待: アラームが表示される（現在の実装では失敗）
+    // バグ: lastDisplayedAlarmsが残存しているため更新されない
+    TEST_ASSERT_EQUAL(2, mockView.lastShownAlarms.size());
+    TEST_ASSERT_FALSE(mockView.noAlarmsShown);
+}
+
 // テストケース: 終了処理
 void test_AlarmDisplayState_OnExit() {
     MockAlarmDisplayView mockView;
@@ -485,6 +516,7 @@ int main() {
     RUN_TEST(test_AlarmDisplayState_NoAlarmsDisplay_NoFlicker);
     RUN_TEST(test_AlarmDisplayState_PartialAreaClear);
     RUN_TEST(test_AlarmDisplayState_OnButtonCLongPress);
+    RUN_TEST(test_AlarmDisplayState_MultipleEntryDisplayBug);
     RUN_TEST(test_AlarmDisplayState_OnExit);
     return UNITY_END();
 } 
