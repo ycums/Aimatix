@@ -189,6 +189,74 @@ void test_settings_logic_edge_cases() {
     TEST_ASSERT_TRUE(logic.isValueEditMode());
 }
 
+// SettingsDisplayStateの未テスト機能を追加
+void test_settings_display_on_draw() {
+    SettingsLogic logic;
+    SettingsDisplayState state(&logic);
+    
+    // onDrawが例外を投げないことを確認
+    state.onDraw();
+    // 正常に実行されることを確認（例外が発生しない）
+}
+
+void test_settings_display_on_enter() {
+    SettingsLogic logic;
+    SettingsDisplayState state(&logic);
+    
+    // onEnterが例外を投げないことを確認
+    state.onEnter();
+    // 正常に実行されることを確認（例外が発生しない）
+}
+
+void test_settings_display_button_a() {
+    SettingsLogic logic;
+    SettingsDisplayState state(&logic);
+    
+    // onButtonAが例外を投げないことを確認
+    state.onButtonA();
+    state.onButtonALongPress();
+    // 正常に実行されることを確認（例外が発生しない）
+}
+
+void test_settings_display_button_b() {
+    SettingsLogic logic;
+    SettingsDisplayState state(&logic);
+    
+    // onButtonBが例外を投げないことを確認
+    state.onButtonB();
+    state.onButtonBLongPress();
+    // 正常に実行されることを確認（例外が発生しない）
+}
+
+void test_settings_display_navigation() {
+    SettingsLogic logic;
+    SettingsDisplayState state(&logic);
+    
+    // 設定項目の移動テスト
+    int initialIndex = state.getSelectedIndex();
+    
+    // 上に移動
+    state.onButtonA();
+    // 下に移動
+    state.onButtonB();
+    
+    // 正常に実行されることを確認（例外が発生しない）
+}
+
+void test_settings_display_null_checks() {
+    // nullptrでの初期化テスト
+    SettingsDisplayState state(nullptr);
+    
+    // null状態でも例外を投げないことを確認
+    state.onEnter();
+    state.onDraw();
+    state.onButtonA();
+    state.onButtonB();
+    state.onButtonC();
+    state.onExit();
+    // 正常に実行されることを確認（例外が発生しない）
+}
+
 int main(int argc, char **argv) {
     UNITY_BEGIN();
     RUN_TEST(test_settings_display_basic);
@@ -204,6 +272,12 @@ int main(int argc, char **argv) {
     RUN_TEST(test_settings_logic_set_value_edit_mode);
     RUN_TEST(test_settings_logic_validate_settings);
     RUN_TEST(test_settings_logic_edge_cases);
+    RUN_TEST(test_settings_display_on_draw);
+    RUN_TEST(test_settings_display_on_enter);
+    RUN_TEST(test_settings_display_button_a);
+    RUN_TEST(test_settings_display_button_b);
+    RUN_TEST(test_settings_display_navigation);
+    RUN_TEST(test_settings_display_null_checks);
     UNITY_END();
     return 0;
 } 

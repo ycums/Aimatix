@@ -1,12 +1,13 @@
 #include "DateTimeInputViewImpl.h"
+#include "ui_constants.h"
 #include <cstring>
- #include <string>
+#include <string>
 #ifdef ARDUINO
 #include <Arduino.h>
 #endif
 
 void DateTimeInputViewImpl::clear() {
-    if (disp) {
+    if (disp != nullptr) {
         disp->clear();
         // 状態をリセット
         lastCursorPosition = -1;
@@ -66,7 +67,7 @@ void DateTimeInputViewImpl::showErrorMessage(const std::string& message) {
     disp->setTextColor(AMBER_COLOR, TFT_BLACK);
     
     // エラーメッセージを中央に表示
-    disp->drawText(160, 160, message.c_str(), 2);
+    disp->drawText(SCREEN_CENTER_X, SCREEN_CENTER_X, message.c_str(), 2);
 }
 
 void DateTimeInputViewImpl::drawDateTimeGrid(const std::string& dateTimeStr) {
@@ -178,12 +179,12 @@ int DateTimeInputViewImpl::getCharWidth(char c) const {
     switch (c) {
         case '0': case '1': case '2': case '3': case '4':
         case '5': case '6': case '7': case '8': case '9':
-            return 16; // 数字は16ピクセル
+            return CHAR_WIDTH_FONT7; // 数字は16ピクセル
         case '/': case ':':
-            return 8;  // 記号は8ピクセル
+            return CHAR_WIDTH_FONT4;  // 記号は8ピクセル
         case ' ':
-            return 8;  // スペースは8ピクセル
+            return CHAR_WIDTH_FONT4;  // スペースは8ピクセル
         default:
-            return 16; // デフォルト
+            return CHAR_WIDTH_FONT7; // デフォルト
     }
 } 

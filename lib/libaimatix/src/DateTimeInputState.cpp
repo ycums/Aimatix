@@ -1,4 +1,5 @@
 #include "DateTimeInputState.h"
+#include "ui_constants.h"
 #include <cassert>
 #include <cstring>
 #include <ctime>
@@ -8,12 +9,11 @@
 void DateTimeInputState::onEnter() {
     resetDateTime();
     // 初期カーソル位置を年十の位に設定（年千の位、年百の位は入力不可のため）
-    cursorPosition = 2;
+    cursorPosition = DIGIT_YEAR_TEN;
     isEditMode = false;
     
-    if (view) {
+    if (view != nullptr) {
         view->clear();
-        constexpr int BATTERY_WARNING_THRESHOLD = 42;
         view->showTitle("SET DATE/TIME", BATTERY_WARNING_THRESHOLD, false);
         view->showHints("INC", "NEXT", "SET");
         onDraw();
@@ -25,7 +25,7 @@ void DateTimeInputState::onExit() {
 }
 
 void DateTimeInputState::onDraw() {
-    if (view) {
+    if (view != nullptr) {
         std::string dateTimeStr = formatDateTimeString();
         int stringPosition = dataPositionToStringPosition(cursorPosition);
         view->showDateTimeString(dateTimeStr, stringPosition);
@@ -47,7 +47,7 @@ void DateTimeInputState::onButtonC() {
     if (validateDateTime()) {
         commitDateTime();
         // 設定画面に戻る
-        if (manager && settingsDisplayState) {
+        if (manager != nullptr && settingsDisplayState != nullptr) {
             manager->setState(settingsDisplayState);
         }
     }
@@ -63,7 +63,7 @@ void DateTimeInputState::onButtonBLongPress() {
 
 void DateTimeInputState::onButtonCLongPress() {
     // 戻るボタン（長押し）
-    if (manager && settingsDisplayState) {
+    if (manager != nullptr && settingsDisplayState != nullptr) {
         manager->setState(settingsDisplayState);
     }
 }
@@ -114,80 +114,80 @@ void DateTimeInputState::incrementCurrentDigit() {
     }
     
     // 年千の位、年百の位は入力不可
-    if (cursorPosition == 0 || cursorPosition == 1) {
+    if (cursorPosition == DIGIT_YEAR_THOUSAND || cursorPosition == DIGIT_YEAR_HUNDRED) {
         return;
     }
     
     int& currentDigit = dateTimeDigits[cursorPosition];
     
     // 現在の値を参照して動的に最大値を設定
-    int maxValue = 9; // デフォルト最大値
+    int maxValue = MAX_DIGIT_9; // デフォルト最大値
     
-    if (cursorPosition == 2) { // 年十の位: 2000-2099の範囲で0-9
-        maxValue = 9;
-    } else if (cursorPosition == 3) { // 年一の位: 2000-2099の範囲で0-9
-        maxValue = 9;
-    } else if (cursorPosition == 4) { // 月十の位: 01-12なので0-1
-        maxValue = 1;
-    } else if (cursorPosition == 5) { // 月一の位: 十の位に応じて決定
-        if (dateTimeDigits[4] == 0) {
-            maxValue = 9; // 01-09月
-        } else if (dateTimeDigits[4] == 1) {
+    if (cursorPosition == DIGIT_YEAR_TEN) { // 年十の位: 2000-2099の範囲で0-9
+        maxValue = MAX_DIGIT_9;
+    } else if (cursorPosition == DIGIT_YEAR_ONE) { // 年一の位: 2000-2099の範囲で0-9
+        maxValue = MAX_DIGIT_9;
+    } else if (cursorPosition == DIGIT_MONTH_TEN) { // 月十の位: 01-12なので0-1
+        maxValue = MAX_MONTH_TEN_DIGIT;
+    } else if (cursorPosition == DIGIT_MONTH_ONE) { // 月一の位: 十の位に応じて決定
+        if (dateTimeDigits[DIGIT_MONTH_TEN] == 0) {
+            maxValue = MAX_DIGIT_9; // 01-09月
+        } else if (dateTimeDigits[DIGIT_MONTH_TEN] == 1) {
             maxValue = 2; // 10-12月
         } else {
-            maxValue = 9;
+            maxValue = MAX_DIGIT_9;
         }
-    } else if (cursorPosition == 6) { // 日十の位: 01-31なので0-3
-        maxValue = 3;
-    } else if (cursorPosition == 7) { // 日一の位: 十の位と月に応じて決定
+    } else if (cursorPosition == DIGIT_DAY_TEN) { // 日十の位: 01-31なので0-3
+        maxValue = MAX_DAY_TEN_DIGIT_OTHER;
+    } else if (cursorPosition == DIGIT_DAY_ONE) { // 日一の位: 十の位と月に応じて決定
         // 現在の月を取得
-        int currentMonth = dateTimeDigits[4] * 10 + dateTimeDigits[5];
-        int maxDaysInMonth = 31; // デフォルト
+        int currentMonth = dateTimeDigits[DIGIT_MONTH_TEN] * YEAR_MULTIPLIER_10 + dateTimeDigits[DIGIT_MONTH_ONE];
+        int maxDaysInMonth = DAYS_IN_MONTH_31; // デフォルト
         
         // 月に応じた最大日数を設定
         if (currentMonth == 2) {
             // 2月: うるう年チェックは省略し、28日固定とする
-            maxDaysInMonth = 28;
+            maxDaysInMonth = DAYS_IN_FEBRUARY;
         } else if (currentMonth == 4 || currentMonth == 6 || currentMonth == 9 || currentMonth == 11) {
             // 4月、6月、9月、11月は30日まで
-            maxDaysInMonth = 30;
+            maxDaysInMonth = DAYS_IN_MONTH_30;
         }
         
-        if (dateTimeDigits[6] == 0) {
-            maxValue = 9; // 01-09日
-        } else if (dateTimeDigits[6] == 1) {
-            maxValue = 9; // 10-19日
-        } else if (dateTimeDigits[6] == 2) {
-            if (maxDaysInMonth >= 29) {
-                maxValue = 9; // 20-29日
+        if (dateTimeDigits[DIGIT_DAY_TEN] == 0) {
+            maxValue = MAX_DIGIT_9; // 01-09日
+        } else if (dateTimeDigits[DIGIT_DAY_TEN] == 1) {
+            maxValue = MAX_DIGIT_9; // 10-19日
+        } else if (dateTimeDigits[DIGIT_DAY_TEN] == 2) {
+            if (maxDaysInMonth >= DAYS_IN_FEBRUARY_LEAP) {
+                maxValue = MAX_DIGIT_9; // 20-29日
             } else {
                 maxValue = 8; // 20-28日（2月の場合）
             }
-        } else if (dateTimeDigits[6] == 3) {
-            if (maxDaysInMonth == 31) {
+        } else if (dateTimeDigits[DIGIT_DAY_TEN] == 3) {
+            if (maxDaysInMonth == DAYS_IN_MONTH_31) {
                 maxValue = 1; // 30-31日
-            } else if (maxDaysInMonth == 30) {
+            } else if (maxDaysInMonth == DAYS_IN_MONTH_30) {
                 maxValue = 0; // 30日のみ
             } else {
                 maxValue = 0; // 制限なし（実際には28/29日まで）
             }
         } else {
-            maxValue = 9;
+            maxValue = MAX_DIGIT_9;
         }
-    } else if (cursorPosition == 8) { // 時十の位: 00-23なので0-2
-        maxValue = 2;
-    } else if (cursorPosition == 9) { // 時一の位: 十の位に応じて決定
-        if (dateTimeDigits[8] == 0 || dateTimeDigits[8] == 1) {
-            maxValue = 9; // 00-19時
-        } else if (dateTimeDigits[8] == 2) {
+    } else if (cursorPosition == DIGIT_HOUR_TEN) { // 時十の位: 00-23なので0-2
+        maxValue = MAX_HOUR_TEN_DIGIT;
+    } else if (cursorPosition == DIGIT_HOUR_ONE) { // 時一の位: 十の位に応じて決定
+        if (dateTimeDigits[DIGIT_HOUR_TEN] == 0 || dateTimeDigits[DIGIT_HOUR_TEN] == 1) {
+            maxValue = MAX_DIGIT_9; // 00-19時
+        } else if (dateTimeDigits[DIGIT_HOUR_TEN] == 2) {
             maxValue = 3; // 20-23時
         } else {
-            maxValue = 9;
+            maxValue = MAX_DIGIT_9;
         }
-    } else if (cursorPosition == 10) { // 分十の位: 00-59なので0-5
-        maxValue = 5;
-    } else if (cursorPosition == 11) { // 分一の位: 00-59なので0-9
-        maxValue = 9;
+    } else if (cursorPosition == DIGIT_MINUTE_TEN) { // 分十の位: 00-59なので0-5
+        maxValue = MAX_MINUTE_TEN_DIGIT;
+    } else if (cursorPosition == DIGIT_MINUTE_ONE) { // 分一の位: 00-59なので0-9
+        maxValue = MAX_DIGIT_9;
     }
     
     // 値をインクリメント（最大値を超えたら0に戻る）

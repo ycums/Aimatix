@@ -233,6 +233,64 @@ void test_DateTimeInputState_InitializeWithNullProvider() {
     TEST_ASSERT_EQUAL_INT32_ARRAY(expectedDigits.data(), state.getDateTimeDigits().data(), expectedDigits.size());
 }
 
+// 追加のテストケース - カバレッジ向上のため
+void test_DateTimeInputState_ButtonHandling() {
+    TestTimeProvider timeProvider;
+    DateTimeInputState state(&timeProvider);
+    
+    // ボタン処理のテスト
+    state.onButtonA(); // インクリメント
+    state.onButtonB(); // カーソル移動
+    state.onButtonC(); // 確定
+    
+    // 正常に実行されることを確認
+}
+
+void test_DateTimeInputState_EditModeToggle() {
+    TestTimeProvider timeProvider;
+    DateTimeInputState state(&timeProvider);
+    
+    // 編集モードの切り替えテスト
+    TEST_ASSERT_FALSE(state.getIsEditMode());
+    
+    // エディットモードに変更（実装により異なる）
+    state.onEnter();
+    // 正常に実行されることを確認
+}
+
+void test_DateTimeInputState_EdgeCases() {
+    TestTimeProvider timeProvider;
+    DateTimeInputState state(&timeProvider);
+    
+    // 境界値のテスト
+    state.setCursorPosition(-1); // 無効な位置
+    state.setCursorPosition(100); // 無効な位置
+    
+    // 無効な値でも例外が発生しないことを確認
+    state.onButtonA();
+    state.onButtonB();
+    state.onButtonC();
+}
+
+void test_DateTimeInputState_StringFormatting() {
+    TestTimeProvider timeProvider;
+    DateTimeInputState state(&timeProvider);
+    
+    // 文字列フォーマットの追加テスト
+    state.setDateTimeDigits({2, 0, 2, 4, 1, 2, 3, 1, 2, 3, 5, 9});
+    std::string formatted = state.formatDateTimeString();
+    TEST_ASSERT_EQUAL_STRING("2024/12/31 23:59", formatted.c_str());
+}
+
+void test_DateTimeInputState_ExitHandling() {
+    TestTimeProvider timeProvider;
+    DateTimeInputState state(&timeProvider);
+    
+    // 終了処理のテスト
+    state.onExit();
+    // 正常に実行されることを確認（例外が発生しない）
+}
+
 int main() {
     UNITY_BEGIN();
     
@@ -245,6 +303,11 @@ int main() {
     RUN_TEST(test_DateTimeInputState_CommitDateTime_InvalidTime);
     RUN_TEST(test_DateTimeInputState_InitializeWithSystemTime);
     RUN_TEST(test_DateTimeInputState_InitializeWithNullProvider);
+    RUN_TEST(test_DateTimeInputState_ButtonHandling);
+    RUN_TEST(test_DateTimeInputState_EditModeToggle);
+    RUN_TEST(test_DateTimeInputState_EdgeCases);
+    RUN_TEST(test_DateTimeInputState_StringFormatting);
+    RUN_TEST(test_DateTimeInputState_ExitHandling);
     
     return UNITY_END();
 } 

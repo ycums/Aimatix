@@ -41,14 +41,14 @@ void AlarmDisplayState::forceDraw() {
     }
     
     // リアルタイム削除: 過去のアラームを削除
-    time_t now = 0;
+    time_t now{0};
     if (timeProvider != nullptr) {
         now = timeProvider->now();
         AlarmLogic::removePastAlarms(alarm_times, now);
     }
     
     // アラームリストを取得（毎回最新の状態を取得）
-    const std::vector<time_t> alarms = getAlarmList();
+    const std::vector<time_t> alarms{getAlarmList()};
     
     // 選択位置の調整（アラーム消化後も適切に調整）
     adjustSelectionIndex();
@@ -137,7 +137,7 @@ auto AlarmDisplayState::getAlarmList() const -> std::vector<time_t> {
 }
 
 auto AlarmDisplayState::adjustSelectionIndex() -> void {
-    const std::vector<time_t> alarms = getAlarmList();
+    const std::vector<time_t> alarms{getAlarmList()};
     if (alarms.empty()) {
         selectedIndex = 0;
         return;
@@ -176,7 +176,7 @@ auto AlarmDisplayState::moveUp() -> void {
 }
 
 auto AlarmDisplayState::moveDown() -> void {
-    const std::vector<time_t> alarms = getAlarmList();
+    const std::vector<time_t> alarms{getAlarmList()};
     if (selectedIndex < alarms.size() - 1) {
         selectedIndex++;
     }
@@ -188,7 +188,7 @@ auto AlarmDisplayState::moveToTop() -> void {
 }
 
 auto AlarmDisplayState::moveToBottom() -> void {
-    const std::vector<time_t> alarms = getAlarmList();
+    const std::vector<time_t> alarms{getAlarmList()};
     if (!alarms.empty()) {
         selectedIndex = alarms.size() - 1;
     }

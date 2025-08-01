@@ -1,4 +1,5 @@
 #include "PartialInputLogic.h"
+#include "ui_constants.h"
 #include <cstdio>
 
 PartialInputLogic::ParsedTime PartialInputLogic::parsePartialInput(const int* digits, const bool* entered) {
@@ -57,7 +58,7 @@ PartialInputLogic::ParsedTime PartialInputLogic::parsePartialInput(const int* di
 }
 
 std::string PartialInputLogic::formatTime(int hour, int minute) {
-    char buffer[16];
+    char buffer[STRING_BUFFER_SIZE];
     std::snprintf(buffer, sizeof(buffer), "%02d:%02d", hour, minute);
     return std::string(buffer);
 }

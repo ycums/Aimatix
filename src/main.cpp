@@ -76,17 +76,17 @@ std::vector<time_t> alarm_times;
 
 // --- 状態管理クラスのグローバル生成 ---
 StateManager state_manager;
-std::shared_ptr<DateTimeAdapter> m5_time_provider = std::make_shared<DateTimeAdapter>();
-std::shared_ptr<M5StackTimeManager> m5_time_manager = std::make_shared<M5StackTimeManager>();
+const std::shared_ptr<DateTimeAdapter> m5_time_provider = std::make_shared<DateTimeAdapter>();
+const std::shared_ptr<M5StackTimeManager> m5_time_manager = std::make_shared<M5StackTimeManager>();
 InputLogic input_logic(m5_time_provider);
-DisplayAdapter display_adapter;
-InputDisplayViewImpl input_display_view_impl(&display_adapter);
-MainDisplayViewImpl main_display_view_impl(&display_adapter);
-AlarmDisplayViewImpl alarm_display_view_impl(&display_adapter);
-SettingsDisplayViewImpl settings_display_view_impl(&display_adapter);
-DateTimeInputViewImpl datetime_input_view_impl(&display_adapter);
-TimeLogic time_logic;
-AlarmLogic alarm_logic;
+const DisplayAdapter display_adapter;
+const InputDisplayViewImpl input_display_view_impl(&display_adapter);
+const MainDisplayViewImpl main_display_view_impl(&display_adapter);
+const AlarmDisplayViewImpl alarm_display_view_impl(&display_adapter);
+const SettingsDisplayViewImpl settings_display_view_impl(&display_adapter);
+const DateTimeInputViewImpl datetime_input_view_impl(&display_adapter);
+const TimeLogic time_logic;
+const AlarmLogic alarm_logic;
 SettingsLogic settings_logic;
 InputDisplayState input_display_state(&input_logic, &input_display_view_impl);
 MainDisplayState main_display_state(&state_manager, &input_display_state, &main_display_view_impl, &time_logic, &alarm_logic);

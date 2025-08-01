@@ -93,7 +93,7 @@ void SettingsDisplayState::onButtonC() {
     
     if (selectedItem == SettingsItem::SET_DATE_TIME) {
         // 日時設定画面に遷移
-        if (manager && datetimeInputState) {
+        if (manager != nullptr && datetimeInputState != nullptr) {
             manager->setState(datetimeInputState);
         }
     }
@@ -103,7 +103,7 @@ void SettingsDisplayState::onButtonC() {
 
 void SettingsDisplayState::onButtonALongPress() {
     // 一番上に移動
-    if (settingsLogic) {
+    if (settingsLogic != nullptr) {
         settingsLogic->setSelectedItem(SettingsItem::SOUND);
         onDraw();
     }
@@ -111,7 +111,7 @@ void SettingsDisplayState::onButtonALongPress() {
 
 void SettingsDisplayState::onButtonBLongPress() {
     // 一番下に移動
-    if (settingsLogic) {
+    if (settingsLogic != nullptr) {
         settingsLogic->setSelectedItem(SettingsItem::INFO);
         onDraw();
     }
@@ -119,7 +119,7 @@ void SettingsDisplayState::onButtonBLongPress() {
 
 void SettingsDisplayState::onButtonCLongPress() {
     // メイン画面に戻る
-    if (manager && mainDisplayState) {
+            if (manager != nullptr && mainDisplayState != nullptr) {
         manager->setState(mainDisplayState);
     }
 }
