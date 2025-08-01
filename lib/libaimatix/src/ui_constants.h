@@ -42,51 +42,51 @@
 
 // DateTimeInput用定数
 // 桁位置インデックス
-constexpr int DIGIT_YEAR_THOUSAND = 0;
-constexpr int DIGIT_YEAR_HUNDRED = 1;
-constexpr int DIGIT_YEAR_TEN = 2;
-constexpr int DIGIT_YEAR_ONE = 3;
-constexpr int DIGIT_MONTH_TEN = 4;
-constexpr int DIGIT_MONTH_ONE = 5;
-constexpr int DIGIT_DAY_TEN = 6;
-constexpr int DIGIT_DAY_ONE = 7;
-constexpr int DIGIT_HOUR_TEN = 8;
-constexpr int DIGIT_HOUR_ONE = 9;
-constexpr int DIGIT_MINUTE_TEN = 10;
-constexpr int DIGIT_MINUTE_ONE = 11;
-constexpr int TOTAL_DIGITS = 12;
+const int DIGIT_YEAR_THOUSAND = 0;
+const int DIGIT_YEAR_HUNDRED = 1;
+const int DIGIT_YEAR_TEN = 2;
+const int DIGIT_YEAR_ONE = 3;
+const int DIGIT_MONTH_TEN = 4;
+const int DIGIT_MONTH_ONE = 5;
+const int DIGIT_DAY_TEN = 6;
+const int DIGIT_DAY_ONE = 7;
+const int DIGIT_HOUR_TEN = 8;
+const int DIGIT_HOUR_ONE = 9;
+const int DIGIT_MINUTE_TEN = 10;
+const int DIGIT_MINUTE_ONE = 11;
+const int TOTAL_DIGITS = 12;
 
 // 日時の境界値
-constexpr int MAX_DIGIT_9 = 9;
-constexpr int MAX_MONTH_TEN_DIGIT = 1;
-constexpr int MAX_DAY_TEN_DIGIT_FEB = 2;
-constexpr int MAX_DAY_TEN_DIGIT_OTHER = 3;
-constexpr int MAX_HOUR_TEN_DIGIT = 2;
-constexpr int MAX_MINUTE_TEN_DIGIT = 5;
+const int MAX_DIGIT_9 = 9;
+const int MAX_MONTH_TEN_DIGIT = 1;
+const int MAX_DAY_TEN_DIGIT_FEB = 2;
+const int MAX_DAY_TEN_DIGIT_OTHER = 3;
+const int MAX_HOUR_TEN_DIGIT = 2;
+const int MAX_MINUTE_TEN_DIGIT = 5;
 
 // 日付の値
-constexpr int DAYS_IN_FEBRUARY = 28;
-constexpr int DAYS_IN_FEBRUARY_LEAP = 29;
-constexpr int DAYS_IN_MONTH_30 = 30;
-constexpr int DAYS_IN_MONTH_31 = 31;
+const int DAYS_IN_FEBRUARY = 28;
+const int DAYS_IN_FEBRUARY_LEAP = 29;
+const int DAYS_IN_MONTH_30 = 30;
+const int DAYS_IN_MONTH_31 = 31;
 
 // 年の計算
-constexpr int YEAR_OFFSET_1900 = 1900;
-constexpr int YEAR_MULTIPLIER_1000 = 1000;
-constexpr int YEAR_MULTIPLIER_100 = 100;
-constexpr int YEAR_MULTIPLIER_10 = 10;
+const int YEAR_OFFSET_1900 = 1900;
+const int YEAR_MULTIPLIER_1000 = 1000;
+const int YEAR_MULTIPLIER_100 = 100;
+const int YEAR_MULTIPLIER_10 = 10;
 
 // うるう年計算
-constexpr int LEAP_YEAR_DIV_4 = 4;
-constexpr int LEAP_YEAR_DIV_100 = 100;
-constexpr int LEAP_YEAR_DIV_400 = 400;
+const int LEAP_YEAR_DIV_4 = 4;
+const int LEAP_YEAR_DIV_100 = 100;
+const int LEAP_YEAR_DIV_400 = 400;
 
 // フォント・文字サイズ
-constexpr int CHAR_WIDTH_FONT7 = 16;
-constexpr int CHAR_WIDTH_FONT4 = 8;
-constexpr int STRING_BUFFER_SIZE = 16;
+const int CHAR_WIDTH_FONT7 = 16;
+const int CHAR_WIDTH_FONT4 = 8;
+const int STRING_BUFFER_SIZE = 16;
 
 // 画面位置
-constexpr int SCREEN_CENTER_X = 160;
+const int SCREEN_CENTER_X = 160;
 
 #endif // AIMATIX_UI_CONSTANTS_H 

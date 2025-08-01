@@ -227,8 +227,8 @@ void test_DateTimeInputState_InitializeWithNullProvider() {
     // onEnter()を呼ぶ
     state.onEnter();
     
-    // timeProviderがnullの場合、デフォルト値が設定されるはず: [2,0,2,5,0,1,0,1,0,0,0,0]
-    std::vector<int> expectedDigits = {2, 0, 2, 5, 0, 1, 0, 1, 0, 0, 0, 0};
+    // timeProviderがnullの場合、デフォルト値が設定されるはず: [2,0,2,4,0,1,0,1,0,0,0,0]
+    std::vector<int> expectedDigits = {2, 0, 2, 4, 0, 1, 0, 1, 0, 0, 0, 0};
     
     TEST_ASSERT_EQUAL_INT32_ARRAY(expectedDigits.data(), state.getDateTimeDigits().data(), expectedDigits.size());
 }

@@ -27,7 +27,7 @@ void DateTimeInputState::onExit() {
 void DateTimeInputState::onDraw() {
     if (view != nullptr) {
         std::string dateTimeStr = formatDateTimeString();
-        int stringPosition = dataPositionToStringPosition(cursorPosition);
+        const int stringPosition = dataPositionToStringPosition(cursorPosition);
         view->showDateTimeString(dateTimeStr, stringPosition);
     }
 }
@@ -75,11 +75,11 @@ void DateTimeInputState::resetDateTime() {
         struct tm* timeInfo = timeProvider->localtime(&currentTime);
         
         if (timeInfo) {
-            int year = timeInfo->tm_year + 1900;  // tm_yearは1900からのオフセット
-            int month = timeInfo->tm_mon + 1;     // tm_monは0ベース
-            int day = timeInfo->tm_mday;
-            int hour = timeInfo->tm_hour;
-            int minute = timeInfo->tm_min;
+            const int year = timeInfo->tm_year + 1900;  // tm_yearは1900からのオフセット
+            const int month = timeInfo->tm_mon + 1;     // tm_monは0ベース
+            const int day = timeInfo->tm_mday;
+            const int hour = timeInfo->tm_hour;
+            const int minute = timeInfo->tm_min;
             
             // 各桁に分解して設定
             dateTimeDigits = {
@@ -98,13 +98,11 @@ void DateTimeInputState::resetDateTime() {
             };
         } else {
             // timeInfoがnullの場合はデフォルト値を使用
-            auto defaultDigits = getDefaultDateTimeDigits();
-            dateTimeDigits = std::vector<int>(defaultDigits.begin(), defaultDigits.end());
+            dateTimeDigits = {2, 0, 2, 4, 0, 1, 0, 1, 0, 0, 0, 0}; // 2024年1月1日00:00
         }
     } else {
         // timeProviderがnullの場合はデフォルト値を使用
-        auto defaultDigits = getDefaultDateTimeDigits();
-        dateTimeDigits = std::vector<int>(defaultDigits.begin(), defaultDigits.end());
+        dateTimeDigits = {2, 0, 2, 4, 0, 1, 0, 1, 0, 0, 0, 0}; // 2024年1月1日00:00
     }
 }
 
@@ -141,7 +139,7 @@ void DateTimeInputState::incrementCurrentDigit() {
         maxValue = MAX_DAY_TEN_DIGIT_OTHER;
     } else if (cursorPosition == DIGIT_DAY_ONE) { // 日一の位: 十の位と月に応じて決定
         // 現在の月を取得
-        int currentMonth = dateTimeDigits[DIGIT_MONTH_TEN] * YEAR_MULTIPLIER_10 + dateTimeDigits[DIGIT_MONTH_ONE];
+        int currentMonth = dateTimeDigits[DIGIT_MONTH_TEN] * 10 + dateTimeDigits[DIGIT_MONTH_ONE];
         int maxDaysInMonth = DAYS_IN_MONTH_31; // デフォルト
         
         // 月に応じた最大日数を設定
@@ -248,17 +246,17 @@ bool DateTimeInputState::validateDateTime() const {
 
 bool DateTimeInputState::validateYear() const {
     int year = getDigitValue(0) * 1000 + getDigitValue(1) * 100 + getDigitValue(2) * 10 + getDigitValue(3);
-    return year >= YEAR_MIN && year <= YEAR_MAX;
+    return year >= 2000 && year <= 2099;
 }
 
 bool DateTimeInputState::validateMonth() const {
     int month = getDigitValue(4) * 10 + getDigitValue(5);
-    return month >= MONTH_MIN && month <= MONTH_MAX;
+    return month >= 1 && month <= 12;
 }
 
 bool DateTimeInputState::validateDay() const {
     int day = getDigitValue(6) * 10 + getDigitValue(7);
-    if (day < DAY_MIN || day > DAY_MAX) {
+    if (day < 1 || day > 31) {
         return false;
     }
     
@@ -272,12 +270,12 @@ bool DateTimeInputState::validateDay() const {
 
 bool DateTimeInputState::validateHour() const {
     int hour = getDigitValue(8) * 10 + getDigitValue(9);
-    return hour >= HOUR_MIN && hour <= HOUR_MAX;
+    return hour >= 0 && hour <= 23;
 }
 
 bool DateTimeInputState::validateMinute() const {
     int minute = getDigitValue(10) * 10 + getDigitValue(11);
-    return minute >= MINUTE_MIN && minute <= MINUTE_MAX;
+    return minute >= 0 && minute <= 59;
 }
 
 void DateTimeInputState::commitDateTime() {
@@ -298,7 +296,7 @@ void DateTimeInputState::commitDateTime() {
     timeInfo.tm_isdst = -1; // 自動判定
     
     // time_tに変換
-    time_t newTime{mktime(&timeInfo)};
+    time_t newTime = mktime(&timeInfo);
     
     // システム時刻を更新
     bool success = timeProvider->setSystemTime(newTime);

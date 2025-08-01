@@ -111,7 +111,7 @@ auto AlarmLogic::addAlarm(std::vector<time_t>& alarms, time_t now, time_t input,
         alarm_tm.tm_mday += add_day;
         
         // 過去時刻チェック（分のみ指定の場合も）
-        const time_t candidate{mktime(&alarm_tm)};
+        const time_t candidate = mktime(&alarm_tm);
         if (candidate <= now) {
             // 現在時刻より前なら翌日
             alarm_tm.tm_mday += 1;
@@ -128,13 +128,13 @@ auto AlarmLogic::addAlarm(std::vector<time_t>& alarms, time_t now, time_t input,
         alarm_tm.tm_hour = hour;
         alarm_tm.tm_min = minute;
         alarm_tm.tm_mday += add_day;
-        const time_t candidate{mktime(&alarm_tm)};
+        const time_t candidate = mktime(&alarm_tm);
         if (candidate <= now) {
             // 現在時刻より前なら翌日
             alarm_tm.tm_mday += 1;
         }
     }
-            const time_t alarmTime{mktime(&alarm_tm)};
+            const time_t alarmTime = mktime(&alarm_tm);
     
     // 最大数チェック
     constexpr int MAX_ALARMS = 5;
@@ -233,7 +233,7 @@ auto AlarmLogic::addAlarmFromPartialInput(
         alarm_tm.tm_mday += 1;
     }
     
-            const time_t alarmTime{mktime(&alarm_tm)};
+            const time_t alarmTime = mktime(&alarm_tm);
     
     // 最大数チェック
     constexpr int MAX_ALARMS_PARTIAL = 5;
@@ -263,7 +263,13 @@ auto AlarmLogic::deleteAlarm(std::vector<time_t>& alarms, size_t index) -> bool 
     if (index >= alarms.size()) {
         return false;
     }
+    
+    // 指定されたインデックスのアラームを削除
     alarms.erase(alarms.begin() + index);
+    
+    // 削除後にソート（念のため）
+    std::sort(alarms.begin(), alarms.end());
+    
     return true;
 }
 
