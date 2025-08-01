@@ -83,7 +83,7 @@ private:
     void incrementCurrentDigit();
     void moveCursorRight();
     void moveCursorLeft();
-    int dataPositionToStringPosition(int dataPos) const;
+    static int dataPositionToStringPosition(int dataPos);
     bool validateYear() const;
     bool validateMonth() const;
     bool validateDay() const;
@@ -92,6 +92,6 @@ private:
     void commitDateTime();
     int getDigitValue(int position) const;
     void setDigitValue(int position, int value);
-    bool isLeapYear(int year) const;
-    int getDaysInMonth(int year, int month) const;
+    static bool isLeapYear(int year);
+    static int getDaysInMonth(int year, int month);
 }; 

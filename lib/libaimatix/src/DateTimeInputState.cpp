@@ -298,7 +298,7 @@ void DateTimeInputState::commitDateTime() {
     timeInfo.tm_isdst = -1; // 自動判定
     
     // time_tに変換
-    time_t newTime = mktime(&timeInfo);
+    time_t newTime{mktime(&timeInfo)};
     
     // システム時刻を更新
     bool success = timeProvider->setSystemTime(newTime);
@@ -330,7 +330,7 @@ std::string DateTimeInputState::formatDateTimeString() const {
     return oss.str();
 }
 
-int DateTimeInputState::dataPositionToStringPosition(int dataPos) const {
+int DateTimeInputState::dataPositionToStringPosition(int dataPos) {
     // データ位置から表示文字列位置への変換
     // データ: [年千,年百,年十,年一,月十,月一,日十,日一,時十,時一,分十,分一]
     // 文字列: "2025/01/01 00:00"
@@ -369,11 +369,11 @@ void DateTimeInputState::setDigitValue(int position, int value) {
     }
 }
 
-bool DateTimeInputState::isLeapYear(int year) const {
+bool DateTimeInputState::isLeapYear(int year) {
     return (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
 }
 
-int DateTimeInputState::getDaysInMonth(int year, int month) const {
+int DateTimeInputState::getDaysInMonth(int year, int month) {
     const int daysInMonth[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
     
     if (month < 1 || month > 12) {

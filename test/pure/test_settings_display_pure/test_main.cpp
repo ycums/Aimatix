@@ -189,6 +189,70 @@ void test_settings_logic_edge_cases() {
     TEST_ASSERT_TRUE(logic.isValueEditMode());
 }
 
+// SettingsLogicの追加テストケース
+void test_settings_logic_get_selected_item() {
+    SettingsLogic logic;
+    
+    // 初期選択項目の確認
+    auto initialItem = logic.getSelectedItem();
+    TEST_ASSERT_EQUAL(0, static_cast<int>(initialItem));
+    
+    // 選択項目の変更
+    logic.setSelectedItem(SettingsItem::SET_DATE_TIME);
+    auto changedItem = logic.getSelectedItem();
+    TEST_ASSERT_EQUAL(2, static_cast<int>(changedItem));
+}
+
+void test_settings_logic_get_index_by_item() {
+    SettingsLogic logic;
+    
+    // インデックス取得のテスト
+    int index = logic.getIndexByItem(SettingsItem::LCD_BRIGHTNESS);
+    TEST_ASSERT_EQUAL(1, index);
+    
+    index = logic.getIndexByItem(SettingsItem::SET_DATE_TIME);
+    TEST_ASSERT_EQUAL(2, index);
+}
+
+void test_settings_logic_get_item_by_index() {
+    SettingsLogic logic;
+    
+    // インデックスから項目取得のテスト
+    auto item = logic.getItemByIndex(0);
+    TEST_ASSERT_EQUAL(0, static_cast<int>(item));
+    
+    item = logic.getItemByIndex(1);
+    TEST_ASSERT_EQUAL(1, static_cast<int>(item));
+}
+
+void test_settings_logic_display_names() {
+    SettingsLogic logic;
+    
+    // 表示名取得のテスト
+    std::string soundName = logic.getItemDisplayName(SettingsItem::SOUND);
+    std::string brightnessName = logic.getItemDisplayName(SettingsItem::LCD_BRIGHTNESS);
+    
+    // 正常に実行されることを確認（例外が発生しない）
+}
+
+void test_settings_logic_value_strings() {
+    SettingsLogic logic;
+    
+    // 値文字列取得のテスト
+    std::string soundValue = logic.getItemValueString(SettingsItem::SOUND);
+    std::string brightnessValue = logic.getItemValueString(SettingsItem::LCD_BRIGHTNESS);
+    
+    // 正常に実行されることを確認（例外が発生しない）
+}
+
+void test_settings_logic_item_count() {
+    SettingsLogic logic;
+    
+    // 項目数のテスト
+    int count = logic.getItemCount();
+    TEST_ASSERT_GREATER_THAN(0, count);
+}
+
 // SettingsDisplayStateの未テスト機能を追加
 void test_settings_display_on_draw() {
     SettingsLogic logic;
@@ -272,6 +336,12 @@ int main(int argc, char **argv) {
     RUN_TEST(test_settings_logic_set_value_edit_mode);
     RUN_TEST(test_settings_logic_validate_settings);
     RUN_TEST(test_settings_logic_edge_cases);
+    RUN_TEST(test_settings_logic_get_selected_item);
+    RUN_TEST(test_settings_logic_get_index_by_item);
+    RUN_TEST(test_settings_logic_get_item_by_index);
+    RUN_TEST(test_settings_logic_display_names);
+    RUN_TEST(test_settings_logic_value_strings);
+    RUN_TEST(test_settings_logic_item_count);
     RUN_TEST(test_settings_display_on_draw);
     RUN_TEST(test_settings_display_on_enter);
     RUN_TEST(test_settings_display_button_a);
