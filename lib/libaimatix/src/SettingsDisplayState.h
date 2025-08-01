@@ -27,10 +27,6 @@ public:
     void setSettingsLogic(ISettingsLogic* logic) { settingsLogic = logic; }
     void setDateTimeInputState(IState* datetimeState) { datetimeInputState = datetimeState; }
     
-    // テスト用のアクセサ
-    int getSelectedIndex() const;
-    void setSelectedIndex(int index);
-    
 private:
     ISettingsLogic* settingsLogic;
     ISettingsDisplayView* view;

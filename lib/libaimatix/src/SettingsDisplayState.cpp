@@ -119,24 +119,8 @@ void SettingsDisplayState::onButtonBLongPress() {
 
 void SettingsDisplayState::onButtonCLongPress() {
     // メイン画面に戻る
-            if (manager != nullptr && mainDisplayState != nullptr) {
+    if (manager != nullptr && mainDisplayState != nullptr) {
         manager->setState(mainDisplayState);
-    }
-}
-
-auto SettingsDisplayState::getSelectedIndex() const -> int {
-    if (settingsLogic == nullptr) {
-        return 0;
-    }
-    return settingsLogic->getIndexByItem(settingsLogic->getSelectedItem());
-}
-
-void SettingsDisplayState::setSelectedIndex(int index) {
-    if (settingsLogic == nullptr) {
-        return;
-    }
-    if (index >= 0 && index < settingsLogic->getItemCount()) {
-        settingsLogic->setSelectedItem(settingsLogic->getItemByIndex(index));
     }
 }
 
