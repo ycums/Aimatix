@@ -30,15 +30,7 @@ public:
     void setTimeProvider(ITimeProvider* provider) { timeProvider = provider; }
     void setView(IDateTimeInputView* v) { view = v; }
     
-    // テスト用のアクセサ
-    int getCursorPosition() const { return cursorPosition; }
-    void setCursorPosition(int pos) { cursorPosition = pos; }
-    const std::vector<int>& getDateTimeDigits() const { return dateTimeDigits; }
-    void setDateTimeDigits(const std::vector<int>& digits) { dateTimeDigits = digits; }
-    bool getIsEditMode() const { return isEditMode; }
-    void setIsEditMode(bool mode) { isEditMode = mode; }
-    
-    // テスト用のバリデーションメソッド
+    // 公開バリデーションメソッド
     bool validateDateTime() const;
     std::string formatDateTimeString() const;
     

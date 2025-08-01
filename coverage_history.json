@@ -1,47 +1,5 @@
 [
   {
-    "timestamp": "2025-07-21T17:32:33.246039",
-    "coverage": 89.25619834710744,
-    "pure_coverage": 89.25619834710744,
-    "m5stack_coverage": 0.0,
-    "quality_gate": true
-  },
-  {
-    "timestamp": "2025-07-21T17:55:55.960811",
-    "coverage": 80.88235294117648,
-    "pure_coverage": 80.88235294117648,
-    "m5stack_coverage": 0.0,
-    "quality_gate": true
-  },
-  {
-    "timestamp": "2025-07-21T19:35:56.627727",
-    "coverage": 74.86338797814209,
-    "pure_coverage": 74.86338797814209,
-    "m5stack_coverage": 0.0,
-    "quality_gate": false
-  },
-  {
-    "timestamp": "2025-07-22T04:51:17.191942",
-    "coverage": 58.29787234042553,
-    "pure_coverage": 58.29787234042553,
-    "m5stack_coverage": 0.0,
-    "quality_gate": false
-  },
-  {
-    "timestamp": "2025-07-22T07:12:26.418942",
-    "coverage": 56.17021276595745,
-    "pure_coverage": 56.17021276595745,
-    "m5stack_coverage": 0.0,
-    "quality_gate": false
-  },
-  {
-    "timestamp": "2025-07-22T07:14:45.753553",
-    "coverage": 56.17021276595745,
-    "pure_coverage": 56.17021276595745,
-    "m5stack_coverage": 0.0,
-    "quality_gate": false
-  },
-  {
     "timestamp": "2025-07-22T07:16:41.571533",
     "coverage": 56.17021276595745,
     "pure_coverage": 56.17021276595745,
@@ -348,5 +306,47 @@
     "pure_coverage": 81.70865279299015,
     "m5stack_coverage": 0.0,
     "quality_gate": false
+  },
+  {
+    "timestamp": "2025-08-02T04:33:48.833864",
+    "coverage": 81.70865279299015,
+    "pure_coverage": 81.70865279299015,
+    "m5stack_coverage": 0.0,
+    "quality_gate": false
+  },
+  {
+    "timestamp": "2025-08-02T04:39:13.204152",
+    "coverage": 81.70865279299015,
+    "pure_coverage": 81.70865279299015,
+    "m5stack_coverage": 0.0,
+    "quality_gate": false
+  },
+  {
+    "timestamp": "2025-08-02T04:43:47.157430",
+    "coverage": 81.70865279299015,
+    "pure_coverage": 81.70865279299015,
+    "m5stack_coverage": 0.0,
+    "quality_gate": false
+  },
+  {
+    "timestamp": "2025-08-02T04:45:58.676532",
+    "coverage": 81.70865279299015,
+    "pure_coverage": 81.70865279299015,
+    "m5stack_coverage": 0.0,
+    "quality_gate": false
+  },
+  {
+    "timestamp": "2025-08-02T05:00:55.093525",
+    "coverage": 84.33734939759037,
+    "pure_coverage": 84.33734939759037,
+    "m5stack_coverage": 0.0,
+    "quality_gate": false
+  },
+  {
+    "timestamp": "2025-08-02T07:47:05.881864",
+    "coverage": 86.34361233480176,
+    "pure_coverage": 86.34361233480176,
+    "m5stack_coverage": 0.0,
+    "quality_gate": true
   }
 ]

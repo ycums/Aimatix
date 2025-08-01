@@ -6,6 +6,31 @@
 #include <sstream>
 #include <iomanip>
 
+// 定数定義
+constexpr int YEAR_BASE_OFFSET = 1000;
+constexpr int MONTH_BASE_OFFSET = 100;
+constexpr int DAY_BASE_OFFSET = 10;
+constexpr int HOUR_BASE_OFFSET = 10;
+constexpr int MINUTE_BASE_OFFSET = 10;
+constexpr int YEAR_MIN = 2000;
+constexpr int YEAR_MAX = 2099;
+constexpr int MONTH_MIN = 1;
+constexpr int MONTH_MAX = 12;
+constexpr int DAY_MIN = 1;
+constexpr int DAY_MAX = 31;
+constexpr int HOUR_MIN = 0;
+constexpr int HOUR_MAX = 23;
+constexpr int MINUTE_MIN = 0;
+constexpr int MINUTE_MAX = 59;
+constexpr int FEBRUARY = 2;
+constexpr int LEAP_YEAR_DIVISOR_4 = 4;
+constexpr int LEAP_YEAR_DIVISOR_100 = 100;
+constexpr int LEAP_YEAR_DIVISOR_400 = 400;
+constexpr int DAYS_IN_FEBRUARY_NORMAL = 28;
+constexpr int YEAR_1900 = 1900;
+constexpr int YEAR_2024 = 2024;
+constexpr int MONTH_TEN_MAX = 2;
+
 void DateTimeInputState::onEnter() {
     resetDateTime();
     // 初期カーソル位置を年十の位に設定（年千の位、年百の位は入力不可のため）
@@ -75,8 +100,8 @@ void DateTimeInputState::resetDateTime() {
         struct tm* timeInfo = timeProvider->localtime(&currentTime);
         
         if (timeInfo) {
-            const int year = timeInfo->tm_year + 1900;  // tm_yearは1900からのオフセット
-            const int month = timeInfo->tm_mon + 1;     // tm_monは0ベース
+            const int year = timeInfo->tm_year + YEAR_1900;  // tm_yearは1900からのオフセット
+            const int month = timeInfo->tm_mon + MONTH_MIN;     // tm_monは0ベース
             const int day = timeInfo->tm_mday;
             const int hour = timeInfo->tm_hour;
             const int minute = timeInfo->tm_min;
@@ -130,8 +155,8 @@ void DateTimeInputState::incrementCurrentDigit() {
     } else if (cursorPosition == DIGIT_MONTH_ONE) { // 月一の位: 十の位に応じて決定
         if (dateTimeDigits[DIGIT_MONTH_TEN] == 0) {
             maxValue = MAX_DIGIT_9; // 01-09月
-        } else if (dateTimeDigits[DIGIT_MONTH_TEN] == 1) {
-            maxValue = 2; // 10-12月
+                    } else if (dateTimeDigits[DIGIT_MONTH_TEN] == 1) {
+                maxValue = MONTH_TEN_MAX; // 10-12月
         } else {
             maxValue = MAX_DIGIT_9;
         }
