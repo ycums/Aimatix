@@ -542,6 +542,184 @@ python scripts/test_coverage.py
 6. **Step 7-6**: その他の改善
 7. **Step 7-7**: カバレッジ改善（テストケース追加）
 
+#### 7.7.1 カバレッジ不足の原因分析
+**主要な問題点**:
+1. **InputDisplayState関連の関数が全くテストされていない**
+   - `InputDisplayState::onDraw()` - 0.0%
+   - `InputDisplayState::onButtonA()` - 0.0%
+   - `InputDisplayState::onButtonB()` - 0.0%
+   - `InputDisplayState::onButtonC()` - 0.0%
+   - その他多数のInputDisplayState関数が0.0%
+
+2. **View実装クラスが全くテストされていない**
+   - `InputDisplayViewImpl` - 全関数0.0%
+   - `MainDisplayViewImpl` - 全関数0.0%
+   - `AlarmDisplayViewImpl` - 全関数0.0%
+   - `SettingsDisplayViewImpl` - 全関数0.0%
+   - `DateTimeInputViewImpl` - 全関数0.0%
+
+3. **MainDisplayStateが全くテストされていない**
+   - `MainDisplayState` - 全関数0.0%
+
+4. **一部のDateTimeInputState関数がテストされていない**
+   - `DateTimeInputState::setDigitValue()` - 0.0%
+   - `DateTimeInputState::moveCursorLeft()` - 0.0%
+   - `DateTimeInputState::dataPositionToStringPosition()` - 0.0%
+
+#### 7.7.2 カバレッジ改善計画
+
+**方針**:
+- テストは1テスト1観点に統一
+- こまめにテストを実行
+- 本番コード側を変更しなければならなくなったときは後回しにして、最後にユーザーに判断を仰ぐ
+
+**Step 7-7-1: InputDisplayStateテストの追加（最優先）**
+
+**1. `onDraw()`関数のテスト（1観点ずつ）**
+```cpp
+// test_input_display_pure/test_main.cpp に追加
+
+TEST_CASE("InputDisplayState onDraw - 基本表示処理が呼ばれる", "[input_display]") {
+    auto mockTimeProvider = std::make_shared<MockTimeProvider>();
+    auto mockView = std::make_unique<MockInputDisplayView>();
+    auto inputLogic = std::make_unique<InputLogic>(mockTimeProvider);
+    InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
+    
+    state.onDraw();
+    
+    // 検証: 基本的な表示処理が呼ばれることを確認
+}
+
+TEST_CASE("InputDisplayState onDraw - エラー状態での表示", "[input_display]") {
+    // エラー状態での表示テスト（1観点）
+}
+
+TEST_CASE("InputDisplayState onDraw - プレビュー表示", "[input_display]") {
+    // プレビュー表示のテスト（1観点）
+}
+```
+
+**2. ボタン処理のテスト（1観点ずつ）**
+```cpp
+TEST_CASE("InputDisplayState onButtonA - 数字入力処理", "[input_display]") {
+    // 数字入力のテスト（1観点）
+}
+
+TEST_CASE("InputDisplayState onButtonB - 数字入力処理", "[input_display]") {
+    // 数字入力のテスト（1観点）
+}
+
+TEST_CASE("InputDisplayState onButtonC - 相対値モード確定", "[input_display]") {
+    // 相対値モード確定のテスト（1観点）
+}
+
+TEST_CASE("InputDisplayState onButtonC - 絶対値モード確定", "[input_display]") {
+    // 絶対値モード確定のテスト（1観点）
+}
+
+TEST_CASE("InputDisplayState onButtonC - エラー時の処理", "[input_display]") {
+    // エラー時の処理テスト（1観点）
+}
+```
+
+**3. 新しく分割された関数のテスト（1観点ずつ）**
+```cpp
+TEST_CASE("InputDisplayState updateDigitDisplay - 数字表示更新", "[input_display]") {
+    // 数字表示更新のテスト（1観点）
+}
+
+TEST_CASE("InputDisplayState updatePreviewDisplay - プレビュー表示更新", "[input_display]") {
+    // プレビュー表示更新のテスト（1観点）
+}
+
+TEST_CASE("InputDisplayState handleRelativeModeSubmit - 相対値確定処理", "[input_display]") {
+    // 相対値確定処理のテスト（1観点）
+}
+
+TEST_CASE("InputDisplayState handleAbsoluteModeSubmit - 絶対値確定処理", "[input_display]") {
+    // 絶対値確定処理のテスト（1観点）
+}
+```
+
+**Step 7-7-2: View実装クラスのテスト追加**
+
+**InputDisplayViewImplのテスト**
+```cpp
+// test_input_display_view_pure/test_main.cpp を新規作成
+TEST_CASE("InputDisplayViewImpl showDigit", "[input_display_view]") {
+    auto mockDisplay = std::make_unique<MockDisplay>();
+    InputDisplayViewImpl view(mockDisplay.get());
+    
+    // 数字表示のテスト
+    view.showDigit(0, 1, true);
+    // 検証: 正しい位置に数字が表示される
+}
+
+TEST_CASE("InputDisplayViewImpl showPreview", "[input_display_view]") {
+    // プレビュー表示のテスト
+}
+
+TEST_CASE("InputDisplayViewImpl showColon", "[input_display_view]") {
+    // コロン表示のテスト
+}
+```
+
+**Step 7-7-3: MainDisplayStateテストの追加**
+
+```cpp
+// test_main_display_pure/test_main.cpp を新規作成
+TEST_CASE("MainDisplayState onEnter", "[main_display]") {
+    // 初期化処理のテスト
+}
+
+TEST_CASE("MainDisplayState onDraw", "[main_display]") {
+    // 表示処理のテスト
+}
+
+TEST_CASE("MainDisplayState onButtonA", "[main_display]") {
+    // ボタンA処理のテスト
+}
+```
+
+**Step 7-7-4: DateTimeInputState不足テストの追加**
+
+```cpp
+// test_datetime_input_pure/test_main.cpp に追加
+TEST_CASE("DateTimeInputState setDigitValue", "[datetime_input]") {
+    // 数字値設定のテスト
+}
+
+TEST_CASE("DateTimeInputState moveCursorLeft", "[datetime_input]") {
+    // カーソル左移動のテスト
+}
+
+TEST_CASE("DateTimeInputState dataPositionToStringPosition", "[datetime_input]") {
+    // データ位置から文字列位置への変換テスト
+}
+```
+
+**実行手順**:
+```bash
+# Step 1: 最初のテスト追加
+# test_input_display_pure/test_main.cpp に最初のテストケースを追加
+pio test -e native -f pure/test_input_display_pure
+python scripts/test_coverage.py --quick
+
+# Step 2: 段階的にテスト追加
+# 各テスト追加後に必ずテスト実行
+pio test -e native -f pure/test_input_display_pure
+python scripts/test_coverage.py --quick
+```
+
+**期待される効果**:
+- **InputDisplayStateテスト追加**: +15-20%
+- **View実装テスト追加**: +10-15%
+- **MainDisplayStateテスト追加**: +5-10%
+- **DateTimeInputState補完**: +2-5%
+
+**合計改善予想**: +32-50%
+**最終カバレッジ**: 88-106%（目標85%を大幅に上回る）
+
 **期待される最終結果:**
 - 静的解析: 0-5件程度（現在46件から大幅改善）
 - カバレッジ: 85%以上（現在56.0%から改善）
