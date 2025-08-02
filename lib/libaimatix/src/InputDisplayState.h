@@ -36,9 +36,9 @@ public:
         errorStartTime = 0;
     }
     void onExit() override {}
-    // 相対値計算結果のプレビュー文字列を生成
+    // 相対値計算結果のプレビュー文字列を生成（改善版）
     void generateRelativePreview(char* preview, size_t previewSize) {
-        if (!timeProvider_ || !inputLogic) {
+        if (!isTimeProviderValid() || !inputLogic) {
             return;
         }
         
@@ -52,9 +52,9 @@ public:
         }
     }
 
-    // 絶対値計算結果のプレビュー文字列を生成（確定処理と同じロジック）
+    // 絶対値計算結果のプレビュー文字列を生成（改善版）
     void generateAbsolutePreview(char* preview, size_t previewSize) {
-        if (!timeProvider_ || !inputLogic) {
+        if (!isTimeProviderValid() || !inputLogic) {
             return;
         }
         
@@ -110,6 +110,16 @@ private:
     
     // プレビュー内容の変化チェック用
     std::string lastPreview;
+
+    // 現在時刻を安全に取得
+    time_t getCurrentTime() const {
+        return timeProvider_ ? timeProvider_->now() : 0;
+    }
+    
+    // 時刻取得が有効かチェック
+    bool isTimeProviderValid() const {
+        return timeProvider_ != nullptr;
+    }
 
     // 数字表示の更新
     void updateDigitDisplay() {
@@ -190,9 +200,9 @@ private:
         }
     }
     
-    // エラー表示の処理
+    // エラー表示の処理（改善版）
     void handleErrorDisplay(char* preview, size_t previewSize) {
-        time_t currentTime = timeProvider_ ? timeProvider_->now() : 0;
+        time_t currentTime = getCurrentTime();
         if (currentTime - errorStartTime >= 3) {
             showError = false;
             errorMessage = "";
@@ -295,11 +305,11 @@ private:
         }
     }
     
-    // 共通エラー処理
+    // 共通エラー処理（改善版）
     void handleError(const std::string& message) {
         showError = true;
         errorMessage = message;
-        errorStartTime = timeProvider_ ? timeProvider_->now() : 0;
+        errorStartTime = getCurrentTime();
     }
     void onButtonA() override {
         if (inputLogic) {

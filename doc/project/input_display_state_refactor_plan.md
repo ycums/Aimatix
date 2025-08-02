@@ -176,13 +176,130 @@ pio check -e native
 
 ### Phase 5: 依存性注入の改善
 
-#### 5.1 ITimeProviderの使用改善
-**改善内容**:
-- 直接的な`timeProvider_`使用を最小化
-- 適切なインターフェース設計
-- テスト容易性の向上
+#### 5.1 現状の問題点
+- **直接的な`timeProvider_`使用**: 194行目と301行目で直接`timeProvider_->now()`を呼び出し
+- **nullptrチェックの散在**: 各所で`timeProvider_ ? timeProvider_->now() : 0`のような冗長なチェック
+- **エラーハンドリングの不統一**: 時刻取得失敗時の処理が統一されていない
+- **テスト容易性の課題**: 時刻関連の処理が直接的に結合している
 
-#### 5.2 品質確認
+#### 5.2 改善方針
+**原則**: 依存性逆転原則、単一責任原則、テスト容易性の向上
+
+**改善内容**:
+1. **時刻取得の抽象化**: `getCurrentTime()`メソッドを追加して、nullptrチェックを内部化
+2. **エラー状態の改善**: 時刻取得失敗時の適切なフォールバック処理
+3. **テスト容易性の向上**: 時刻取得処理の分離、モック化しやすい構造への改善
+
+#### 5.3 具体的な変更内容
+
+##### 5.3.1 時刻取得メソッドの追加
+```cpp
+private:
+    // 現在時刻を安全に取得
+    time_t getCurrentTime() const {
+        return timeProvider_ ? timeProvider_->now() : 0;
+    }
+    
+    // 時刻取得が有効かチェック
+    bool isTimeProviderValid() const {
+        return timeProvider_ != nullptr;
+    }
+```
+
+##### 5.3.2 エラーハンドリングの統一
+```cpp
+private:
+    // エラー表示の処理（改善版）
+    void handleErrorDisplay(char* preview, size_t previewSize) {
+        time_t currentTime = getCurrentTime();
+        if (currentTime - errorStartTime >= 3) {
+            showError = false;
+            errorMessage = "";
+        } else {
+            strncpy(preview, errorMessage.c_str(), previewSize - 1);
+            preview[previewSize - 1] = '\0';
+        }
+    }
+    
+    // 共通エラー処理（改善版）
+    void handleError(const std::string& message) {
+        showError = true;
+        errorMessage = message;
+        errorStartTime = getCurrentTime();
+    }
+```
+
+##### 5.3.3 プレビュー生成の改善
+```cpp
+private:
+    // 相対値計算結果のプレビュー文字列を生成（改善版）
+    void generateRelativePreview(char* preview, size_t previewSize) {
+        if (!isTimeProviderValid() || !inputLogic) {
+            return;
+        }
+        
+        time_t relativeTime = inputLogic->getAbsoluteValue();
+        if (relativeTime != -1) {
+            auto result = TimePreviewLogic::generateRelativePreview(relativeTime, timeProvider_);
+            if (result.isValid) {
+                strncpy(preview, result.preview.c_str(), previewSize - 1);
+                preview[previewSize - 1] = '\0';
+            }
+        }
+    }
+
+    // 絶対値計算結果のプレビュー文字列を生成（改善版）
+    void generateAbsolutePreview(char* preview, size_t previewSize) {
+        if (!isTimeProviderValid() || !inputLogic) {
+            return;
+        }
+        
+        const int* digits = inputLogic->getDigits();
+        const bool* entered = inputLogic->getEntered();
+        if (!digits || !entered) {
+            return;
+        }
+        
+        auto result = TimePreviewLogic::generatePreview(digits, entered, timeProvider_, false);
+        if (result.isValid) {
+            strncpy(preview, result.preview.c_str(), previewSize - 1);
+            preview[previewSize - 1] = '\0';
+        }
+    }
+```
+
+#### 5.4 実装手順
+
+##### Step 1: 時刻取得メソッドの追加
+1. `getCurrentTime()`と`isTimeProviderValid()`メソッドを追加
+2. 既存の直接呼び出し箇所を新しいメソッドに置き換え
+
+##### Step 2: エラーハンドリングの統一
+1. `handleErrorDisplay()`と`handleError()`を改善
+2. 時刻取得失敗時の適切なフォールバック処理を追加
+
+##### Step 3: プレビュー生成の改善
+1. `generateRelativePreview()`と`generateAbsolutePreview()`を改善
+2. 時刻プロバイダーの妥当性チェックを統一
+
+##### Step 4: 品質確認
+1. ビルド確認: `pio run -e native`
+2. 静的解析: `pio check -e native`
+3. テスト実行: `pio test -e native`
+
+#### 5.5 期待される効果
+1. **可読性向上**: 時刻取得処理が抽象化され、意図が明確
+2. **保守性向上**: 時刻関連の処理が一箇所に集約
+3. **テスト容易性向上**: 時刻取得処理のモック化が容易
+4. **エラーハンドリング統一**: 時刻取得失敗時の処理が統一
+
+#### 5.6 リスク管理
+1. **既存機能への影響**: 時刻取得処理の変更による副作用
+   - 対策: 段階的な変更とテスト
+2. **パフォーマンス**: 追加メソッド呼び出しによるオーバーヘッド
+   - 対策: インライン化の検討
+
+#### 5.7 品質確認
 ```bash
 # ビルド確認
 pio run -e native
@@ -193,6 +310,26 @@ pio check -e native
 # テスト実行
 pio test -e native
 ```
+
+#### 5.8 完了状況
+✅ **Phase 5: 依存性注入の改善 - 完了**
+
+**実施内容**:
+- 時刻取得メソッドの追加 (`getCurrentTime()`, `isTimeProviderValid()`)
+- エラーハンドリングの統一 (`handleErrorDisplay()`, `handleError()`)
+- プレビュー生成の改善 (`generateRelativePreview()`, `generateAbsolutePreview()`)
+
+**成果**:
+- 時刻取得処理の抽象化
+- 統一されたエラーハンドリング
+- テスト容易性の向上
+- 設計原則への準拠度向上
+
+**品質確認結果**:
+- 全テスト通過: 114テストケースすべて成功
+- 静的解析: 中重要度警告306件（既存の警告、新規警告なし）
+- 高重要度警告: 0件
+- 低重要度警告: 0件
 
 ### Phase 6: エラーハンドリングの統一
 
@@ -298,11 +435,11 @@ pio test -e native
 ## 進捗管理
 
 ### チェックポイント
-- [ ] Phase 1: 準備段階完了
-- [ ] Phase 2: デバッグコード削除完了
-- [ ] Phase 3: 時刻計算ロジック共通化完了
-- [ ] Phase 4: 関数分割・整理完了
-- [ ] Phase 5: 依存性注入改善完了
+- [x] Phase 1: 準備段階完了
+- [x] Phase 2: デバッグコード削除完了
+- [x] Phase 3: 時刻計算ロジック共通化完了
+- [x] Phase 4: 関数分割・整理完了
+- [x] Phase 5: 依存性注入改善完了
 - [ ] Phase 6: エラーハンドリング統一完了
 - [ ] Phase 7: 品質保証工程完了
 - [ ] Phase 8: 最終確認完了
