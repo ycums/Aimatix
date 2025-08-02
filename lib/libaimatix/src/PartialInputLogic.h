@@ -14,9 +14,12 @@ public:
         int hour = 0;        // 時（0-23）
         int minute = 0;      // 分（0-59）
         bool isValid = true; // 解析結果が有効かどうか
+        bool hourSpecified = false;  // 時が指定されているか
+        bool minuteSpecified = false; // 分が指定されているか
         
         ParsedTime() = default;
-        ParsedTime(int h, int m, bool valid = true) : hour(h), minute(m), isValid(valid) {}
+        ParsedTime(int h, int m, bool valid = true, bool hSpec = false, bool mSpec = false) 
+            : hour(h), minute(m), isValid(valid), hourSpecified(hSpec), minuteSpecified(mSpec) {}
     };
     
     /**
@@ -27,7 +30,7 @@ public:
      * @param entered 各桁の入力済みフラグ配列[4]
      * @return 解析された時分
      */
-    static ParsedTime parsePartialInput(const int* digits, const bool* entered);
+    static auto parsePartialInput(const int* digits, const bool* entered) -> ParsedTime;
     
     /**
      * 時分を HH:MM 形式の文字列にフォーマット
@@ -36,7 +39,7 @@ public:
      * @param minute 分（0-59）
      * @return フォーマットされた文字列
      */
-    static std::string formatTime(int hour, int minute);
+    static auto formatTime(int hour, int minute) -> std::string;
     
     /**
      * 時分の妥当性をチェック
@@ -45,10 +48,12 @@ public:
      * @param minute 分
      * @return true: 有効, false: 無効
      */
-    static bool isValidTime(int hour, int minute);
+    static auto isValidTime(int hour, int minute) -> bool;
 
 private:
     static constexpr int HOURS_10 = 10;
     static constexpr int HOURS_24 = 24;
     static constexpr int MINUTES_60 = 60;
+    static constexpr int DIGITS_COUNT = 4;
+    static constexpr int STRING_BUFFER_SIZE = 32;
 };

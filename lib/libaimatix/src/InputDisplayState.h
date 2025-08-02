@@ -57,6 +57,103 @@ public:
         }
     }
 
+    // 絶対値計算結果のプレビュー文字列を生成（確定処理と同じロジック）
+    void generateAbsolutePreview(char* preview, size_t previewSize) {
+        const int* digits = inputLogic ? inputLogic->getDigits() : nullptr;
+        const bool* entered = inputLogic ? inputLogic->getEntered() : nullptr;
+        if (!digits || !entered) {
+            return;
+        }
+        
+        auto parsedTime = PartialInputLogic::parsePartialInput(digits, entered);
+        if (!parsedTime.isValid) {
+            return;
+        }
+        
+        // 確定処理と同じロジックで時刻計算
+        time_t now = time(nullptr);
+        struct tm* now_tm = localtime(&now);
+        if (now_tm == nullptr) {
+            return;
+        }
+        
+        struct tm alarm_tm = *now_tm;
+        alarm_tm.tm_sec = 0;
+        alarm_tm.tm_isdst = -1;
+        
+        int hour = parsedTime.hour;
+        int minute = parsedTime.minute;
+        
+        // 時が指定されていない場合の処理
+        if (!parsedTime.hourSpecified) {
+            // 分のみで過去か未来かを判定
+            if (minute <= now_tm->tm_min) {
+                // 分が現在分以下なら、次の時間の同じ分として設定
+                hour = (now_tm->tm_hour + 1) % 24;
+            } else {
+                // 分が現在分より大きいなら、現在時間の同じ分として設定
+                hour = now_tm->tm_hour;
+            }
+        } else {
+            // 時が指定されている場合：通常の処理
+            // 分繰り上げ
+            if (minute >= 60) { 
+                hour += minute / 60; 
+                minute = minute % 60; 
+            }
+            // 時繰り上げ
+            const int add_day = hour / 24;
+            hour = hour % 24;
+            alarm_tm.tm_mday += add_day;
+            
+            const time_t candidate = mktime(&alarm_tm);
+            if (candidate <= now) {
+                // 過去時刻の場合：翌日の同じ時刻として処理
+                alarm_tm.tm_mday += 1;
+            }
+        }
+        
+        alarm_tm.tm_hour = hour;
+        alarm_tm.tm_min = minute;
+        
+        const time_t finalTime = mktime(&alarm_tm);
+        struct tm* final_tm = localtime(&finalTime);
+        if (final_tm == nullptr) {
+            return;
+        }
+        
+        // 日付跨ぎ判定（現在日付との差分を計算）
+        int dayDiff = final_tm->tm_mday - now_tm->tm_mday;
+        // 月をまたぐ場合の処理
+        if (dayDiff < 0) {
+            // 前月の場合、月の日数を加算
+            struct tm temp_tm = *now_tm;
+            temp_tm.tm_mday = 1;
+            temp_tm.tm_mon++;
+            time_t nextMonth = mktime(&temp_tm);
+            struct tm* nextMonth_tm = localtime(&nextMonth);
+            if (nextMonth_tm != nullptr) {
+                int daysInMonth = nextMonth_tm->tm_mday - 1;
+                dayDiff += daysInMonth;
+            }
+        }
+        
+        // プレビュー文字列生成
+        if (dayDiff > 0) {
+            const int result = std::snprintf(preview, previewSize, "+%dd %02d:%02d", dayDiff, final_tm->tm_hour, final_tm->tm_min);
+            if (result < 0 || static_cast<size_t>(result) >= previewSize) {
+                // エラー時は何もしない（プレビューは空のまま）
+                return;
+            }
+        } else {
+            const int result = std::snprintf(preview, previewSize, "%02d:%02d", final_tm->tm_hour, final_tm->tm_min);
+            if (result < 0 || static_cast<size_t>(result) >= previewSize) {
+                // エラー時は何もしない（プレビューは空のまま）
+                return;
+            }
+        }
+    }
+
     void onDraw() override {
         if (inputLogic && view) {
             const int* digits = inputLogic->getDigits();
@@ -102,8 +199,8 @@ public:
                 if (isRelativeMode) {
                     generateRelativePreview(preview, sizeof(preview));
                 } else {
-                    // 絶対時刻入力モードの場合は従来通り
-                    snprintf(preview, sizeof(preview), "%02d:%02d", value/100, value%100);
+                    // 絶対時刻入力モードの場合：過去時刻の翌日処理を含む
+                    generateAbsolutePreview(preview, sizeof(preview));
                 }
             } else {
                 // 部分入力時のプレビュー表示（絶対値・相対値共通）

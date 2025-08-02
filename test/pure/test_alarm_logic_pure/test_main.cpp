@@ -231,10 +231,10 @@ void test_partial_input_hour_only() {
     base_tm.tm_year = 124; base_tm.tm_mon = 0; base_tm.tm_mday = 1; base_tm.tm_hour = 14; base_tm.tm_min = 35; base_tm.tm_sec = 0;
     now = mktime(&base_tm);
     
-    // _0:__ → 00:00（過去時刻なので翌日）
+    // _1:__ → 01:00（修正後：時一桁のみ入力時は時一桁として解釈）
     int digits[4] = {0, 0, 0, 0};
     bool entered[4] = {false, false, false, false};
-    digits[0] = 0; entered[0] = true; // 時十桁のみ入力
+    digits[1] = 1; entered[1] = true; // 時一桁のみ入力
     
     alarms.clear();
     bool ok = AlarmLogic::addAlarmFromPartialInput(alarms, now, digits, entered, result, msg);
@@ -242,8 +242,8 @@ void test_partial_input_hour_only() {
     TEST_ASSERT_EQUAL((int)AlarmLogic::AddAlarmResult::Success, (int)result);
     
     struct tm* tm = localtime(&alarms[0]);
-    TEST_ASSERT_EQUAL(2, tm->tm_mday); // 翌日
-    TEST_ASSERT_EQUAL(0, tm->tm_hour);
+    TEST_ASSERT_EQUAL(2, tm->tm_mday); // 翌日（01:00は現在時刻14:35より過去）
+    TEST_ASSERT_EQUAL(1, tm->tm_hour); // 修正後：1（修正前：10）
     TEST_ASSERT_EQUAL(0, tm->tm_min);
 }
 
@@ -256,7 +256,7 @@ void test_partial_input_minute_only() {
     base_tm.tm_year = 124; base_tm.tm_mon = 0; base_tm.tm_mday = 1; base_tm.tm_hour = 14; base_tm.tm_min = 35; base_tm.tm_sec = 0;
     now = mktime(&base_tm);
     
-    // __:01 → 00:01（過去時刻なので翌日）
+    // __:01 → 15:01（分のみ入力時は現在時間の同じ分として設定）
     int digits[4] = {0, 0, 0, 0};
     bool entered[4] = {false, false, false, false};
     digits[3] = 1; entered[3] = true; // 分一桁のみ入力
@@ -267,8 +267,8 @@ void test_partial_input_minute_only() {
     TEST_ASSERT_EQUAL((int)AlarmLogic::AddAlarmResult::Success, (int)result);
     
     struct tm* tm = localtime(&alarms[0]);
-    TEST_ASSERT_EQUAL(2, tm->tm_mday); // 翌日
-    TEST_ASSERT_EQUAL(0, tm->tm_hour);
+    TEST_ASSERT_EQUAL(1, tm->tm_mday); // 当日（15:01は現在時刻14:35より未来）
+    TEST_ASSERT_EQUAL(15, tm->tm_hour); // 現在時間の次の時間
     TEST_ASSERT_EQUAL(1, tm->tm_min); // 修正後：分一桁のみ入力時は分一桁として解釈
 }
 
@@ -281,11 +281,11 @@ void test_partial_input_hour_minute_partial() {
     base_tm.tm_year = 124; base_tm.tm_mon = 0; base_tm.tm_mday = 1; base_tm.tm_hour = 14; base_tm.tm_min = 35; base_tm.tm_sec = 0;
     now = mktime(&base_tm);
     
-    // _0:1_ → 00:10（過去時刻なので翌日）
+    // _0:1_ → 00:10（修正後：時が未入力、分が未入力として扱う）
     int digits[4] = {0, 0, 0, 0};
     bool entered[4] = {false, false, false, false};
-    digits[0] = 0; entered[0] = true; // 時十桁入力
-    digits[2] = 1; entered[2] = true; // 分十桁入力
+    digits[0] = 0; entered[0] = true; // 時十桁入力（時が未入力として扱う）
+    digits[2] = 1; entered[2] = true; // 分十桁入力（分が未入力として扱う）
     
     alarms.clear();
     bool ok = AlarmLogic::addAlarmFromPartialInput(alarms, now, digits, entered, result, msg);
@@ -293,9 +293,9 @@ void test_partial_input_hour_minute_partial() {
     TEST_ASSERT_EQUAL((int)AlarmLogic::AddAlarmResult::Success, (int)result);
     
     struct tm* tm = localtime(&alarms[0]);
-    TEST_ASSERT_EQUAL(2, tm->tm_mday); // 翌日
-    TEST_ASSERT_EQUAL(0, tm->tm_hour);
-    TEST_ASSERT_EQUAL(10, tm->tm_min);
+    TEST_ASSERT_EQUAL(1, tm->tm_mday); // 当日（時が未入力、分が未入力なので現在時間の次の時間）
+    TEST_ASSERT_EQUAL(15, tm->tm_hour); // 現在時間の次の時間
+    TEST_ASSERT_EQUAL(0, tm->tm_min); // 分が未入力なので0
 }
 
 void test_partial_input_future_time() {
@@ -307,11 +307,10 @@ void test_partial_input_future_time() {
     base_tm.tm_year = 124; base_tm.tm_mon = 0; base_tm.tm_mday = 1; base_tm.tm_hour = 14; base_tm.tm_min = 35; base_tm.tm_sec = 0;
     now = mktime(&base_tm);
     
-    // 15:__ → 15:00（未来時刻なので当日）
+    // _5:__ → 05:00（未来時刻なので当日）
     int digits[4] = {0, 0, 0, 0};
     bool entered[4] = {false, false, false, false};
-    digits[0] = 1; entered[0] = true; // 時十桁入力
-    digits[1] = 5; entered[1] = true; // 時一桁入力
+    digits[1] = 5; entered[1] = true; // 時一桁のみ入力
     
     alarms.clear();
     bool ok = AlarmLogic::addAlarmFromPartialInput(alarms, now, digits, entered, result, msg);
@@ -319,8 +318,8 @@ void test_partial_input_future_time() {
     TEST_ASSERT_EQUAL((int)AlarmLogic::AddAlarmResult::Success, (int)result);
     
     struct tm* tm = localtime(&alarms[0]);
-    TEST_ASSERT_EQUAL(1, tm->tm_mday); // 当日
-    TEST_ASSERT_EQUAL(15, tm->tm_hour);
+    TEST_ASSERT_EQUAL(2, tm->tm_mday); // 翌日（05:00は現在時刻14:35より過去）
+    TEST_ASSERT_EQUAL(5, tm->tm_hour);
     TEST_ASSERT_EQUAL(0, tm->tm_min);
 }
 

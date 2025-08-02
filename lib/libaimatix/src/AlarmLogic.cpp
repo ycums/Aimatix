@@ -211,29 +211,51 @@ auto AlarmLogic::addAlarmFromPartialInput(
     int hour = parsedTime.hour;
     int minute = parsedTime.minute;
     
-    // 時分を直接指定してアラーム追加（既存のaddAlarm関数を拡張して使用）
+    // 時分を直接指定してアラーム追加
     struct tm* now_tm = localtime(&now);
+    if (now_tm == nullptr) {
+        result = AddAlarmResult::ErrorInvalid;
+        errorMsg = "Invalid current time";
+        return false;
+    }
+    
     struct tm alarm_tm = *now_tm;
     alarm_tm.tm_sec = 0;
     alarm_tm.tm_isdst = -1;
     
-    // 分繰り上げ
-    if (minute >= MINUTES_60) { hour += minute / MINUTES_60; minute = minute % MINUTES_60; }
-    // 時繰り上げ
-    const int add_day = hour / HOURS_24;
-    hour = hour % HOURS_24;
+    // 時が指定されていない場合の処理
+    if (!parsedTime.hourSpecified) {
+        // 分のみで過去か未来かを判定
+        if (minute <= now_tm->tm_min) {
+            // 分が現在分以下なら、次の時間の同じ分として設定
+            hour = (now_tm->tm_hour + 1) % HOURS_24;
+        } else {
+            // 分が現在分より大きいなら、現在時間の同じ分として設定
+            hour = now_tm->tm_hour;
+        }
+    } else {
+        // 時が指定されている場合：通常の処理
+        // 分繰り上げ
+        if (minute >= MINUTES_60) { 
+            hour += minute / MINUTES_60; 
+            minute = minute % MINUTES_60; 
+        }
+        // 時繰り上げ
+        const int add_day = hour / HOURS_24;
+        hour = hour % HOURS_24;
+        alarm_tm.tm_mday += add_day;
+        
+        const time_t candidate = mktime(&alarm_tm);
+        if (candidate <= now) {
+            // 過去時刻の場合：翌日の同じ時刻として処理
+            alarm_tm.tm_mday += 1;
+        }
+    }
     
     alarm_tm.tm_hour = hour;
     alarm_tm.tm_min = minute;
-    alarm_tm.tm_mday += add_day;
     
-    const time_t candidate = mktime(&alarm_tm);
-    if (candidate <= now) {
-        // 現在時刻より前なら翌日
-        alarm_tm.tm_mday += 1;
-    }
-    
-            const time_t alarmTime = mktime(&alarm_tm);
+    const time_t alarmTime = mktime(&alarm_tm);
     
     // 最大数チェック
     constexpr int MAX_ALARMS_PARTIAL = 5;
@@ -244,7 +266,7 @@ auto AlarmLogic::addAlarmFromPartialInput(
     }
     
     // 重複チェック
-    for (auto existing : alarms) {
+    for (const auto& existing : alarms) {
         if (existing == alarmTime) {
             result = AddAlarmResult::ErrorDuplicate;
             errorMsg = "Duplicate alarm time";
@@ -252,6 +274,7 @@ auto AlarmLogic::addAlarmFromPartialInput(
         }
     }
     
+    // アラーム追加
     alarms.push_back(alarmTime);
     std::sort(alarms.begin(), alarms.end());
     result = AddAlarmResult::Success;
