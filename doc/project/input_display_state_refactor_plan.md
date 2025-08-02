@@ -63,67 +63,22 @@ pio test -e native
 
 ### Phase 3: 時刻計算ロジックの共通化
 
-#### 3.1 重複ロジックの特定
-**対象**:
-- `generateAbsolutePreview`関数（約100行）
-- `generateRelativePreview`関数（約30行）
+#### 実施内容
+- `generateAbsolutePreview`/`generateRelativePreview`の重複ロジックを`TimePreviewLogic`クラスに集約
+- InputDisplayStateから時刻計算・日付跨ぎ判定・プレビュー生成ロジックを排除し、共通関数呼び出しに変更
+- 静的バッファ問題（localtimeの多重呼び出しによるバグ）を回避するため、tm構造体の値コピーを徹底
+- テストケース（特に日付跨ぎのプレビュー）も全てパス
 
-**共通化対象**:
-- 時刻計算ロジック
-- 日付跨ぎ判定ロジック
-- プレビュー文字列生成ロジック
+#### 注意点
+- localtime等の標準C関数は静的バッファを返すため、複数回呼び出す場合は必ず値をコピーして使うこと
+- 共通化したロジックは他の画面やロジックでも再利用可能
+- テスト失敗時はlocaltimeの使い方・tm構造体の扱いを重点的に見直すこと
 
-#### 3.2 共通関数の作成
-**新規作成ファイル**: `lib/libaimatix/src/TimePreviewLogic.h`
+#### 品質保証
+- `pio test -e native`で全テストパス（バグ再発防止テストも含む）
+- コードの可読性・保守性が向上
 
-**作成する関数**:
-```cpp
-class TimePreviewLogic {
-public:
-    struct PreviewResult {
-        std::string preview;
-        bool isValid;
-    };
-    
-    static PreviewResult generatePreview(
-        const int* digits, 
-        const bool* entered, 
-        ITimeProvider* timeProvider,
-        bool isRelativeMode
-    );
-    
-private:
-    static time_t calculateAbsoluteTime(
-        const int* digits, 
-        const bool* entered, 
-        ITimeProvider* timeProvider
-    );
-    
-    static std::string formatPreview(
-        time_t time, 
-        ITimeProvider* timeProvider,
-        bool isRelativeMode
-    );
-};
-```
-
-#### 3.3 InputDisplayState.hの更新
-**変更内容**:
-- `generateAbsolutePreview`と`generateRelativePreview`を削除
-- `TimePreviewLogic::generatePreview`を使用するように変更
-- 関数サイズを大幅に削減
-
-#### 3.4 品質確認
-```bash
-# ビルド確認
-pio run -e native
-
-# 静的解析
-pio check -e native
-
-# テスト実行
-pio test -e native
-```
+---
 
 ### Phase 4: 関数の分割・整理
 
