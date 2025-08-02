@@ -1,3 +1,9 @@
+---
+description: Aimatixプロジェクトの基本情報と開発原則
+globs: ["**/*"]
+alwaysApply: true
+---
+
 # Aimatix プロジェクト概要
 
 ## プロジェクト概要
@@ -72,8 +78,3 @@ pio test -e native -f pure/test_button_manager_pure
 - **TDDアプローチ**: テストファースト
 - **純粋ロジックのみをテスト対象とする**
 - **モックを使用してハードウェア依存を分離**
----
-description: Aimatixプロジェクトの基本情報と開発原則
-globs: ["**/*"]
-alwaysApply: true
----

@@ -1,3 +1,9 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+
 # プロジェクト構造と開発ガイドライン
 
 ## プロジェクト構造
@@ -69,7 +75,3 @@ python scripts/test_coverage.py --quick
 2. **実装クラス**: `src/` はカバレッジ対象外
 3. **モック使用**: ハードウェア依存を分離
 4. **段階的テスト**: 効果測定後に無駄なテストを削除
-description:
-globs:
-alwaysApply: false
----

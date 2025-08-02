@@ -1,3 +1,9 @@
+---
+description: テスト戦略と実行方法
+globs: ["test/**/*", "**/*test*"]
+alwaysApply: false
+---
+
 # テスト戦略
 
 ## テスト環境構成
@@ -146,8 +152,3 @@ test/
 - **Native環境**: 純粋ロジックの単体テスト
 - **M5Stack環境**: ハードウェア連携の統合テスト
 - **ESP32環境**: ESP32固有の機能テスト
----
-description: テスト戦略と実行方法
-globs: ["test/**/*", "**/*test*"]
-alwaysApply: false
----

@@ -1,3 +1,9 @@
+---
+description: コーディング規約と静的解析のガイドライン
+globs: ["**/*.cpp", "**/*.h", "**/*.hpp"]
+alwaysApply: false
+---
+
 # コーディング規約と静的解析
 
 ## Clang-Tidy静的解析
@@ -148,8 +154,3 @@ private:
 - **PartialInputLogic.cpp** (1件): const修飾子警告（snprintf制約）
 - **TimePreviewLogic.cpp** (3件): 静的メソッド警告（引数制約）
 - **DateTimeInputViewImpl.cpp** (2件): const修飾子、静的メソッド警告（技術的制約）
----
-description: コーディング規約と静的解析のガイドライン
-globs: ["**/*.cpp", "**/*.h", "**/*.hpp"]
-alwaysApply: false
----

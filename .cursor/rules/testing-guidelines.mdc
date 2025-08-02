@@ -1,3 +1,8 @@
+---
+globs: ["test/**/*.cpp", "test/**/*.h"]
+description: テスト作成のガイドラインとベストプラクティス
+alwaysApply: false
+---
 # テスト作成ガイドライン
 
 ## 基本原則
@@ -19,6 +24,100 @@
 - ❌ private関数の直接テスト
 - ❌ 既に十分カバーされている関数の追加テスト
 - ❌ 効果のない分岐テスト
+
+## 効率的なアプローチ対象決定手順
+
+### Step 1: カバレッジレポートから未カバー分岐を特定
+```bash
+# カバレッジレポートを確認
+python scripts/test_coverage.py --quick
+
+# 未カバー分岐を特定
+grep -n '"count": 0' coverage_reports/coverage_report_*.json
+```
+
+### Step 2: Public関数の未カバー分岐を優先
+**判定基準**:
+1. **Public関数**: テスト対象（優先度高）
+2. **Private関数**: テスト対象外（ガイドライン準拠）
+
+**確認方法**:
+```cpp
+// ヘッダーファイルでpublic/privateを確認
+class AlarmDisplayState : public IState {
+public:
+    void onEnter() override;  // ← これが対象
+    void onDraw() override;   // ← これが対象
+    
+private:
+    void forceDraw();         // ← これは対象外
+};
+```
+
+### Step 3: 分岐カバレッジの効果を測定
+**手順**:
+```bash
+# 1. 現在のカバレッジを記録
+python scripts/test_coverage.py --quick
+
+# 2. 1つの分岐テストを追加
+# test_xxx_pure/test_main.cpp に追加
+
+# 3. テスト実行
+pio test -e native -f pure/test_xxx_pure
+
+# 4. カバレッジ再測定
+python scripts/test_coverage.py --quick
+
+# 5. 効果判定
+# 変動あり → 保持
+# 変動なし → 削除して次の分岐を試す
+```
+
+### Step 4: 優先順位の決定
+**優先度1**: Public関数の未カバー分岐（count: 0）
+- `AlarmDisplayState::onEnter()` - 13行目
+- `AlarmDisplayState::onDraw()` - 30行目
+- `InputDisplayState::onDraw()` - エラー分岐
+- `MainDisplayState::onDraw()` - エラー分岐
+
+**優先度2**: Public関数の部分カバー分岐（count: 低い値）
+- 分岐の一部が未カバー
+
+**優先度3**: Private関数（対象外）
+- `forceDraw()`などは直接テストしない
+
+### Step 5: 段階的アプローチ
+```cpp
+// 例: AlarmDisplayStateの未カバー分岐テスト
+void test_alarm_display_state_onenter_null_view_branches() {
+    // 13行目の未カバー分岐をテスト
+    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    
+    // viewをnullptrに設定（未カバー分岐を実行）
+    AlarmDisplayState state(nullptr, nullptr, mockTimeProvider.get());
+    
+    state.onEnter(); // public関数の分岐をテスト
+    
+    // 効果測定
+    TEST_ASSERT_TRUE(true);
+}
+```
+
+### Step 6: 効果判定と次の対象
+```bash
+# 効果測定
+python scripts/test_coverage.py --quick
+
+# 判定
+if [ カバレッジ向上 ]; then
+    echo "保持して次の分岐へ"
+    # 次の未カバー分岐を特定
+else
+    echo "削除して別の分岐を試す"
+    # テストを削除して別のアプローチ
+fi
+```
 
 ## テスト作成パターン
 
@@ -96,12 +195,60 @@ python scripts/test_coverage.py --quick
 2. **効果判定**: 変動あり → 保持、変動なし → 削除
 3. **次の関数**: 効率的に移行
 
+## 具体的な実行例
+
+### Phase 1: AlarmDisplayStateの未カバー分岐
+```bash
+# 1. 現在のカバレッジ確認
+python scripts/test_coverage.py --quick
+# 結果: 78.2%
+
+# 2. 13行目の未カバー分岐テスト追加
+# test_alarm_display_pure/test_main.cpp に追加
+pio test -e native -f pure/test_alarm_display_pure
+
+# 3. カバレッジ再測定
+python scripts/test_coverage.py --quick
+# 結果: 78.5% → 効果あり、保持
+
+# 4. 30行目の未カバー分岐テスト追加
+# 同様の手順
+```
+
+### Phase 2: InputDisplayStateの未カバー分岐
+```bash
+# 1. 次の未カバー分岐を特定
+# カバレッジレポートからcount: 0の行を確認
+
+# 2. public関数の分岐テスト追加
+# test_input_display_pure/test_main.cpp に追加
+
+# 3. 効果測定
+python scripts/test_coverage.py --quick
+```
+
+## 判定基準
+
+### 効果あり（保持）
+- カバレッジが向上（例: 78.2% → 78.5%）
+- 未カバー行が減少
+
+### 効果なし（削除）
+- カバレッジが変わらない
+- 既にカバーされている分岐
+
+### 次の対象
+1. **Public関数の未カバー分岐**を優先
+2. **count: 0**の行から開始
+3. **段階的に1つずつ**テスト追加
+
 ## 参考ドキュメント
 
 - [カバレッジ向上戦略](mdc:doc/project/coverage_strategy.md)
 - [テスト戦略](mdc:doc/operation/testing_strategy.md)
 - [品質ゲート基準](mdc:doc/operation/quality_gates.md)
-description:
-globs:
-alwaysApply: false
----
+
+
+- [カバレッジ向上戦略](mdc:doc/project/coverage_strategy.md)
+- [テスト戦略](mdc:doc/operation/testing_strategy.md)
+- [品質ゲート基準](mdc:doc/operation/quality_gates.md)

@@ -1,3 +1,7 @@
+---
+title: Coverage Strategy
+---
+
 # カバレッジ向上戦略
 
 ## 基本方針
@@ -92,7 +96,3 @@ pio test -e native -f pure/test_input_display_pure
 - [カバレッジ向上戦略](mdc:doc/project/coverage_strategy.md)
 - [テスト戦略](mdc:doc/operation/testing_strategy.md)
 - [品質ゲート基準](mdc:doc/operation/quality_gates.md)
-description:
-globs:
-alwaysApply: false
----
