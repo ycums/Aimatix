@@ -72,7 +72,9 @@ private:
     // ハイブリッドアプローチ用のヘルパー
     bool shouldUpdateRealTime() const;
     void updateLastUserAction();
-    unsigned long getCurrentMillis() const;
+    
+    // 静的メソッド
+    static unsigned long getCurrentMillis(const std::shared_ptr<ITimeManager>& timeManager);
     
     // 強制描画（初期表示とリアルタイム更新用）
     void forceDraw();

@@ -4,7 +4,7 @@
 
 auto PartialInputLogic::parsePartialInput(const int* digits, const bool* entered) -> ParsedTime {
     if (digits == nullptr || entered == nullptr) {
-        return ParsedTime(0, 0, false);
+        return {0, 0, false};
     }
     
     // 完全未入力チェック（確定拒絶のため）
@@ -17,7 +17,7 @@ auto PartialInputLogic::parsePartialInput(const int* digits, const bool* entered
     }
     if (!hasAnyInput) {
         // 完全未入力の場合は無効とする（確定拒絶）
-        return ParsedTime(0, 0, false);
+        return {0, 0, false};
     }
     
     int hour = 0;
@@ -55,8 +55,8 @@ auto PartialInputLogic::parsePartialInput(const int* digits, const bool* entered
         minuteSpecified = false;
     }
     
-    bool valid = isValidTime(hour, minute);
-    return ParsedTime(hour, minute, valid, hourSpecified, minuteSpecified);
+    const bool valid = isValidTime(hour, minute);
+    return {hour, minute, valid, hourSpecified, minuteSpecified};
 }
 
 auto PartialInputLogic::formatTime(int hour, int minute) -> std::string {

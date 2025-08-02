@@ -27,6 +27,6 @@ private:
     void drawCursorHighlight(const std::string& dateTimeStr, int cursorPosition);
     void clearCursorHighlight(int cursorPosition);
     int getCursorPixelPosition(int cursorPosition) const;
-    int getCharWidth(char c) const;
+    static int getCharWidth(char c);
     void drawCharAtPosition(char c, int x, int y, bool isHighlighted = false);
 }; 

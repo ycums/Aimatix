@@ -33,7 +33,7 @@ void DateTimeInputViewImpl::showDateTimeString(const std::string& dateTimeStr, i
     
     // 状態変更の検出
     bool needsRedraw = (dateTimeStr != lastDateTimeStr) || (lastDateTimeStr.empty());
-    bool cursorChanged = (cursorPosition != lastCursorPosition);
+    const bool cursorChanged = (cursorPosition != lastCursorPosition);
     
     // 日時文字列が変更された場合または初回描画時、全体を再描画
     if (needsRedraw) {
@@ -84,7 +84,7 @@ void DateTimeInputViewImpl::drawDateTimeGrid(const std::string& dateTimeStr) {
     }
     
     // 中央寄せのための開始X座標を計算
-    int startX = (SCREEN_WIDTH - totalWidth) / 2;
+    const int startX = (SCREEN_WIDTH - totalWidth) / 2;
     const int baseY = GRID_Y(5); // グリッドレイアウトに準拠
     
     // 日時文字列をグリッド様に1文字ずつ描画
@@ -92,7 +92,7 @@ void DateTimeInputViewImpl::drawDateTimeGrid(const std::string& dateTimeStr) {
     for (size_t i = 0; i < dateTimeStr.length(); ++i) {
         char c = dateTimeStr[i];
         // MC_DATUMなので文字の中央座標を計算
-        int charCenterX = currentX + getCharWidth(c) / 2;
+        const int charCenterX = currentX + getCharWidth(c) / 2;
         drawCharAtPosition(c, charCenterX, baseY, false);
         currentX += getCharWidth(c);
     }
@@ -104,9 +104,9 @@ void DateTimeInputViewImpl::drawCursorHighlight(const std::string& dateTimeStr, 
     }
     
     // カーソル位置の文字をハイライト表示
-    int cursorX = getCursorPixelPosition(cursorPosition);
+    const int cursorX = getCursorPixelPosition(cursorPosition);
     const int baseY = GRID_Y(5); // グリッドレイアウトに準拠
-    char cursorChar = dateTimeStr[cursorPosition];
+    const char cursorChar = dateTimeStr[cursorPosition];
     
     drawCharAtPosition(cursorChar, cursorX, baseY, true);
 }
@@ -117,9 +117,9 @@ void DateTimeInputViewImpl::clearCursorHighlight(int cursorPosition) {
     }
     
     // 前のカーソル位置の文字を通常表示に戻す
-    int cursorX = getCursorPixelPosition(cursorPosition);
+    const int cursorX = getCursorPixelPosition(cursorPosition);
     const int baseY = GRID_Y(5); // グリッドレイアウトに準拠
-    char cursorChar = lastDateTimeStr[cursorPosition];
+    const char cursorChar = lastDateTimeStr[cursorPosition];
     
     drawCharAtPosition(cursorChar, cursorX, baseY, false);
 }
@@ -158,12 +158,12 @@ int DateTimeInputViewImpl::getCursorPixelPosition(int cursorPosition) const {
     }
     
     // 中央寄せのための開始X座標を計算
-    int startX = (SCREEN_WIDTH - totalWidth) / 2;
+    const int startX = (SCREEN_WIDTH - totalWidth) / 2;
     int currentX = startX;
     
     // 各文字の位置を正確に計算（MC_DATUMなので文字の中央座標）
     for (int i = 0; i < cursorPosition && i < static_cast<int>(dateTimeStr.length()); ++i) {
-        char c = dateTimeStr[i];
+        const char c = dateTimeStr[i];
         currentX += getCharWidth(c);
     }
     
@@ -174,16 +174,14 @@ int DateTimeInputViewImpl::getCursorPixelPosition(int cursorPosition) const {
     return currentX;
 }
 
-int DateTimeInputViewImpl::getCharWidth(char c) const {
+int DateTimeInputViewImpl::getCharWidth(char c) {
     // フォント4での文字幅を正確に計算
     switch (c) {
         case '0': case '1': case '2': case '3': case '4':
         case '5': case '6': case '7': case '8': case '9':
             return CHAR_WIDTH_FONT7; // 数字は16ピクセル
-        case '/': case ':':
-            return CHAR_WIDTH_FONT4;  // 記号は8ピクセル
-        case ' ':
-            return CHAR_WIDTH_FONT4;  // スペースは8ピクセル
+        case '/': case ':': case ' ':
+            return CHAR_WIDTH_FONT4;  // 記号・スペースは8ピクセル
         default:
             return CHAR_WIDTH_FONT7; // デフォルト
     }

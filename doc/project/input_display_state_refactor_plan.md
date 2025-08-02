@@ -283,7 +283,7 @@ private:
 2. 時刻プロバイダーの妥当性チェックを統一
 
 ##### Step 4: 品質確認
-1. ビルド確認: `pio run -e native`
+1. ビルド確認: `pio run`
 2. 静的解析: `pio check -e native`
 3. テスト実行: `pio test -e native`
 
@@ -302,7 +302,7 @@ private:
 #### 5.7 品質確認
 ```bash
 # ビルド確認
-pio run -e native
+pio run
 
 # 静的解析
 pio check -e native
@@ -390,40 +390,101 @@ pio test -e native
 
 ### Phase 7: 品質保証工程
 
-#### 7.1 静的解析
+#### 7.1 現在の詳細状態確認
 ```bash
-# 静的解析実行
+# 1. ビルド確認
+pio run
+
+# 2. 静的解析の詳細確認
 pio check -e native
 
-# 結果確認
-# 目標: 中重要度警告85件以下
-```
-
-#### 7.2 テスト実行
-```bash
-# 全テスト実行
-pio test -e native
-
-# カバレッジ測定
+# 3. カバレッジの詳細分析
 python scripts/test_coverage.py
-
-# 結果確認
-# 目標: テストカバレッジ85%以上
 ```
 
-#### 7.3 品質ゲート確認
+#### 7.2 静的解析改善（優先度：高）
+**方針**: ソースコードの修正のみで警告数を0に近づける
+
+**実施内容**:
+1. **Step 2-1: staticメソッド化（15件削減）**
+   - AlarmDisplayState.cpp: `getCurrentMillis()` → static化
+   - AlarmLogic.cpp: `initAlarms()`, `removePastAlarms()`, `getRemainSec()` → static化
+   - DateTimeInputState.cpp: `incrementCurrentDigit()`, `getDigitValue()`, `setDigitValue()` → static化
+   - TimePreviewLogic.cpp: `formatPreview()`, `calculateDayDifference()` → static化
+   - DateTimeInputViewImpl.cpp: `getCharWidth()` → static化
+
+2. **Step 2-2: 明示的nullptrチェック（20件削減）**
+   - DateTimeInputState.cpp: `ITimeProvider *` → `timeProvider != nullptr`
+   - TimePreviewLogic.cpp: `ITimeProvider *`, `const int *`, `const bool *` → 明示的チェック
+   - TimeValidationLogic.cpp: `ITimeProvider *` → 明示的チェック
+   - DateTimeInputViewImpl.cpp: `IDisplay *` → 明示的チェック
+
+3. **Step 2-3: const修飾子追加（15件削減）**
+   - DateTimeInputState.cpp: 変数にconst修飾子を追加
+   - PartialInputLogic.cpp: 変数にconst修飾子を追加
+   - SettingsDisplayState.cpp: 変数にconst修飾子を追加
+   - DateTimeInputViewImpl.cpp: 変数にconst修飾子を追加
+
+4. **Step 2-4: 波括弧初期化リスト（3件削減）**
+   - PartialInputLogic.cpp: return文を波括弧初期化リストに変更
+
+5. **Step 2-5: 重複分岐統合（8件削減）**
+   - DateTimeInputState.cpp: 重複したif文の統合
+   - SettingsLogic.cpp: switch文の重複分岐統合
+   - DateTimeInputViewImpl.cpp: switch文の重複分岐統合
+
+6. **Step 2-6: 型変換明示化（12件削減）**
+   - SettingsDisplayViewImpl.cpp: `unsigned long long` → `int` の明示的キャスト
+   - main.cpp: .cppファイルのinclude修正
+
+**各ステップでの確認**:
+- ビルド確認: `pio run`
+- テスト実行: `pio test -e native`
+- 静的解析確認: `pio check -e native`
+- 結果確認: 警告数の削減確認
+
+**期待される結果**:
+- 修正前: 73件の警告
+- 修正後: 0-5件程度の警告
+- 削減率: 約93-100%
+
+#### 7.3 カバレッジ改善（優先度：中）
+**方針**: カバレッジが極端に低いものから優先的に対応
+
+**実施内容**:
+1. **カバレッジレポートの詳細分析**
+   - どのファイル/関数のカバレッジが低いかを特定
+   - 特にInputDisplayState関連のカバレッジ状況を確認
+
+2. **不足テストケースの特定**
+   - 未テストの関数や分岐を特定
+   - エッジケースのテスト追加
+
+3. **テストケース追加**
+   - カバレッジが最も低い関数から順次追加
+   - 特に新しく分割された関数のテストを優先
+
+#### 7.4 品質ゲート通過確認
+```bash
+# 修正後の最終確認
+pio run
+pio check -e native
+pio test -e native
+python scripts/test_coverage.py
+```
+
 **確認項目**:
-- [ ] 中重要度警告85件以下
-- [ ] テストカバレッジ85%以上
-- [ ] すべてのテストが通過
-- [ ] ビルドが正常に完了
+- [ ] テストカバレッジ: 85%以上
+- [ ] 中重要度警告: 85件以下（できれば0件近く）
+- [ ] 全テスト通過: 100%
+- [ ] ビルド成功: 正常
 
 ### Phase 8: 最終確認
 
 #### 8.1 機能確認
 ```bash
 # ビルド確認
-pio run -e native
+pio run
 pio run -e m5stack-fire
 
 # テスト確認

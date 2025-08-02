@@ -76,9 +76,6 @@ std::vector<time_t> alarm_times;
 
 // --- 状態管理クラスのグローバル生成 ---
 StateManager state_manager;
-const std::shared_ptr<DateTimeAdapter> m5_time_provider = std::make_shared<DateTimeAdapter>();
-const std::shared_ptr<M5StackTimeManager> m5_time_manager = std::make_shared<M5StackTimeManager>();
-InputLogic input_logic(m5_time_provider);
 DisplayAdapter display_adapter;
 InputDisplayViewImpl input_display_view_impl(&display_adapter);
 MainDisplayViewImpl main_display_view_impl(&display_adapter);
@@ -88,15 +85,30 @@ DateTimeInputViewImpl datetime_input_view_impl(&display_adapter);
 TimeLogic time_logic;
 AlarmLogic alarm_logic;
 SettingsLogic settings_logic;
+ButtonManager button_manager; // 追加
+
+#ifdef ARDUINO
+// M5Stack関連のクラス（ARDUINO環境でのみ定義）
+const std::shared_ptr<DateTimeAdapter> m5_time_provider = std::make_shared<DateTimeAdapter>();
+const std::shared_ptr<M5StackTimeManager> m5_time_manager = std::make_shared<M5StackTimeManager>();
+InputLogic input_logic(m5_time_provider);
 InputDisplayState input_display_state(&input_logic, &input_display_view_impl);
 MainDisplayState main_display_state(&state_manager, &input_display_state, &main_display_view_impl, &time_logic, &alarm_logic);
 AlarmDisplayState alarm_display_state(&state_manager, &alarm_display_view_impl, m5_time_provider, m5_time_manager);
 SettingsDisplayState settings_display_state(&settings_logic, &settings_display_view_impl);
 DateTimeInputState datetime_input_state(m5_time_provider.get(), &datetime_input_view_impl);
-ButtonManager button_manager; // 追加
+#else
+// Native環境用のモック（テスト用）
+InputLogic input_logic(nullptr);
+InputDisplayState input_display_state(&input_logic, &input_display_view_impl);
+MainDisplayState main_display_state(&state_manager, &input_display_state, &main_display_view_impl, &time_logic, &alarm_logic);
+AlarmDisplayState alarm_display_state(&state_manager, &alarm_display_view_impl, nullptr, nullptr);
+SettingsDisplayState settings_display_state(&settings_logic, &settings_display_view_impl);
+DateTimeInputState datetime_input_state(nullptr, &datetime_input_view_impl);
+#endif
 
-void setup() {
 #ifdef ARDUINO
+void setup() {
     M5.begin();
     M5.Lcd.setTextColor(AMBER_COLOR, TFT_BLACK);
 
@@ -110,7 +122,7 @@ void setup() {
         // 時刻補正が実行された場合のログ出力（デバッグ用）
         // プロダクション環境では必要に応じて削除可能
     }
-#endif
+
     // --- 状態遷移の依存注入（@/design/ui_state_management.md準拠） ---
     input_display_state.setManager(&state_manager);
     input_display_state.setMainDisplayState(&main_display_state);
@@ -129,7 +141,6 @@ void setup() {
 }
 
 void loop() {
-#ifdef ARDUINO
     M5.update();
     // 物理ボタン状態をButtonManagerに渡す
     button_manager.update(ButtonManager::BtnA, M5.BtnA.isPressed(), millis());
@@ -148,5 +159,13 @@ void loop() {
         current->onDraw();
     }
     delay(LOOP_DELAY_MS);
+}
 #endif
-} 
+
+#ifndef ARDUINO
+// Native環境用のmain関数
+int main() {
+    // Native環境では何もしない（テスト用）
+    return 0;
+}
+#endif 

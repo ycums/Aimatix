@@ -16,7 +16,7 @@ constexpr int SECONDS_60 = 60;
 constexpr int SECONDS_120 = 120;
 constexpr int PERCENT_100 = 100;
 
-auto AlarmLogic::initAlarms(std::vector<time_t>& alarms, time_t now) -> void {
+void AlarmLogic::initAlarms(std::vector<time_t>& alarms, time_t now) {
     alarms.clear();
     alarms.push_back(now + SECONDS_10);    // +10秒
     alarms.push_back(now + SECONDS_30);    // +30秒
@@ -24,21 +24,21 @@ auto AlarmLogic::initAlarms(std::vector<time_t>& alarms, time_t now) -> void {
     alarms.push_back(now + SECONDS_120);   // +2分
 }
 
-auto AlarmLogic::removePastAlarms(std::vector<time_t>& alarms, time_t now) -> void {
+void AlarmLogic::removePastAlarms(std::vector<time_t>& alarms, time_t now) {
     alarms.erase(
         alarms.begin(),
         std::find_if(alarms.begin(), alarms.end(), [now](time_t time_value) { return time_value > now; })
     );
 }
 
-auto AlarmLogic::getRemainSec(const std::vector<time_t>& alarms, time_t now) -> int {
+int AlarmLogic::getRemainSec(const std::vector<time_t>& alarms, time_t now) {
     if (alarms.empty()) {
         return 0;
     }
     return static_cast<int>(alarms.front() - now);
 }
 
-auto AlarmLogic::getRemainPercent(int remainSec, int totalSec) -> int {
+int AlarmLogic::getRemainPercent(int remainSec, int totalSec) {
     if (totalSec <= 0) {
         return 0;
     }
@@ -52,7 +52,7 @@ auto AlarmLogic::getRemainPercent(int remainSec, int totalSec) -> int {
     return percent;
 }
 
-auto AlarmLogic::getAlarmTimeStrings(const std::vector<time_t>& alarms, std::vector<std::string>& out) -> void {
+void AlarmLogic::getAlarmTimeStrings(const std::vector<time_t>& alarms, std::vector<std::string>& out) {
     out.clear();
     for (auto t : alarms) {
         std::tm* tm_alarm = std::localtime(&t);
@@ -64,7 +64,7 @@ auto AlarmLogic::getAlarmTimeStrings(const std::vector<time_t>& alarms, std::vec
 } 
 
 // addAlarm: 入力値をアラームとして追加。エラー時はresult, errorMsgに理由を格納。
-auto AlarmLogic::addAlarm(std::vector<time_t>& alarms, time_t now, time_t input, AddAlarmResult& result, std::string& errorMsg) -> bool {
+bool AlarmLogic::addAlarm(std::vector<time_t>& alarms, time_t now, time_t input, AddAlarmResult& result, std::string& errorMsg) {
     if (input == -1) {
         result = AddAlarmResult::ErrorEmptyInput;
         errorMsg = "Input is empty.";
@@ -160,7 +160,7 @@ auto AlarmLogic::addAlarm(std::vector<time_t>& alarms, time_t now, time_t input,
 }
 
 // 絶対時刻（time_t）をアラームとして追加。エラー時はresult, errorMsgに理由を格納。
-auto AlarmLogic::addAlarmAtTime(std::vector<time_t>& alarms, time_t alarmTime, AddAlarmResult& result, std::string& errorMsg) -> bool {
+bool AlarmLogic::addAlarmAtTime(std::vector<time_t>& alarms, time_t alarmTime, AddAlarmResult& result, std::string& errorMsg) {
     // 最大数チェック
     constexpr int MAX_ALARMS = 5;
     if (alarms.size() >= MAX_ALARMS) {
@@ -185,14 +185,14 @@ auto AlarmLogic::addAlarmAtTime(std::vector<time_t>& alarms, time_t alarmTime, A
 }
 
 // 部分的な入力状態（digits[4], entered[4]）からアラームを追加
-auto AlarmLogic::addAlarmFromPartialInput(
+bool AlarmLogic::addAlarmFromPartialInput(
     std::vector<time_t>& alarms, 
     time_t now, 
     const int* digits, 
     const bool* entered, 
     AddAlarmResult& result, 
     std::string& errorMsg
-) -> bool {
+) {
     // 入力チェック
     if (digits == nullptr || entered == nullptr) {
         result = AddAlarmResult::ErrorInvalid;
@@ -282,7 +282,7 @@ auto AlarmLogic::addAlarmFromPartialInput(
 }
 
 // 指定インデックスのアラームを削除
-auto AlarmLogic::deleteAlarm(std::vector<time_t>& alarms, size_t index) -> bool {
+bool AlarmLogic::deleteAlarm(std::vector<time_t>& alarms, size_t index) {
     if (index >= alarms.size()) {
         return false;
     }
@@ -297,7 +297,7 @@ auto AlarmLogic::deleteAlarm(std::vector<time_t>& alarms, size_t index) -> bool 
 }
 
 // アラームリストを取得（時刻順でソート済み）
-auto AlarmLogic::getAlarms(const std::vector<time_t>& alarms) -> std::vector<time_t> {
+std::vector<time_t> AlarmLogic::getAlarms(const std::vector<time_t>& alarms) {
     std::vector<time_t> sortedAlarms{alarms};
     std::sort(sortedAlarms.begin(), sortedAlarms.end());
     return sortedAlarms;

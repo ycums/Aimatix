@@ -89,7 +89,7 @@ void SettingsDisplayState::onButtonC() {
     }
     
     // 選択確定（値変更モードに入る）
-    SettingsItem selectedItem = settingsLogic->getSelectedItem();
+    const SettingsItem selectedItem = settingsLogic->getSelectedItem();
     
     if (selectedItem == SettingsItem::SET_DATE_TIME) {
         // 日時設定画面に遷移

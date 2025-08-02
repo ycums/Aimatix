@@ -18,7 +18,7 @@ void SettingsDisplayViewImpl::showSettingsList(const std::vector<std::string>& i
     size_t displayCount = (items.size() < maxItems) ? items.size() : maxItems;
     
     for (size_t i = 0; i < displayCount; ++i) {
-        const int y_pos = startY + i * lineHeight;
+        const int y_pos = startY + static_cast<int>(i) * lineHeight;
         
         // 背景をクリア（選択状態に関係なく）
         disp->fillRect(0, y_pos - ALARM_BACKGROUND_OFFSET, SCREEN_WIDTH, lineHeight, TFT_BLACK);

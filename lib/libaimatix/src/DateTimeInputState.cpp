@@ -94,12 +94,12 @@ void DateTimeInputState::onButtonCLongPress() {
 }
 
 void DateTimeInputState::resetDateTime() {
-    if (timeProvider) {
+    if (timeProvider != nullptr) {
         // システム時刻から初期値を設定
         time_t currentTime = timeProvider->now();
         struct tm* timeInfo = timeProvider->localtime(&currentTime);
         
-        if (timeInfo) {
+        if (timeInfo != nullptr) {
             const int year = timeInfo->tm_year + YEAR_1900;  // tm_yearは1900からのオフセット
             const int month = timeInfo->tm_mon + MONTH_MIN;     // tm_monは0ベース
             const int day = timeInfo->tm_mday;
@@ -146,9 +146,7 @@ void DateTimeInputState::incrementCurrentDigit() {
     // 現在の値を参照して動的に最大値を設定
     int maxValue = MAX_DIGIT_9; // デフォルト最大値
     
-    if (cursorPosition == DIGIT_YEAR_TEN) { // 年十の位: 2000-2099の範囲で0-9
-        maxValue = MAX_DIGIT_9;
-    } else if (cursorPosition == DIGIT_YEAR_ONE) { // 年一の位: 2000-2099の範囲で0-9
+    if (cursorPosition == DIGIT_YEAR_TEN || cursorPosition == DIGIT_YEAR_ONE) { // 年十の位・年一の位: 2000-2099の範囲で0-9
         maxValue = MAX_DIGIT_9;
     } else if (cursorPosition == DIGIT_MONTH_TEN) { // 月十の位: 01-12なので0-1
         maxValue = MAX_MONTH_TEN_DIGIT;
@@ -233,7 +231,7 @@ void DateTimeInputState::moveCursorRight() {
     
     // 次の有効位置に移動（循環）
     if (currentIndex >= 0) {
-        int nextIndex = (currentIndex + 1) % numValidPositions;
+        const int nextIndex = (currentIndex + 1) % numValidPositions;
         cursorPosition = validPositions[nextIndex];
     } else {
         // 現在位置が無効の場合、最初の有効位置に移動
@@ -257,7 +255,7 @@ void DateTimeInputState::moveCursorLeft() {
     
     // 前の有効位置に移動（循環）
     if (currentIndex >= 0) {
-        int prevIndex = (currentIndex - 1 + numValidPositions) % numValidPositions;
+        const int prevIndex = (currentIndex - 1 + numValidPositions) % numValidPositions;
         cursorPosition = validPositions[prevIndex];
     } else {
         // 現在位置が無効の場合、最初の有効位置に移動
@@ -270,41 +268,41 @@ bool DateTimeInputState::validateDateTime() const {
 }
 
 bool DateTimeInputState::validateYear() const {
-    int year = getDigitValue(0) * 1000 + getDigitValue(1) * 100 + getDigitValue(2) * 10 + getDigitValue(3);
+    const int year = getDigitValue(0) * 1000 + getDigitValue(1) * 100 + getDigitValue(2) * 10 + getDigitValue(3);
     return year >= 2000 && year <= 2099;
 }
 
 bool DateTimeInputState::validateMonth() const {
-    int month = getDigitValue(4) * 10 + getDigitValue(5);
+    const int month = getDigitValue(4) * 10 + getDigitValue(5);
     return month >= 1 && month <= 12;
 }
 
 bool DateTimeInputState::validateDay() const {
-    int day = getDigitValue(6) * 10 + getDigitValue(7);
+    const int day = getDigitValue(6) * 10 + getDigitValue(7);
     if (day < 1 || day > 31) {
         return false;
     }
     
     // 月に応じた日数の制限をチェック
-    int year = getDigitValue(0) * 1000 + getDigitValue(1) * 100 + getDigitValue(2) * 10 + getDigitValue(3);
-    int month = getDigitValue(4) * 10 + getDigitValue(5);
-    int maxDays = getDaysInMonth(year, month);
+    const int year = getDigitValue(0) * 1000 + getDigitValue(1) * 100 + getDigitValue(2) * 10 + getDigitValue(3);
+    const int month = getDigitValue(4) * 10 + getDigitValue(5);
+    const int maxDays = getDaysInMonth(year, month);
     
     return day <= maxDays;
 }
 
 bool DateTimeInputState::validateHour() const {
-    int hour = getDigitValue(8) * 10 + getDigitValue(9);
+    const int hour = getDigitValue(8) * 10 + getDigitValue(9);
     return hour >= 0 && hour <= 23;
 }
 
 bool DateTimeInputState::validateMinute() const {
-    int minute = getDigitValue(10) * 10 + getDigitValue(11);
+    const int minute = getDigitValue(10) * 10 + getDigitValue(11);
     return minute >= 0 && minute <= 59;
 }
 
 void DateTimeInputState::commitDateTime() {
-    if (!timeProvider || !validateDateTime()) {
+    if (timeProvider == nullptr || !validateDateTime()) {
         return;
     }
     

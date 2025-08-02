@@ -1,19 +1,5 @@
 [
   {
-    "timestamp": "2025-07-22T07:39:37.040565",
-    "coverage": 67.40331491712708,
-    "pure_coverage": 67.40331491712708,
-    "m5stack_coverage": 0.0,
-    "quality_gate": false
-  },
-  {
-    "timestamp": "2025-07-22T07:47:58.465002",
-    "coverage": 77.04918032786885,
-    "pure_coverage": 77.04918032786885,
-    "m5stack_coverage": 0.0,
-    "quality_gate": false
-  },
-  {
     "timestamp": "2025-07-22T07:50:39.374203",
     "coverage": 81.4207650273224,
     "pure_coverage": 81.4207650273224,
@@ -346,6 +332,20 @@
     "timestamp": "2025-08-02T17:55:33.169877",
     "coverage": 71.51020408163265,
     "pure_coverage": 71.51020408163265,
+    "m5stack_coverage": 0.0,
+    "quality_gate": false
+  },
+  {
+    "timestamp": "2025-08-02T18:47:51.339453",
+    "coverage": 56.01023017902813,
+    "pure_coverage": 56.01023017902813,
+    "m5stack_coverage": 0.0,
+    "quality_gate": false
+  },
+  {
+    "timestamp": "2025-08-02T19:04:14.653004",
+    "coverage": 56.01023017902813,
+    "pure_coverage": 56.01023017902813,
     "m5stack_coverage": 0.0,
     "quality_gate": false
   }

@@ -197,14 +197,15 @@ auto AlarmDisplayState::moveToBottom() -> void {
 
 auto AlarmDisplayState::shouldUpdateRealTime() const -> bool {
     // ユーザー操作から一定時間経過していればリアルタイム更新
-    return (getCurrentMillis() - lastUserAction) > UPDATE_PAUSE_DURATION;
+    return (getCurrentMillis(timeManager) - lastUserAction) > UPDATE_PAUSE_DURATION;
 }
 
 auto AlarmDisplayState::updateLastUserAction() -> void {
-    lastUserAction = getCurrentMillis();
+    lastUserAction = getCurrentMillis(timeManager);
 }
 
-auto AlarmDisplayState::getCurrentMillis() const -> unsigned long {
+// 静的メソッドとして定義
+unsigned long AlarmDisplayState::getCurrentMillis(const std::shared_ptr<ITimeManager>& timeManager) {
     // ITimeManager経由で時刻を取得
     if (timeManager) {
         return timeManager->getCurrentMillis();

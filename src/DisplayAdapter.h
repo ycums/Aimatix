@@ -28,7 +28,9 @@ public:
 #endif
     }
     void drawRect(int x, int y, int w, int h, uint32_t color) override {
+#ifdef ARDUINO
         M5.Lcd.drawRect(x, y, w, h, color);
+#endif
     }
     void setTextDatum(int datum) override {
 #ifdef ARDUINO
