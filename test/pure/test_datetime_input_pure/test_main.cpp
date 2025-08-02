@@ -8,6 +8,22 @@ extern std::vector<time_t> alarm_times;
 const time_t kFixedTestTime = 1700000000;
 std::shared_ptr<MockTimeProvider> testTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
 
+// モックDateTimeInputViewクラス
+class MockDateTimeInputView : public IDateTimeInputView {
+public:
+    void clear() override {}
+    void showTitle(const char* title, int batteryLevel, bool isCharging) override {}
+    void showHints(const char* btnA, const char* btnB, const char* btnC) override {}
+    void showDateTimeString(const std::string& dateTimeStr, int cursorPosition) override {}
+    void showErrorMessage(const std::string& message) override {}
+};
+
+// モックStateManagerクラス
+class MockStateManager : public StateManager {
+public:
+    void setState(IState* state) override {}
+};
+
 void setUp(void) {}
 void tearDown(void) {}
 
@@ -235,6 +251,48 @@ void test_datetime_input_uncovered_functions() {
     TEST_ASSERT_FALSE(result.empty());
 }
 
+// テストケース: 終了処理
+void test_DateTimeInputState_OnExit() {
+    MockDateTimeInputView mockView;
+    auto timeProvider = std::make_shared<MockTimeProvider>();
+    DateTimeInputState state(timeProvider.get(), &mockView);
+    
+    // 終了処理を実行（現在は何もしない）
+    state.onExit();
+    
+    // エラーが発生しないことを確認
+    TEST_PASS();
+}
+
+// 未カバー分岐テスト: timeInfoがnullの場合のresetDateTime
+void test_DateTimeInputState_ResetDateTime_WithNullTimeInfo() {
+    MockDateTimeInputView mockView;
+    auto timeProvider = std::make_shared<MockTimeProvider>();
+    
+    // timeProviderのlocaltimeをnullptrを返すように設定
+    timeProvider->setLocaltimeResult(nullptr);
+    
+    DateTimeInputState state(timeProvider.get(), &mockView);
+    
+    // resetDateTimeを呼び出し（エラーが発生しないことを確認）
+    state.onEnter(); // resetDateTimeが呼ばれる
+    
+    TEST_PASS();
+}
+
+// 未カバー分岐テスト: timeProviderがnullの場合のresetDateTime
+void test_DateTimeInputState_ResetDateTime_WithNullTimeProvider() {
+    MockDateTimeInputView mockView;
+    
+    // timeProviderをnullptrに設定
+    DateTimeInputState state(nullptr, &mockView);
+    
+    // resetDateTimeを呼び出し（エラーが発生しないことを確認）
+    state.onEnter(); // resetDateTimeが呼ばれる
+    
+    TEST_PASS();
+}
+
 int main(int argc, char **argv) {
     UNITY_BEGIN();
     
@@ -251,6 +309,9 @@ int main(int argc, char **argv) {
     RUN_TEST(test_datetime_input_additional_coverage);
     RUN_TEST(test_datetime_input_branch_coverage_additional);
     RUN_TEST(test_datetime_input_uncovered_functions);
+    RUN_TEST(test_DateTimeInputState_OnExit);
+    RUN_TEST(test_DateTimeInputState_ResetDateTime_WithNullTimeInfo);
+    RUN_TEST(test_DateTimeInputState_ResetDateTime_WithNullTimeProvider);
     
     return UNITY_END();
 } 

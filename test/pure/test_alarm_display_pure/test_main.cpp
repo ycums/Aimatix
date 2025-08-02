@@ -497,6 +497,37 @@ void test_AlarmDisplayState_OnExit() {
     TEST_PASS();
 }
 
+// 未カバー分岐テスト: view == nullptrの場合のonDraw
+void test_AlarmDisplayState_OnDraw_WithNullView() {
+    MockStateManager mockManager;
+    auto timeProvider = std::make_shared<MockTimeProvider>();
+    auto timeManager = std::make_shared<MockTimeManager>();
+    
+    // viewをnullptrに設定
+    AlarmDisplayState state(&mockManager, nullptr, timeProvider, timeManager);
+    
+    // onDrawを呼び出し（エラーが発生しないことを確認）
+    state.onDraw();
+    
+    TEST_PASS();
+}
+
+// 未カバー分岐テスト: view == nullptrの場合のforceDraw
+void test_AlarmDisplayState_ForceDraw_WithNullView() {
+    MockStateManager mockManager;
+    auto timeProvider = std::make_shared<MockTimeProvider>();
+    auto timeManager = std::make_shared<MockTimeManager>();
+    
+    // viewをnullptrに設定
+    AlarmDisplayState state(&mockManager, nullptr, timeProvider, timeManager);
+    
+    // forceDrawを呼び出し（エラーが発生しないことを確認）
+    // 注意: forceDrawはprivateなので、onEnterを通じてテスト
+    state.onEnter();
+    
+    TEST_PASS();
+}
+
 int main() {
     UNITY_BEGIN();
     RUN_TEST(test_AlarmDisplayState_Initialization);
@@ -518,5 +549,7 @@ int main() {
     RUN_TEST(test_AlarmDisplayState_OnButtonCLongPress);
     RUN_TEST(test_AlarmDisplayState_MultipleEntryDisplayBug);
     RUN_TEST(test_AlarmDisplayState_OnExit);
+    RUN_TEST(test_AlarmDisplayState_OnDraw_WithNullView);
+    RUN_TEST(test_AlarmDisplayState_ForceDraw_WithNullView);
     return UNITY_END();
 } 

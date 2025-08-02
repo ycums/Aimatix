@@ -1,47 +1,5 @@
 [
   {
-    "timestamp": "2025-07-27T17:31:59.976097",
-    "coverage": 84.18079096045197,
-    "pure_coverage": 84.18079096045197,
-    "m5stack_coverage": 0.0,
-    "quality_gate": true
-  },
-  {
-    "timestamp": "2025-07-27T17:42:31.346128",
-    "coverage": 83.97163120567376,
-    "pure_coverage": 83.97163120567376,
-    "m5stack_coverage": 0.0,
-    "quality_gate": false
-  },
-  {
-    "timestamp": "2025-07-27T17:56:51.170432",
-    "coverage": 84.10689170182842,
-    "pure_coverage": 84.10689170182842,
-    "m5stack_coverage": 0.0,
-    "quality_gate": false
-  },
-  {
-    "timestamp": "2025-07-27T18:00:43.272868",
-    "coverage": 83.97163120567376,
-    "pure_coverage": 83.97163120567376,
-    "m5stack_coverage": 0.0,
-    "quality_gate": false
-  },
-  {
-    "timestamp": "2025-07-27T18:10:25.034176",
-    "coverage": 83.97163120567376,
-    "pure_coverage": 83.97163120567376,
-    "m5stack_coverage": 0.0,
-    "quality_gate": false
-  },
-  {
-    "timestamp": "2025-07-27T18:14:22.323681",
-    "coverage": 83.97163120567376,
-    "pure_coverage": 83.97163120567376,
-    "m5stack_coverage": 0.0,
-    "quality_gate": false
-  },
-  {
     "timestamp": "2025-07-27T18:20:39.439944",
     "coverage": 86.66666666666667,
     "pure_coverage": 86.66666666666667,
@@ -346,6 +304,48 @@
     "timestamp": "2025-08-02T21:31:56.618007",
     "coverage": 78.19833459500379,
     "pure_coverage": 78.19833459500379,
+    "m5stack_coverage": 0.0,
+    "quality_gate": false
+  },
+  {
+    "timestamp": "2025-08-02T23:03:37.622813",
+    "coverage": 78.27403482210447,
+    "pure_coverage": 78.27403482210447,
+    "m5stack_coverage": 0.0,
+    "quality_gate": false
+  },
+  {
+    "timestamp": "2025-08-02T23:04:19.645713",
+    "coverage": 78.27403482210447,
+    "pure_coverage": 78.27403482210447,
+    "m5stack_coverage": 0.0,
+    "quality_gate": false
+  },
+  {
+    "timestamp": "2025-08-02T23:05:04.460638",
+    "coverage": 78.27403482210447,
+    "pure_coverage": 78.27403482210447,
+    "m5stack_coverage": 0.0,
+    "quality_gate": false
+  },
+  {
+    "timestamp": "2025-08-02T23:05:47.344520",
+    "coverage": 78.27403482210447,
+    "pure_coverage": 78.27403482210447,
+    "m5stack_coverage": 0.0,
+    "quality_gate": false
+  },
+  {
+    "timestamp": "2025-08-02T23:09:12.089637",
+    "coverage": 78.34973504920515,
+    "pure_coverage": 78.34973504920515,
+    "m5stack_coverage": 0.0,
+    "quality_gate": false
+  },
+  {
+    "timestamp": "2025-08-02T23:11:48.682733",
+    "coverage": 79.19818456883509,
+    "pure_coverage": 79.19818456883509,
     "m5stack_coverage": 0.0,
     "quality_gate": false
   }
