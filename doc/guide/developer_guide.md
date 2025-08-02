@@ -88,8 +88,8 @@ pio check -e native
 # 特定の重要度の警告のみ表示
 pio check -e native --severity=high
 
-# 詳細な結果を表示
-pio check -e native --verbose
+# 特定の重要度の警告のみ表示
+pio check -e native --severity=high
 ```
 
 ### 3.3 クリーンビルド

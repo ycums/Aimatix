@@ -11,7 +11,7 @@ pio test -e native # native環境でテスト実行
 # 静的解析
 pio check -e native # Clang-Tidy静的解析実行
 pio check -e native --severity=high # 高重要度警告のみ表示
-pio check -e native --verbose # 詳細な結果を表示
+pio check -e native --severity=high # 高重要度警告のみ表示
 
 # カバレッジ測定
 python scripts/test_coverage.py --quick # クイックカバレッジ測定

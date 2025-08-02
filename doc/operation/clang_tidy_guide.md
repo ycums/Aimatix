@@ -51,10 +51,9 @@ Clang-Tidyには自動修正機能があります。このプロジェクトで�
 ```bash
 # 自動修正可能な警告を修正
 pio check -e native --flags "clangtidy: --config-file=.clang-tidy --fix"
-
-# 詳細な修正内容を確認
-pio check -e native --flags "clangtidy: --config-file=.clang-tidy --fix" --verbose
 ```
+
+**⚠️ 重要**: `--verbose`オプションは使用しないでください。詳細モードでは診断エラーが異なる動作をする可能性があります。
 
 **注意**: 
 - 自動修正は慎重に行う必要があります。修正前にバックアップを取ることを推奨します。
@@ -63,12 +62,14 @@ pio check -e native --flags "clangtidy: --config-file=.clang-tidy --fix" --verbo
 ### 解析結果の確認
 
 ```bash
-# 詳細な解析結果を表示
-pio check -e native --verbose
-
 # 特定の重要度以上の警告のみ表示
 pio check -e native --severity=high
+
+# 通常の解析結果表示
+pio check -e native
 ```
+
+**⚠️ 重要**: `--verbose`オプションは使用しないでください。詳細モードでは診断エラーが異なる動作をする可能性があります。
 
 ## 主なチェック項目
 

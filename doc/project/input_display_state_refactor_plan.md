@@ -392,8 +392,8 @@ pio test -e native
 
 #### 7.1 静的解析
 ```bash
-# 詳細な静的解析実行
-pio check -e native --verbose
+# 静的解析実行
+pio check -e native
 
 # 結果確認
 # 目標: 中重要度警告85件以下
