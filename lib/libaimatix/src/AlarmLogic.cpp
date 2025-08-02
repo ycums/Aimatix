@@ -195,7 +195,7 @@ bool AlarmLogic::addAlarmFromPartialInput(
     }
     
     // 部分的な入力状態を完全な時分に変換（PartialInputLogicを使用）
-    PartialInputLogic::ParsedTime parsedTime = PartialInputLogic::parsePartialInput(digits, entered);
+    const PartialInputLogic::ParsedTime parsedTime = PartialInputLogic::parsePartialInput(digits, entered);
     if (!parsedTime.isValid) {
         result = AddAlarmResult::ErrorInvalid;
         errorMsg = "Invalid time format";

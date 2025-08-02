@@ -7,7 +7,6 @@
 #include "DateTimeInputState.h"
 #include "InputLogic.h"
 #include "SettingsLogic.h"
-#include "SettingsLogic.cpp"
 #include "InputDisplayViewImpl.h"
 #include "MainDisplayViewImpl.h"
 #include "AlarmDisplayViewImpl.h"

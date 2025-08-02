@@ -147,17 +147,16 @@ void DateTimeInputState::incrementCurrentDigit() {
     int maxValue = MAX_DIGIT_9; // デフォルト最大値
     
     if (cursorPosition == DIGIT_YEAR_TEN || cursorPosition == DIGIT_YEAR_ONE) { // 年十の位・年一の位: 2000-2099の範囲で0-9
-        maxValue = MAX_DIGIT_9;
+        // maxValue = MAX_DIGIT_9; // デフォルト値と同じなので設定不要
     } else if (cursorPosition == DIGIT_MONTH_TEN) { // 月十の位: 01-12なので0-1
         maxValue = MAX_MONTH_TEN_DIGIT;
     } else if (cursorPosition == DIGIT_MONTH_ONE) { // 月一の位: 十の位に応じて決定
         if (dateTimeDigits[DIGIT_MONTH_TEN] == 0) {
-            maxValue = MAX_DIGIT_9; // 01-09月
-                    } else if (dateTimeDigits[DIGIT_MONTH_TEN] == 1) {
-                maxValue = MONTH_TEN_MAX; // 10-12月
-        } else {
-            maxValue = MAX_DIGIT_9;
+            // maxValue = MAX_DIGIT_9; // デフォルト値と同じなので設定不要
+        } else if (dateTimeDigits[DIGIT_MONTH_TEN] == 1) {
+            maxValue = MONTH_TEN_MAX; // 10-12月
         }
+        // else: maxValue = MAX_DIGIT_9; // デフォルト値と同じなので設定不要
     } else if (cursorPosition == DIGIT_DAY_TEN) { // 日十の位: 01-31なので0-3
         maxValue = MAX_DAY_TEN_DIGIT_OTHER;
     } else if (cursorPosition == DIGIT_DAY_ONE) { // 日一の位: 十の位と月に応じて決定
@@ -175,12 +174,12 @@ void DateTimeInputState::incrementCurrentDigit() {
         }
         
         if (dateTimeDigits[DIGIT_DAY_TEN] == 0) {
-            maxValue = MAX_DIGIT_9; // 01-09日
+            // maxValue = MAX_DIGIT_9; // デフォルト値と同じなので設定不要
         } else if (dateTimeDigits[DIGIT_DAY_TEN] == 1) {
-            maxValue = MAX_DIGIT_9; // 10-19日
+            // maxValue = MAX_DIGIT_9; // デフォルト値と同じなので設定不要
         } else if (dateTimeDigits[DIGIT_DAY_TEN] == 2) {
             if (maxDaysInMonth >= DAYS_IN_FEBRUARY_LEAP) {
-                maxValue = MAX_DIGIT_9; // 20-29日
+                // maxValue = MAX_DIGIT_9; // デフォルト値と同じなので設定不要
             } else {
                 maxValue = 8; // 20-28日（2月の場合）
             }
@@ -192,24 +191,21 @@ void DateTimeInputState::incrementCurrentDigit() {
             } else {
                 maxValue = 0; // 制限なし（実際には28/29日まで）
             }
-        } else {
-            maxValue = MAX_DIGIT_9;
         }
+        // else: maxValue = MAX_DIGIT_9; // デフォルト値と同じなので設定不要
     } else if (cursorPosition == DIGIT_HOUR_TEN) { // 時十の位: 00-23なので0-2
         maxValue = MAX_HOUR_TEN_DIGIT;
     } else if (cursorPosition == DIGIT_HOUR_ONE) { // 時一の位: 十の位に応じて決定
         if (dateTimeDigits[DIGIT_HOUR_TEN] == 0 || dateTimeDigits[DIGIT_HOUR_TEN] == 1) {
-            maxValue = MAX_DIGIT_9; // 00-19時
+            // maxValue = MAX_DIGIT_9; // デフォルト値と同じなので設定不要
         } else if (dateTimeDigits[DIGIT_HOUR_TEN] == 2) {
             maxValue = 3; // 20-23時
-        } else {
-            maxValue = MAX_DIGIT_9;
         }
+        // else: maxValue = MAX_DIGIT_9; // デフォルト値と同じなので設定不要
     } else if (cursorPosition == DIGIT_MINUTE_TEN) { // 分十の位: 00-59なので0-5
         maxValue = MAX_MINUTE_TEN_DIGIT;
-    } else if (cursorPosition == DIGIT_MINUTE_ONE) { // 分一の位: 00-59なので0-9
-        maxValue = MAX_DIGIT_9;
     }
+    // else if (cursorPosition == DIGIT_MINUTE_ONE): maxValue = MAX_DIGIT_9; // デフォルト値と同じなので設定不要
     
     // 値をインクリメント（最大値を超えたら0に戻る）
     currentDigit = (currentDigit + 1) % (maxValue + 1);

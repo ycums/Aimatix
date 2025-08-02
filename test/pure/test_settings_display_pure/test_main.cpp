@@ -1,6 +1,5 @@
 #include <unity.h>
 #include "SettingsDisplayState.h"
-#include "SettingsLogic.cpp"
 #include "../mock/MockTimeProvider.h"
 #include <memory>
 
