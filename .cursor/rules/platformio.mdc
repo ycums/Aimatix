@@ -1,0 +1,189 @@
+# PlatformIO運用
+
+## ディレクトリ構成（現状準拠）
+
+```
+Aimatix/
+├── lib/
+│   └── libaimatix/
+│       └── src/
+│           ├── button_manager.h/.cpp
+│           ├── alarm.h/.cpp
+│           ├── debounce_manager.h/.cpp
+│           ├── input.h/.cpp
+│           ├── settings.h/.cpp
+│           ├── time_logic.h/.cpp
+│           └── types.h
+├── src/
+│   ├── main.cpp
+│   ├── ui.cpp/.h
+│   ├── time_sync.cpp/.h
+│   ├── wifi_manager.cpp/.h
+│   └── state_transition/
+│       ├── state_transition.cpp/.h
+│       ├── button_event.cpp/.h
+│       ├── system_state.cpp/.h
+│       ├── transition_result.cpp/.h
+│       └── transition_validator.cpp/.h
+├── test/
+│   ├── pure/
+│   │   ├── test_button_manager_pure/
+│   │   │   ├── test_main.cpp
+│   │   │   ├── mock_button_manager.h/.cpp
+│   │   │   └── mock_time.h
+│   │   ├── test_alarm_logic_pure/
+│   │   │   └── test_main.cpp
+│   │   ├── test_debounce_manager_pure/
+│   │   │   └── test_main.cpp
+│   │   ├── test_input_logic_pure/
+│   │   │   └── test_main.cpp
+│   │   ├── test_settings_logic_pure/
+│   │   │   └── test_main.cpp
+│   │   └── test_time_logic_simple/
+│   │       └── test_main.cpp
+│   ├── mock/
+│   │   ├── mock_button_manager.h/.cpp
+│   │   ├── mock_m5stack.h
+│   │   └── mock_time.h
+│   ├── integration/          # 実機向け統合テスト
+│   │   ├── test_integration.cpp
+│   │   └── ...
+│   └── unity_config.h
+├── platformio.ini
+└── ...
+```
+
+## テストディレクトリ構造・運用ルール
+
+- **test/pure/**配下は「各テストごとに独立ディレクトリ＋test_main.cpp」
+  - 例: test_button_manager_pure/test_main.cpp
+- **mockの配置**
+  - 複数テストで使う共通モックは test/mock/ に集約
+  - テスト固有のmockは test/pure/各ディレクトリ内に配置可
+- **test/integration/**は現状未使用（必要時のみ作成）
+- **test/unity_config.h**は全テスト共通で利用
+
+## platformio.ini 設定（現状）
+
+```ini
+[platformio]
+default_envs = m5stack-fire
+
+[env:m5stack-fire]
+platform = espressif32
+board = m5stack-fire
+framework = arduino
+lib_deps =
+    m5stack/M5Stack @ ^0.4.3
+    WiFiProv
+    arduino-libraries/NTPClient @ ^3.2.1
+monitor_speed = 115200
+build_flags = 
+    -DCORE_DEBUG_LEVEL=0
+    -DM5STACK_FIRE
+    -DILI9341_ENABLE_DOUBLE_BUFFER
+upload_port = COM3
+monitor_port = COM3
+build_type = release
+upload_speed = 921600
+
+[env:native]
+platform = native
+build_flags = 
+```
+
+## ビルド・テスト方法
+
+### 基本的なビルド
+
+#### M5Stack Fire向けビルド
+```bash
+# ビルド
+pio run -e m5stack-fire
+
+# アップロード
+pio run -e m5stack-fire -t upload
+
+# シリアルモニター
+pio run -e m5stack-fire -t monitor
+```
+
+#### Native環境向けビルド（テスト用）
+```bash
+# ビルド
+pio run -e native
+
+# テスト実行
+pio test -e native
+```
+
+### テスト実行
+
+#### 全テスト実行
+```bash
+# 全テスト実行
+pio test -e native
+
+# 特定テスト実行
+pio test -e native -f pure/test_button_manager_pure
+```
+
+注意点: printf デバッグを行うときは `-v` オプションが必要です。
+
+#### テストカバレッジ測定
+```bash
+# カバレッジ測定
+python scripts/test_coverage.py
+```
+
+#### 静的解析実行
+```bash
+# 静的解析実行
+pio check -e native
+
+# 特定の重要度の警告のみ表示
+pio check -e native --severity=high
+
+# 詳細な結果を表示
+pio check -e native --verbose
+```
+
+### クリーンビルド
+```bash
+# 全環境クリーン
+pio run -t clean
+
+# 特定環境クリーン
+pio run -e m5stack-fire -t clean
+```
+
+## 重要な運用ルール
+
+### ディレクトリ構成ルール
+- **lib/libaimatix/src/**: 純粋ロジック（ハード非依存）
+- **src/**: M5Stack依存の本体実装
+- **test/pure/**: 各テストごとに独立ディレクトリ（test_main.cpp必須、必要に応じて固有mockも同梱）
+- **test/mock/**: 共通モック（複数テストで使うもの）
+- **test/integration/**: 実機（M5Stack Fire等）での統合テスト
+- **test/unity_config.h**: Unity設定
+- **test/integration/**: 現状未使用
+
+### テストディレクトリ構造・運用ルール
+- **test/pure/**配下は「各テストごとに独立ディレクトリ＋test_main.cpp」
+  - 例: test_button_manager_pure/test_main.cpp
+- **mockの配置**
+  - 複数テストで使う共通モックは test/mock/ に集約
+  - テスト固有のmockは test/pure/各ディレクトリ内に配置可
+- **test/integration/**は現状未使用（必要時のみ作成）
+- **test/unity_config.h**は全テスト共通で利用
+
+### トラブルシューティング
+- **ビルドエラー**: クリーンビルドを試行
+- **テストエラー**: 特定テストの実行で詳細確認
+- **アップロードエラー**: ポート設定の確認
+- **依存関係エラー**: lib_depsの確認
+---
+description: PlatformIO運用とビルド設定
+globs: ["platformio.ini", "**/*.ini", "src/**/*", "lib/**/*"]
+alwaysApply: false
+---

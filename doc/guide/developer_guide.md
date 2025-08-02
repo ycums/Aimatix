@@ -30,6 +30,8 @@ Aimatix/
 │   ├── pure/                 # 純粋ロジックテスト
 │   └── mock/                 # モックファイル
 ├── doc/                      # ドキュメント
+├── .cursor/                  # Cursor Rules
+│   └── rules/               # AI用ルールファイル
 ├── .clang-tidy              # Clang-Tidy設定
 └── platformio.ini           # PlatformIO設定
 ```
@@ -678,9 +680,187 @@ Total                 0       100       0  # ← 85件以下で合格
 - `.gitignore`: Git除外設定
 - `README.md`: プロジェクト概要
 
+## 10. Cursor Rules管理
+
+### 10.1 Cursor Rules概要
+
+#### 10.1.1 目的
+- **AI支援**: Cursor AIがプロジェクトを理解するためのルール
+- **効率化**: 開発時の自動補完・提案の精度向上
+- **一貫性**: プロジェクト全体でのコーディング規約の統一
+
+#### 10.1.2 構成
+```
+.cursor/rules/
+├── project-overview.mdc      # Always Apply - プロジェクト基本情報
+├── architecture.mdc          # Auto Attached - アーキテクチャ設計
+├── testing.mdc              # Auto Attached - テスト戦略
+└── platformio.mdc           # Auto Attached - PlatformIO運用
+```
+
+### 10.2 ルールタイプ
+
+#### 10.2.1 Always Apply
+- **適用範囲**: 全ファイル
+- **用途**: プロジェクトの基本原則
+- **例**: `project-overview.mdc`
+
+#### 10.2.2 Auto Attached
+- **適用範囲**: 特定のファイルパターン
+- **用途**: 領域別の詳細ルール
+- **例**: `architecture.mdc` (lib/**/*, src/**/*)
+
+#### 10.2.3 Agent Requested
+- **適用範囲**: AIが必要に応じて参照
+- **用途**: 詳細なガイドライン
+- **例**: デバッグ用ルール
+
+### 10.3 更新手順
+
+#### 10.3.1 自動更新（推奨）
+```bash
+# 1. @doc/ を更新
+# 2. 関連ドキュメントを読み込み
+@doc/README.md
+@doc/guide/developer_guide.md
+@doc/design/architecture.md
+@doc/operation/testing_strategy.md
+
+# 3. Cursor Rulesを再生成
+/Generate Cursor Rules
+```
+
+#### 10.3.2 手動更新
+```bash
+# 特定ルールの直接編集
+code .cursor/rules/project-overview.mdc
+code .cursor/rules/testing.mdc
+
+# 新しいルールの追加
+code .cursor/rules/new-rule.mdc
+```
+
+### 10.4 保守方針
+
+#### 10.4.1 @doc/ との関係
+- **@doc/ を主要な情報源として維持**
+- **.cursor/rules は @doc/ から生成**
+- **両方を並行して使用**
+
+#### 10.4.2 更新タイミング
+- **@doc/ 更新時**: 自動再生成
+- **微調整時**: 直接編集
+- **新機能追加時**: 新しいルールファイル作成
+
+#### 10.4.3 品質管理
+- **ルールの整合性**: @doc/ との整合性確認
+- **適用範囲**: 適切なglobs設定
+- **内容の正確性**: プロジェクトの現状を反映
+
+### 10.5 運用ガイド
+
+#### 10.5.1 新規参加者向け
+```bash
+# 1. プロジェクト概要を確認
+cat .cursor/rules/project-overview.mdc
+
+# 2. アーキテクチャを理解
+cat .cursor/rules/architecture.mdc
+
+# 3. テスト方法を確認
+cat .cursor/rules/testing.mdc
+```
+
+#### 10.5.2 開発者向け
+```bash
+# 開発時のルール確認
+# Cursorが自動的に適用するルールを確認
+
+# 特定領域の開発時
+# 該当するルールファイルを参照
+```
+
+#### 10.5.3 管理者向け
+```bash
+# ルールの更新管理
+# @doc/ 更新時の自動再生成
+
+# 品質確認
+# ルールの整合性と適用範囲の確認
+```
+
+### 10.6 トラブルシューティング
+
+#### 10.6.1 ルールが適用されない場合
+```bash
+# 1. ファイルパターンの確認
+# globs設定が正しいか確認
+
+# 2. ルールファイルの構文確認
+# frontmatterの形式が正しいか確認
+
+# 3. Cursorの再起動
+# ルール変更後はCursorの再起動が必要
+```
+
+#### 10.6.2 ルールの競合
+```bash
+# 1. 適用順序の確認
+# Always Apply > Auto Attached > Agent Requested
+
+# 2. 重複するglobsの確認
+# 複数のルールが同じファイルに適用される場合
+
+# 3. ルールの統合
+# 必要に応じてルールを統合
+```
+
+### 10.7 ベストプラクティス
+
+#### 10.7.1 ルール設計
+- **明確な目的**: 各ルールの目的を明確にする
+- **適切な範囲**: 過度に広範囲なルールを避ける
+- **保守性**: 更新しやすい構造にする
+
+#### 10.7.2 内容管理
+- **@doc/ との整合性**: 常に@doc/と整合性を保つ
+- **現状反映**: プロジェクトの現状を正確に反映
+- **段階的更新**: 大きな変更は段階的に行う
+
+#### 10.7.3 品質保証
+- **定期的な確認**: ルールの有効性を定期的に確認
+- **フィードバック**: 開発者からのフィードバックを収集
+- **継続的改善**: ルールの継続的な改善
+
+## 11. リソース
+
+### 11.1 ドキュメント
+- `doc/spec/`: 仕様書
+- `doc/design/`: 設計書
+- `doc/guide/`: 使用方法ガイド
+- `doc/operation/`: 運用・開発ルール
+
+### 11.2 Cursor Rules
+- `.cursor/rules/project-overview.mdc`: プロジェクト概要
+- `.cursor/rules/architecture.mdc`: アーキテクチャ設計
+- `.cursor/rules/testing.mdc`: テスト戦略
+- `.cursor/rules/platformio.mdc`: PlatformIO運用
+
+### 11.3 テストファイル
+- `test/pure/`: 純粋ロジックテスト
+- `test/mock/`: モックファイル
+- `test/integration/`: 統合テスト
+
+### 11.4 設定ファイル
+- `platformio.ini`: PlatformIO設定
+- `.clang-tidy`: Clang-Tidy設定
+- `.gitignore`: Git除外設定
+- `README.md`: プロジェクト概要
+
 ---
 
 **作成日**: 2025年1月  
-**バージョン**: 2.0.0  
+**バージョン**: 2.1.0  
 **更新日**: 2025年1月  
-**品質ゲート基準**: 中重要度警告85件以下 
+**品質ゲート基準**: 中重要度警告85件以下  
+**Cursor Rules**: 自動生成・手動調整対応 
