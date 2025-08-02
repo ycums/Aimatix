@@ -31,9 +31,7 @@ public:
             for (int i = 0; i < 4; ++i) { lastDigits[i] = -1; lastEntered[i] = false; }
         }
         // エラー状態をリセット
-        showError = false;
-        errorMessage = "";
-        errorStartTime = 0;
+        resetErrorState();
     }
     void onExit() override {}
     // 相対値計算結果のプレビュー文字列を生成（改善版）
@@ -94,6 +92,12 @@ public:
     void setTimeProvider(ITimeProvider* timeProvider) { timeProvider_ = timeProvider; }
 
 private:
+    // エラーメッセージ定数
+    static constexpr const char* ERROR_EMPTY_INPUT = "Input is empty.";
+    static constexpr const char* ERROR_ADD_ALARM_FAILED = "Failed to add alarm.";
+    static constexpr const char* ERROR_INVALID_TIME = "Invalid time format.";
+    static constexpr time_t ERROR_DISPLAY_DURATION = 3;
+    
     InputLogic* inputLogic;
     IInputDisplayView* view;
     ITimeProvider* timeProvider_;
@@ -202,10 +206,8 @@ private:
     
     // エラー表示の処理（改善版）
     void handleErrorDisplay(char* preview, size_t previewSize) {
-        time_t currentTime = getCurrentTime();
-        if (currentTime - errorStartTime >= 3) {
-            showError = false;
-            errorMessage = "";
+        if (isErrorExpired()) {
+            resetErrorState();
         } else {
             strncpy(preview, errorMessage.c_str(), previewSize - 1);
             preview[previewSize - 1] = '\0';
@@ -262,12 +264,10 @@ private:
         if (relativeTime != -1) {
             success = addAlarmAtTime(relativeTime);
             if (!success) {
-                handleError("Failed to add alarm.");
-                error = true;
+                handleErrorWithValidation(ERROR_ADD_ALARM_FAILED, error);
             }
         } else {
-            handleError("Input is empty.");
-            error = true;
+            handleErrorWithValidation(ERROR_EMPTY_INPUT, error);
         }
     }
     
@@ -284,8 +284,7 @@ private:
             if (ok) {
                 success = true;
             } else {
-                handleError(msg);
-                error = true;
+                handleErrorWithValidation(msg, error);
             }
         }
     }
@@ -303,6 +302,36 @@ private:
         if (manager && mainDisplayState) {
             manager->setState(mainDisplayState);
         }
+    }
+    
+    // エラー状態管理関数
+    void resetErrorState() {
+        showError = false;
+        errorMessage = "";
+        errorStartTime = 0;
+    }
+    
+    bool isErrorActive() const {
+        return showError;
+    }
+    
+    bool isErrorExpired() const {
+        return getCurrentTime() - errorStartTime >= ERROR_DISPLAY_DURATION;
+    }
+    
+    // 統一されたエラー処理
+    void handleErrorWithValidation(const std::string& message, bool& error) {
+        handleError(message);
+        error = true;
+    }
+    
+    // 入力検証関数
+    bool validateInputLogic() {
+        return inputLogic != nullptr;
+    }
+    
+    bool validateTimeProvider() {
+        return isTimeProviderValid();
     }
     
     // 共通エラー処理（改善版）
