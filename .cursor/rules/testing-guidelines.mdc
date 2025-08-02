@@ -1,254 +1,133 @@
----
-globs: ["test/**/*.cpp", "test/**/*.h"]
-description: テスト作成のガイドラインとベストプラクティス
-alwaysApply: false
----
-# テスト作成ガイドライン
+# テストカバレッジ向上ガイドライン
 
-## 基本原則
+## 概要
+このガイドラインは、テストカバレッジを効率的に向上させるための手順を定義します。
+目標は85%のカバレッジ達成です。
 
-### 1. 分岐カバレッジ優先
-- **目標**: public関数の分岐カバレッジ向上
-- **波及効果**: private関数も自然にカバーされる
-- **効率性**: 1つのテストで複数の関数をカバー
+## 基本方針
+1. **未カバーpublic関数を最優先**でテスト
+2. **分岐カバレッジ**を重視
+3. **段階的アプローチ**で効果を測定
+4. **全体実行**によるカバレッジ測定
 
-### 2. 段階的テスト追加
-```
-1. テスト追加 → カバレッジ測定
-2. 効果あり → 保持
-3. 効果なし → 即座削除
-4. 次の関数に移行
-```
+## 手順
 
-### 3. 避けるべき無駄なテスト
-- ❌ private関数の直接テスト
-- ❌ 既に十分カバーされている関数の追加テスト
-- ❌ 効果のない分岐テスト
-
-## 効率的なアプローチ対象決定手順
-
-### Step 1: カバレッジレポートから未カバー分岐を特定
+### Step 1: 未カバーpublic関数の特定（最優先）
 ```bash
-# カバレッジレポートを確認
-python scripts/test_coverage.py --quick
-
-# 未カバー分岐を特定
-grep -n '"count": 0' coverage_reports/coverage_report_*.json
+# 未カバー分岐を持つpublic関数を特定
+grep -A 5 -B 5 '"count": 0' coverage_reports/coverage_report_*.json | grep -E '"function_name"|"line_number"' | head -20
 ```
 
-### Step 2: Public関数の未カバー分岐を優先
-**判定基準**:
-1. **Public関数**: テスト対象（優先度高）
-2. **Private関数**: テスト対象外（ガイドライン準拠）
+**最優先対象**:
+- `AlarmLogic`のpublic関数
+- `AlarmDisplayState`のpublic関数
+- `DateTimeInputState`のpublic関数
 
-**確認方法**:
-```cpp
-// ヘッダーファイルでpublic/privateを確認
-class AlarmDisplayState : public IState {
-public:
-    void onEnter() override;  // ← これが対象
-    void onDraw() override;   // ← これが対象
-    
-private:
-    void forceDraw();         // ← これは対象外
-};
-```
-
-### Step 3: 分岐カバレッジの効果を測定
-**手順**:
+### Step 2: 未カバー分岐の特定
 ```bash
-# 1. 現在のカバレッジを記録
-python scripts/test_coverage.py --quick
-
-# 2. 1つの分岐テストを追加
-# test_xxx_pure/test_main.cpp に追加
-
-# 3. テスト実行
-pio test -e native -f pure/test_xxx_pure
-
-# 4. カバレッジ再測定
-python scripts/test_coverage.py --quick
-
-# 5. 効果判定
-# 変動あり → 保持
-# 変動なし → 削除して次の分岐を試す
+# 最新のカバレッジレポートから未カバー分岐を抽出
+cat coverage_reports/coverage_report_*.json | jq '.files[] | select(.lines[] | .count == 0) | {file: .file, lines: [.lines[] | select(.count == 0)]}'
 ```
 
-### Step 4: 優先順位の決定
-**優先度1**: Public関数の未カバー分岐（count: 0）
-- `AlarmDisplayState::onEnter()` - 13行目
-- `AlarmDisplayState::onDraw()` - 30行目
-- `InputDisplayState::onDraw()` - エラー分岐
-- `MainDisplayState::onDraw()` - エラー分岐
+### Step 3: Public関数の未カバー分岐を優先
+- 未カバー分岐がpublic関数にある場合、最優先でテスト追加
+- private関数の未カバー分岐は後回し
 
-**優先度2**: Public関数の部分カバー分岐（count: 低い値）
-- 分岐の一部が未カバー
-
-**優先度3**: Private関数（対象外）
-- `forceDraw()`などは直接テストしない
-
-### Step 5: 段階的アプローチ
-```cpp
-// 例: AlarmDisplayStateの未カバー分岐テスト
-void test_alarm_display_state_onenter_null_view_branches() {
-    // 13行目の未カバー分岐をテスト
-    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
-    
-    // viewをnullptrに設定（未カバー分岐を実行）
-    AlarmDisplayState state(nullptr, nullptr, mockTimeProvider.get());
-    
-    state.onEnter(); // public関数の分岐をテスト
-    
-    // 効果測定
-    TEST_ASSERT_TRUE(true);
-}
-```
-
-### Step 6: 効果判定と次の対象
+### Step 4: 分岐カバレッジの効果を測定
 ```bash
-# 効果測定
+# 全体テスト実行によるカバレッジ測定
 python scripts/test_coverage.py --quick
-
-# 判定
-if [ カバレッジ向上 ]; then
-    echo "保持して次の分岐へ"
-    # 次の未カバー分岐を特定
-else
-    echo "削除して別の分岐を試す"
-    # テストを削除して別のアプローチ
-fi
 ```
 
-## テスト作成パターン
+### Step 5: 優先順位の決定
+1. **最優先**: `AlarmLogic`のpublic関数
+2. **高優先**: `AlarmDisplayState`のpublic関数
+3. **中優先**: `DateTimeInputState`のpublic関数
+4. **低優先**: その他のpublic関数
 
-### 効果的なテスト例
+### Step 6: 段階的アプローチ
+1. 1つのテストファイルに効果的なテストを追加
+2. 全体テスト実行でカバレッジ測定
+3. 効果があったら次の対象へ
+4. 効果がなければ別のアプローチを検討
+
+### Step 7: 効果判定と次の対象
+- **効果あり**: カバレッジが0.1%以上向上
+- **効果なし**: カバレッジ向上なし、または0.1%未満
+- 効果があった場合は次の未カバー分岐へ
+- 効果がない場合は別の関数やファイルを対象に変更
+
+## 効果的なテスト例
+
+### AlarmLogicのpublic関数テスト例
 ```cpp
-// 分岐カバレッジ向上テスト（+0.6%改善）
-void test_display_common_null_pointer_branches() {
-    // nullptr分岐のテスト
-    drawButtonHintsGrid(mockDisplay.get(), nullptr, nullptr, nullptr);
-    TEST_ASSERT_EQUAL(0, mockDisplay->drawTextCallCount);
+// 未カバー分岐テスト: addAlarmの最大数チェック
+void test_AlarmLogic_AddAlarm_MaxReached() {
+    std::vector<time_t> alarms;
+    time_t now = 1000;
     
-    // 充電状態分岐のテスト
-    drawTitleBar(mockDisplay.get(), "TEST", 50, true);
-    TEST_ASSERT_TRUE(mockDisplay->lastDrawText.find("CHG") != std::string::npos);
-}
-```
-
-### 無駄なテスト例
-```cpp
-// 削除すべき無駄なテスト（0.0%変動）
-void test_input_display_state_ondraw_comprehensive() {
-    state.onDraw(); // 既に十分カバーされている
-    TEST_ASSERT_TRUE(true); // 効果なし
-}
-```
-
-## モック作成ガイドライン
-
-### 基本構造
-```cpp
-class MockDisplay : public IDisplay {
-public:
-    MockDisplay() : clearCalled(false), drawTextCallCount(0) {}
-    
-    void clear() override { clearCalled = true; }
-    void drawText(int x, int y, const char* text, int fontSize) override { 
-        drawTextCalled = true; 
-        drawTextCallCount++;
+    // 最大数までアラームを追加
+    for (int i = 0; i < 5; i++) {
+        AlarmLogic::AddAlarmResult result;
+        std::string msg;
+        bool ok = AlarmLogic::addAlarm(alarms, now, now + (i + 1) * 60, result, msg);
+        TEST_ASSERT_TRUE(ok);
+        TEST_ASSERT_EQUAL((int)AlarmLogic::AddAlarmResult::Success, (int)result);
     }
     
-    // Test用フラグ
-    bool clearCalled;
-    bool drawTextCalled;
-    int drawTextCallCount;
-};
+    // 6個目を追加しようとすると最大数エラー
+    AlarmLogic::AddAlarmResult result;
+    std::string msg;
+    bool ok = AlarmLogic::addAlarm(alarms, now, now + 600, result, msg);
+    TEST_ASSERT_FALSE(ok);
+    TEST_ASSERT_EQUAL((int)AlarmLogic::AddAlarmResult::ErrorMaxReached, (int)result);
+    TEST_ASSERT_EQUAL_STRING("Max alarms reached (5)", msg.c_str());
+}
 ```
 
-### 注意事項
-- **C++11準拠**: `std::make_unique` は使用不可
-- **スマートポインタ**: `std::unique_ptr(new ...)` を使用
-- **Unity Framework**: `setUp()`, `tearDown()` が必要
+### AlarmDisplayStateのpublic関数テスト例
+```cpp
+// 未カバー分岐テスト: view == nullptrの場合のonDraw
+void test_AlarmDisplayState_OnDraw_WithNullView() {
+    MockStateManager mockManager;
+    auto timeProvider = std::make_shared<MockTimeProvider>();
+    auto timeManager = std::make_shared<MockTimeManager>();
 
-## テスト実行コマンド
+    // viewをnullptrに設定
+    AlarmDisplayState state(&mockManager, nullptr, timeProvider, timeManager);
 
-```bash
-# 特定テスト実行
-pio test -e native -f pure/test_input_display_pure
+    // onDrawを呼び出し（エラーが発生しないことを確認）
+    state.onDraw();
 
-# 全テスト実行
-pio test -e native
-
-# カバレッジ測定
-python scripts/test_coverage.py --quick
+    TEST_PASS();
+}
 ```
 
-## 品質チェック
+## 効率的なカバレッジ確認方法
 
-### テスト追加前
-1. **カバレッジ測定**: 現在の状態を記録
-2. **対象関数特定**: 分岐カバレッジが低い関数を選択
-3. **テスト設計**: 分岐をカバーするテストケース作成
-
-### テスト追加後
-1. **カバレッジ測定**: 効果を確認
-2. **効果判定**: 変動あり → 保持、変動なし → 削除
-3. **次の関数**: 効率的に移行
-
-## 具体的な実行例
-
-### Phase 1: AlarmDisplayStateの未カバー分岐
+### 全体実行による測定
 ```bash
 # 1. 現在のカバレッジ確認
 python scripts/test_coverage.py --quick
-# 結果: 78.2%
 
-# 2. 13行目の未カバー分岐テスト追加
-# test_alarm_display_pure/test_main.cpp に追加
-pio test -e native -f pure/test_alarm_display_pure
-
-# 3. カバレッジ再測定
+# 2. テスト追加後、再度全体実行
 python scripts/test_coverage.py --quick
-# 結果: 78.5% → 効果あり、保持
 
-# 4. 30行目の未カバー分岐テスト追加
-# 同様の手順
+# 3. 効果判定
+# カバレッジが向上していれば効果あり
+# 向上していなければ効果なし
 ```
 
-### Phase 2: InputDisplayStateの未カバー分岐
+### 進捗管理
 ```bash
-# 1. 次の未カバー分岐を特定
-# カバレッジレポートからcount: 0の行を確認
-
-# 2. public関数の分岐テスト追加
-# test_input_display_pure/test_main.cpp に追加
-
-# 3. 効果測定
-python scripts/test_coverage.py --quick
+# 進捗確認
+echo "現在のカバレッジ: $(python scripts/test_coverage.py --quick | grep '純粋ロジックカバレッジ' | cut -d':' -f2 | tr -d ' ')"
+echo "目標: 85.0%"
+echo "残り: $(echo "85.0 - $(python scripts/test_coverage.py --quick | grep '純粋ロジックカバレッジ' | cut -d':' -f2 | tr -d ' ' | sed 's/%//')" | bc)%"
 ```
 
-## 判定基準
-
-### 効果あり（保持）
-- カバレッジが向上（例: 78.2% → 78.5%）
-- 未カバー行が減少
-
-### 効果なし（削除）
-- カバレッジが変わらない
-- 既にカバーされている分岐
-
-### 次の対象
-1. **Public関数の未カバー分岐**を優先
-2. **count: 0**の行から開始
-3. **段階的に1つずつ**テスト追加
-
-## 参考ドキュメント
-
-- [カバレッジ向上戦略](mdc:doc/project/coverage_strategy.md)
-- [テスト戦略](mdc:doc/operation/testing_strategy.md)
-- [品質ゲート基準](mdc:doc/operation/quality_gates.md)
-
-
-- [カバレッジ向上戦略](mdc:doc/project/coverage_strategy.md)
-- [テスト戦略](mdc:doc/operation/testing_strategy.md)
-- [品質ゲート基準](mdc:doc/operation/quality_gates.md)
+## 注意事項
+- 個別ファイルのカバレッジ測定は複雑なため、全体実行を推奨
+- 効果測定は必ず全体テスト実行で行う
+- 0.1%以上の向上を効果ありと判定
+- 効果がない場合は別のアプローチを検討
