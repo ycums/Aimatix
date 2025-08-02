@@ -490,6 +490,65 @@ void test_alarmlogic_delete_alarm() {
     TEST_ASSERT_EQUAL(0, empty_alarms.size());
 }
 
+// 未カバー分岐テスト: addAlarmの最大数チェック
+void test_AlarmLogic_AddAlarm_MaxReached() {
+    std::vector<time_t> alarms;
+    time_t now = 1000;
+    
+    // 最大数までアラームを追加
+    for (int i = 0; i < 5; i++) {
+        AlarmLogic::AddAlarmResult result;
+        std::string msg;
+        bool ok = AlarmLogic::addAlarm(alarms, now, now + (i + 1) * 60, result, msg);
+        TEST_ASSERT_TRUE(ok);
+        TEST_ASSERT_EQUAL((int)AlarmLogic::AddAlarmResult::Success, (int)result);
+    }
+    
+    // 6個目を追加しようとすると最大数エラー
+    AlarmLogic::AddAlarmResult result;
+    std::string msg;
+    bool ok = AlarmLogic::addAlarm(alarms, now, now + 600, result, msg);
+    TEST_ASSERT_FALSE(ok);
+    TEST_ASSERT_EQUAL((int)AlarmLogic::AddAlarmResult::ErrorMaxReached, (int)result);
+    TEST_ASSERT_EQUAL_STRING("Max alarms reached (5)", msg.c_str());
+}
+
+// 未カバー分岐テスト: addAlarmの重複チェック
+void test_AlarmLogic_AddAlarm_Duplicate() {
+    std::vector<time_t> alarms;
+    time_t now = 1000;
+    time_t alarmTime = now + 60;
+    
+    // 最初のアラームを追加
+    AlarmLogic::AddAlarmResult result;
+    std::string msg;
+    bool ok = AlarmLogic::addAlarm(alarms, now, alarmTime, result, msg);
+    TEST_ASSERT_TRUE(ok);
+    TEST_ASSERT_EQUAL((int)AlarmLogic::AddAlarmResult::Success, (int)result);
+    TEST_ASSERT_EQUAL(1, alarms.size());
+    
+    // 同じ時刻のアラームを追加しようとすると重複エラー
+    ok = AlarmLogic::addAlarm(alarms, now, alarmTime, result, msg);
+    TEST_ASSERT_FALSE(ok);
+    TEST_ASSERT_EQUAL((int)AlarmLogic::AddAlarmResult::ErrorDuplicate, (int)result);
+    TEST_ASSERT_EQUAL_STRING("Duplicate alarm time", msg.c_str());
+    TEST_ASSERT_EQUAL(1, alarms.size()); // サイズは変わらない
+}
+
+// 未カバー分岐テスト: addAlarmFromPartialInputのnullptrチェック
+void test_AlarmLogic_AddAlarmFromPartialInput_NullInput() {
+    std::vector<time_t> alarms;
+    time_t now = 1000;
+    
+    // nullptrを渡すとエラー
+    AlarmLogic::AddAlarmResult result;
+    std::string msg;
+    bool ok = AlarmLogic::addAlarmFromPartialInput(alarms, now, nullptr, nullptr, result, msg);
+    TEST_ASSERT_FALSE(ok);
+    TEST_ASSERT_EQUAL((int)AlarmLogic::AddAlarmResult::ErrorInvalid, (int)result);
+    TEST_ASSERT_EQUAL_STRING("Invalid input data", msg.c_str());
+}
+
 void setUp(void) {}
 void tearDown(void) {}
 
@@ -519,6 +578,9 @@ int main(int argc, char **argv) {
     RUN_TEST(test_partial_input_no_input_rejection);
     RUN_TEST(test_bugreport_3_0_14_minute_only_5);
     RUN_TEST(test_alarmlogic_delete_alarm);
+    RUN_TEST(test_AlarmLogic_AddAlarm_MaxReached);
+    RUN_TEST(test_AlarmLogic_AddAlarm_Duplicate);
+    RUN_TEST(test_AlarmLogic_AddAlarmFromPartialInput_NullInput);
     UNITY_END();
     return 0;
 } 

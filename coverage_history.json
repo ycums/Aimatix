@@ -1,12 +1,5 @@
 [
   {
-    "timestamp": "2025-07-27T18:20:39.439944",
-    "coverage": 86.66666666666667,
-    "pure_coverage": 86.66666666666667,
-    "m5stack_coverage": 0.0,
-    "quality_gate": true
-  },
-  {
     "timestamp": "2025-07-27T18:24:04.847438",
     "coverage": 86.66666666666667,
     "pure_coverage": 86.66666666666667,
@@ -346,6 +339,13 @@
     "timestamp": "2025-08-02T23:11:48.682733",
     "coverage": 79.19818456883509,
     "pure_coverage": 79.19818456883509,
+    "m5stack_coverage": 0.0,
+    "quality_gate": false
+  },
+  {
+    "timestamp": "2025-08-02T23:29:17.614286",
+    "coverage": 79.4251134644478,
+    "pure_coverage": 79.4251134644478,
     "m5stack_coverage": 0.0,
     "quality_gate": false
   }
