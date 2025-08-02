@@ -1,0 +1,319 @@
+# InputDisplayState リファクタ工程手順書
+
+## 概要
+プレビューのバグ修正計画の続行として、InputDisplayState.hのリファクタ工程を実行します。
+品質保証工程も含めた段階的な改善を行います。
+
+## 目標
+- デバッグコードの削除
+- 重複ロジックの統合
+- コードの可読性向上
+- 品質ゲート基準（中重要度警告85件以下）の達成
+- テストカバレッジ85%以上の維持
+
+## 前提条件
+- 現在のコードが正常にビルド・テストできる状態
+- 既存の機能が正常に動作している状態
+
+## リファクタ工程の詳細手順
+
+### Phase 1: 準備段階
+
+#### 1.1 現在の品質状態確認
+```bash
+# 静的解析実行
+pio check -e native
+
+# テスト実行
+pio test -e native
+
+# カバレッジ測定
+python scripts/test_coverage.py
+```
+
+#### 1.2 バックアップ作成
+```bash
+# 現在の状態をバックアップ
+git add .
+git commit -m "Before InputDisplayState refactor"
+```
+
+### Phase 2: デバッグコードの削除
+
+#### 2.1 printf文の削除
+**対象ファイル**: `lib/libaimatix/src/InputDisplayState.h`
+
+**削除対象**:
+- 96行目: `printf("[DEBUG] now_tm: %04d-%02d-%02d %02d:%02d\n", ...)`
+- その他のデバッグ用printf文（約20箇所）
+
+**削除手順**:
+1. ファイル内のすべての`printf("[DEBUG]`で始まる行を検索
+2. 各printf文を削除
+3. 必要に応じて適切なコメントに置き換え
+
+#### 2.2 品質確認
+```bash
+# 静的解析
+pio check -e native
+
+# テスト実行
+pio test -e native
+```
+
+### Phase 3: 時刻計算ロジックの共通化
+
+#### 3.1 重複ロジックの特定
+**対象**:
+- `generateAbsolutePreview`関数（約100行）
+- `generateRelativePreview`関数（約30行）
+
+**共通化対象**:
+- 時刻計算ロジック
+- 日付跨ぎ判定ロジック
+- プレビュー文字列生成ロジック
+
+#### 3.2 共通関数の作成
+**新規作成ファイル**: `lib/libaimatix/src/TimePreviewLogic.h`
+
+**作成する関数**:
+```cpp
+class TimePreviewLogic {
+public:
+    struct PreviewResult {
+        std::string preview;
+        bool isValid;
+    };
+    
+    static PreviewResult generatePreview(
+        const int* digits, 
+        const bool* entered, 
+        ITimeProvider* timeProvider,
+        bool isRelativeMode
+    );
+    
+private:
+    static time_t calculateAbsoluteTime(
+        const int* digits, 
+        const bool* entered, 
+        ITimeProvider* timeProvider
+    );
+    
+    static std::string formatPreview(
+        time_t time, 
+        ITimeProvider* timeProvider,
+        bool isRelativeMode
+    );
+};
+```
+
+#### 3.3 InputDisplayState.hの更新
+**変更内容**:
+- `generateAbsolutePreview`と`generateRelativePreview`を削除
+- `TimePreviewLogic::generatePreview`を使用するように変更
+- 関数サイズを大幅に削減
+
+#### 3.4 品質確認
+```bash
+# ビルド確認
+pio run -e native
+
+# 静的解析
+pio check -e native
+
+# テスト実行
+pio test -e native
+```
+
+### Phase 4: 関数の分割・整理
+
+#### 4.1 長い関数の分割
+**対象**: `onDraw`関数（約80行）
+
+**分割方針**:
+- 入力値変化チェック部分を独立関数に分離
+- プレビュー表示部分を独立関数に分離
+- エラーメッセージ表示部分を独立関数に分離
+
+#### 4.2 認知複雑度の削減
+**目標**: 各関数の認知複雑度を25以下に抑制
+
+**手法**:
+- 早期リターンの活用
+- 条件分岐の簡素化
+- 複雑な条件を別関数に分離
+
+#### 4.3 品質確認
+```bash
+# 静的解析
+pio check -e native
+
+# テスト実行
+pio test -e native
+```
+
+### Phase 5: 依存性注入の改善
+
+#### 5.1 ITimeProviderの使用改善
+**改善内容**:
+- 直接的な`timeProvider_`使用を最小化
+- 適切なインターフェース設計
+- テスト容易性の向上
+
+#### 5.2 品質確認
+```bash
+# ビルド確認
+pio run -e native
+
+# 静的解析
+pio check -e native
+
+# テスト実行
+pio test -e native
+```
+
+### Phase 6: エラーハンドリングの統一
+
+#### 6.1 エラーハンドリングの統合
+**改善内容**:
+- 散在するエラーハンドリングを統一的に管理
+- エラーメッセージの標準化
+- エラー状態の適切な管理
+
+#### 6.2 品質確認
+```bash
+# 静的解析
+pio check -e native
+
+# テスト実行
+pio test -e native
+```
+
+### Phase 7: 品質保証工程
+
+#### 7.1 静的解析
+```bash
+# 詳細な静的解析実行
+pio check -e native --verbose
+
+# 結果確認
+# 目標: 中重要度警告85件以下
+```
+
+#### 7.2 テスト実行
+```bash
+# 全テスト実行
+pio test -e native
+
+# カバレッジ測定
+python scripts/test_coverage.py
+
+# 結果確認
+# 目標: テストカバレッジ85%以上
+```
+
+#### 7.3 品質ゲート確認
+**確認項目**:
+- [ ] 中重要度警告85件以下
+- [ ] テストカバレッジ85%以上
+- [ ] すべてのテストが通過
+- [ ] ビルドが正常に完了
+
+### Phase 8: 最終確認
+
+#### 8.1 機能確認
+```bash
+# ビルド確認
+pio run -e native
+pio run -e m5stack-fire
+
+# テスト確認
+pio test -e native
+```
+
+#### 8.2 ドキュメント更新
+**更新対象**:
+- この手順書の完了報告
+- 必要に応じて関連ドキュメントの更新
+
+## 品質ゲート基準
+
+### 静的解析基準
+- **High**: 高重要度の警告は0件以下
+- **Medium**: 中重要度の警告は85件以下（ゲート基準）
+- **Low**: 低重要度の警告は50件以下
+
+### テスト基準
+- **カバレッジ**: 85%以上
+- **通過率**: 100%
+- **実行時間**: 30秒以内
+
+### ビルド基準
+- **Native環境**: 正常ビルド
+- **M5Stack環境**: 正常ビルド
+- **警告**: 最小限
+
+## リスク管理
+
+### 高リスク項目
+1. **時刻計算ロジックの変更**
+   - 影響: プレビュー機能全体
+   - 対策: 段階的な変更とテスト
+
+2. **関数の大幅な分割**
+   - 影響: 既存テストの修正が必要
+   - 対策: テストファーストアプローチ
+
+### 中リスク項目
+1. **デバッグコードの削除**
+   - 影響: デバッグ情報の損失
+   - 対策: 必要に応じてログシステム導入
+
+2. **依存性注入の変更**
+   - 影響: テストコードの修正
+   - 対策: 既存テストの維持
+
+## 進捗管理
+
+### チェックポイント
+- [ ] Phase 1: 準備段階完了
+- [ ] Phase 2: デバッグコード削除完了
+- [ ] Phase 3: 時刻計算ロジック共通化完了
+- [ ] Phase 4: 関数分割・整理完了
+- [ ] Phase 5: 依存性注入改善完了
+- [ ] Phase 6: エラーハンドリング統一完了
+- [ ] Phase 7: 品質保証工程完了
+- [ ] Phase 8: 最終確認完了
+
+### 品質ゲート通過確認
+- [ ] 静的解析基準達成
+- [ ] テスト基準達成
+- [ ] ビルド基準達成
+
+## 完了条件
+
+### 必須条件
+1. すべてのテストが通過
+2. 中重要度警告85件以下
+3. テストカバレッジ85%以上
+4. 正常にビルド可能
+
+### 推奨条件
+1. コードの可読性向上
+2. 関数サイズの適正化
+3. 認知複雑度の削減
+4. 保守性の向上
+
+## 参考資料
+
+- `doc/guide/developer_guide.md`: 開発者ガイド
+- `doc/design/architecture.md`: アーキテクチャ設計
+- `doc/operation/testing_strategy.md`: テスト戦略
+- `doc/operation/quality_gates.md`: 品質ゲート基準
+
+---
+
+**作成日**: 2025年1月  
+**バージョン**: 1.0.0  
+**対象ファイル**: `lib/libaimatix/src/InputDisplayState.h`  
+**品質ゲート基準**: 中重要度警告85件以下、テストカバレッジ85%以上 

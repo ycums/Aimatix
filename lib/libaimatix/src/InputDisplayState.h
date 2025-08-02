@@ -3,8 +3,10 @@
 #include "InputLogic.h"
 #include "IInputDisplayView.h"
 #include "PartialInputLogic.h"
+#include "ITimeProvider.h"
 #include <stdio.h>
 #include <vector>
+#include <string>
 #include "AlarmLogic.h"
 #include <cstring>
 
@@ -12,8 +14,8 @@
 class InputDisplayState : public IState {
 public:
     // InputDisplayStateのコンストラクタ
-    InputDisplayState(InputLogic* logic = nullptr, IInputDisplayView* view = nullptr)
-        : inputLogic(logic), view(view), manager(nullptr), mainDisplayState(nullptr), isRelativeMode(false), 
+    InputDisplayState(InputLogic* logic = nullptr, IInputDisplayView* view = nullptr, ITimeProvider* timeProvider = nullptr)
+        : inputLogic(logic), view(view), timeProvider_(timeProvider), manager(nullptr), mainDisplayState(nullptr), isRelativeMode(false), 
           errorMessage(""), showError(false), errorStartTime(0) {
         for (int i = 0; i < 4; ++i) { lastDigits[i] = -1; lastEntered[i] = false; }
     }
@@ -35,14 +37,18 @@ public:
     void onExit() override {}
     // 相対値計算結果のプレビュー文字列を生成
     void generateRelativePreview(char* preview, size_t previewSize) {
+        if (!timeProvider_) {
+            return;
+        }
+        
         time_t relativeTime = inputLogic->getAbsoluteValue();
         if (relativeTime != -1) {
             struct tm result_tm;
             struct tm now_tm;
-            struct tm* result_tm_ptr = localtime(&relativeTime);
+            struct tm* result_tm_ptr = timeProvider_->localtime(&relativeTime);
             result_tm = *result_tm_ptr;
-            time_t now = time(nullptr);
-            struct tm* now_tm_ptr = localtime(&now);
+            time_t now = timeProvider_->now();
+            struct tm* now_tm_ptr = timeProvider_->localtime(&now);
             now_tm = *now_tm_ptr;
             
             // 日付跨ぎ判定
@@ -59,6 +65,10 @@ public:
 
     // 絶対値計算結果のプレビュー文字列を生成（確定処理と同じロジック）
     void generateAbsolutePreview(char* preview, size_t previewSize) {
+        if (!timeProvider_) {
+            return;
+        }
+        
         const int* digits = inputLogic ? inputLogic->getDigits() : nullptr;
         const bool* entered = inputLogic ? inputLogic->getEntered() : nullptr;
         if (!digits || !entered) {
@@ -71,8 +81,8 @@ public:
         }
         
         // 確定処理と同じロジックで時刻計算
-        time_t now = time(nullptr);
-        struct tm* now_tm = localtime(&now);
+        time_t now = timeProvider_->now();
+        struct tm* now_tm = timeProvider_->localtime(&now);
         if (now_tm == nullptr) {
             return;
         }
@@ -88,42 +98,43 @@ public:
         if (!parsedTime.hourSpecified) {
             // 分のみで過去か未来かを判定
             if (minute <= now_tm->tm_min) {
-                // 分が現在分以下なら、次の時間の同じ分として設定
                 hour = (now_tm->tm_hour + 1) % 24;
             } else {
-                // 分が現在分より大きいなら、現在時間の同じ分として設定
                 hour = now_tm->tm_hour;
             }
         } else {
             // 時が指定されている場合：通常の処理
-            // 分繰り上げ
             if (minute >= 60) { 
                 hour += minute / 60; 
                 minute = minute % 60; 
             }
-            // 時繰り上げ
             const int add_day = hour / 24;
             hour = hour % 24;
             alarm_tm.tm_mday += add_day;
-            
-            const time_t candidate = mktime(&alarm_tm);
-            if (candidate <= now) {
-                // 過去時刻の場合：翌日の同じ時刻として処理
-                alarm_tm.tm_mday += 1;
-            }
         }
-        
+        // 必ずここで時刻をセット
         alarm_tm.tm_hour = hour;
         alarm_tm.tm_min = minute;
-        
+        const time_t candidate = mktime(&alarm_tm);
+        if (candidate <= now) {
+            // 過去時刻の場合：翌日の同じ時刻として処理
+            alarm_tm.tm_mday += 1;
+        }
         const time_t finalTime = mktime(&alarm_tm);
-        struct tm* final_tm = localtime(&finalTime);
+        time_t finalTime_copy = finalTime;
+        struct tm* final_tm = timeProvider_->localtime(&finalTime_copy);
         if (final_tm == nullptr) {
             return;
         }
         
+        // final_tmの値を先にコピー（静的バッファ問題を回避）
+        struct tm final_tm_copy = *final_tm;
+        
         // 日付跨ぎ判定（現在日付との差分を計算）
-        int dayDiff = final_tm->tm_mday - now_tm->tm_mday;
+        // now_tmを再度取得（localtimeの静的バッファ問題を回避）
+        time_t now_copy = now;
+        struct tm* now_tm_fresh = timeProvider_->localtime(&now_copy);
+        int dayDiff = final_tm_copy.tm_mday - now_tm_fresh->tm_mday;
         // 月をまたぐ場合の処理
         if (dayDiff < 0) {
             // 前月の場合、月の日数を加算
@@ -140,13 +151,13 @@ public:
         
         // プレビュー文字列生成
         if (dayDiff > 0) {
-            const int result = std::snprintf(preview, previewSize, "+%dd %02d:%02d", dayDiff, final_tm->tm_hour, final_tm->tm_min);
+            const int result = snprintf(preview, previewSize, "+%dd %02d:%02d", dayDiff, final_tm_copy.tm_hour, final_tm_copy.tm_min);
             if (result < 0 || static_cast<size_t>(result) >= previewSize) {
                 // エラー時は何もしない（プレビューは空のまま）
                 return;
             }
         } else {
-            const int result = std::snprintf(preview, previewSize, "%02d:%02d", final_tm->tm_hour, final_tm->tm_min);
+            const int result = snprintf(preview, previewSize, "%02d:%02d", final_tm_copy.tm_hour, final_tm_copy.tm_min);
             if (result < 0 || static_cast<size_t>(result) >= previewSize) {
                 // エラー時は何もしない（プレビューは空のまま）
                 return;
@@ -186,7 +197,7 @@ public:
             // エラーメッセージ表示の管理
             if (showError) {
                 // エラーメッセージを3秒間表示
-                time_t currentTime = time(nullptr);
+                time_t currentTime = timeProvider_ ? timeProvider_->now() : 0;
                 if (currentTime - errorStartTime >= 3) {
                     showError = false;
                     errorMessage = "";
@@ -220,10 +231,8 @@ public:
                         if (isRelativeMode) {
                             generateRelativePreview(preview, sizeof(preview));
                         } else {
-                            // 絶対時刻入力モードの場合：確定処理と同じロジックで表示
-                            std::string timeStr = PartialInputLogic::formatTime(parsedTime.hour, parsedTime.minute);
-                            strncpy(preview, timeStr.c_str(), sizeof(preview) - 1);
-                            preview[sizeof(preview) - 1] = '\0';
+                            // 修正: 部分入力時もgenerateAbsolutePreviewを使う
+                            generateAbsolutePreview(preview, sizeof(preview));
                         }
                     }
                 }
@@ -237,54 +246,18 @@ public:
             }
             view->showColon();
         }
-#ifndef ARDUINO
-        printf("[InputDisplay] value=%d, relativeMode=%s\n", value, isRelativeMode ? "true" : "false");
-#endif
+
     }
     void onButtonA() override {
         if (inputLogic) {
-#ifndef ARDUINO
-            printf("[InputDisplay] A button pressed - before increment\n");
-            printf("[InputDisplay] Current state: %d%d:%d%d (entered: %d%d%d%d)\n", 
-                inputLogic->getDigit(0), inputLogic->getDigit(1), 
-                inputLogic->getDigit(2), inputLogic->getDigit(3),
-                inputLogic->isEntered(0), inputLogic->isEntered(1), 
-                inputLogic->isEntered(2), inputLogic->isEntered(3));
-#endif
             inputLogic->incrementInput(1);
-#ifndef ARDUINO
-            printf("[InputDisplay] A button pressed - after increment\n");
-            printf("[InputDisplay] New state: %d%d:%d%d (entered: %d%d%d%d)\n", 
-                inputLogic->getDigit(0), inputLogic->getDigit(1), 
-                inputLogic->getDigit(2), inputLogic->getDigit(3),
-                inputLogic->isEntered(0), inputLogic->isEntered(1), 
-                inputLogic->isEntered(2), inputLogic->isEntered(3));
-#endif
         }
         onDraw();
     }
     void onButtonB() override {
         if (inputLogic) {
-#ifndef ARDUINO
-            printf("[InputDisplay] B button pressed - before shift\n");
-            printf("[InputDisplay] Current state: %d%d:%d%d (entered: %d%d%d%d)\n", 
-                inputLogic->getDigit(0), inputLogic->getDigit(1), 
-                inputLogic->getDigit(2), inputLogic->getDigit(3),
-                inputLogic->isEntered(0), inputLogic->isEntered(1), 
-                inputLogic->isEntered(2), inputLogic->isEntered(3));
-#endif
             // 桁送りを試行
             bool success = inputLogic->shiftDigits();
-#ifndef ARDUINO
-            printf("[InputDisplay] B button pressed - shift result: %s\n", success ? "SUCCESS" : "FAILED");
-            if (success) {
-                printf("[InputDisplay] New state: %d%d:%d%d (entered: %d%d%d%d)\n", 
-                    inputLogic->getDigit(0), inputLogic->getDigit(1), 
-                    inputLogic->getDigit(2), inputLogic->getDigit(3),
-                    inputLogic->isEntered(0), inputLogic->isEntered(1), 
-                    inputLogic->isEntered(2), inputLogic->isEntered(3));
-            }
-#endif
             // 成功時のみUI反映（失敗時は何もしない）
             if (success) {
                 onDraw();
@@ -311,13 +284,13 @@ public:
                     error = true;
                     showError = true;
                     errorMessage = msg;
-                    errorStartTime = time(nullptr);
+                    errorStartTime = timeProvider_ ? timeProvider_->now() : 0;
                 }
             } else {
                 error = true;
                 showError = true;
                 errorMessage = "Input is empty.";
-                errorStartTime = time(nullptr);
+                errorStartTime = timeProvider_ ? timeProvider_->now() : 0;
             }
         } else {
             // 絶対時刻入力モード: 既存のロジックを使用
@@ -335,7 +308,7 @@ public:
                     error = true;
                     showError = true;
                     errorMessage = msg;
-                    errorStartTime = time(nullptr);
+                    errorStartTime = timeProvider_ ? timeProvider_->now() : 0;
                 }
             }
         }
@@ -373,9 +346,16 @@ public:
     void setRelativeMode(bool relative) { isRelativeMode = relative; }
     bool getRelativeMode() const { return isRelativeMode; }
     
+    // テスト用: inputLogicを直接セット
+    void setInputLogicForTest(InputLogic* logic) { inputLogic = logic; }
+    
+    // ITimeProviderのsetter
+    void setTimeProvider(ITimeProvider* timeProvider) { timeProvider_ = timeProvider; }
+    
 private:
     InputLogic* inputLogic;
     IInputDisplayView* view;
+    ITimeProvider* timeProvider_;
     int lastDigits[4] = {-1,-1,-1,-1};
     bool lastEntered[4] = {false,false,false,false};
     StateManager* manager;

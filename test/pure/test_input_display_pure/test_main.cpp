@@ -190,6 +190,63 @@ void test_ba_operation_bug_reproduction() {
     TEST_ASSERT_EQUAL_STRING("00:01", timeStr.c_str()); // Expected: 00:01
 }
 
+// バグ修正用テストケース
+void test_bugfix_partial_input_preview() {
+    // 現在時刻を12:34に設定
+    struct tm test_tm = {};
+    test_tm.tm_year = 2023 - 1900;
+    test_tm.tm_mon = 11 - 1;
+    test_tm.tm_mday = 13;
+    test_tm.tm_hour = 12;
+    test_tm.tm_min = 34;
+    test_tm.tm_sec = 0;
+    test_tm.tm_isdst = -1;
+    time_t testTime = mktime(&test_tm);
+    std::shared_ptr<MockTimeProvider> mockTimeProvider = std::make_shared<MockTimeProvider>(testTime);
+
+    // テストケース1: _1:00 → +1d 01:00
+    {
+        InputLogic inputLogic(mockTimeProvider);
+        inputLogic.reset();
+        inputLogic.incrementInput(1);
+        inputLogic.shiftDigits();
+        inputLogic.shiftDigits();
+
+        // 各桁の値を確認
+        TEST_ASSERT_EQUAL(0, inputLogic.getDigit(0)); // 時十
+        TEST_ASSERT_EQUAL(1, inputLogic.getDigit(1)); // 時一
+        TEST_ASSERT_EQUAL(0, inputLogic.getDigit(2)); // 分十
+        TEST_ASSERT_EQUAL(0, inputLogic.getDigit(3)); // 分一
+
+        InputDisplayState state;
+        state.setRelativeMode(false);
+        state.setInputLogicForTest(&inputLogic);
+        state.setTimeProvider(mockTimeProvider.get());
+
+        char preview[32] = "";
+        printf("[DEBUG] About to call generateAbsolutePreview\n");
+        state.generateAbsolutePreview(preview, sizeof(preview));
+        printf("[DEBUG] generateAbsolutePreview returned: '%s'\n", preview);
+        TEST_ASSERT_EQUAL_STRING("+1d 01:00", preview);
+    }
+
+    // テストケース2: __:_1 → 13:01
+    {
+        InputLogic inputLogic(mockTimeProvider);
+        inputLogic.reset();
+        inputLogic.incrementInput(1);  // 分一
+
+        InputDisplayState state;
+        state.setRelativeMode(false);
+        state.setInputLogicForTest(&inputLogic);
+        state.setTimeProvider(mockTimeProvider.get());
+
+        char preview[32] = "";
+        state.generateAbsolutePreview(preview, sizeof(preview));
+        TEST_ASSERT_EQUAL_STRING("13:01", preview);
+    }
+}
+
 int main(int argc, char **argv) {
     UNITY_BEGIN();
     RUN_TEST(test_basic_input_logic);
@@ -199,6 +256,7 @@ int main(int argc, char **argv) {
     RUN_TEST(test_input_logic_complete_input_value);
     RUN_TEST(test_input_logic_shift_digits_edge_cases);
     RUN_TEST(test_ba_operation_bug_reproduction);
+    RUN_TEST(test_bugfix_partial_input_preview);
     UNITY_END();
     return 0;
 } 

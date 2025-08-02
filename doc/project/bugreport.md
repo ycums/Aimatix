@@ -1,228 +1,236 @@
-- 対象画面: 絶対時刻入力モード
-- 前提: 
-  - 現在時刻: 12:34 
-- 操作
-  - ABB
-    - 補足: `_1:00` 
-- expected
-  - プレビューの表示: `+1d 01:00` 
-- actual
-  - プレビューの表示: `10:00`
+## バグフィックス対応計画（TDDベース）
 
+### 1. バグの詳細分析
 
-1. バグレポートの「絶対値入力」とは、相対値入力モード（現在時刻 + 入力値）のことでしょうか、それとも絶対時刻入力モード（指定時刻）のことでしょうか？
-   1. 「絶対時刻入力モード」のことです。
-2. 期待値の+1d 01:00は、現在時刻（12:34）から1日後の01:00を意味していますか？
-   1. yes. そして、プレビューの書式のことでもあります。
-3. このバグは相対値入力モードでのみ発生する問題でしょうか、それとも絶対時刻入力モードでも発生する問題でしょうか？
-   1. 絶対時刻入力モードで発生する問題です。
+#### バグ1: `_1:00` → 期待値: `+1d 01:00`, 実際: `01:00`
+**原因**: 部分入力時のプレビュー表示で、絶対時刻入力モードでも`PartialInputLogic::formatTime`を使用しているため、過去時刻の翌日処理が適用されていない。
 
-```cpp
- snprintf(preview, previewSize, "+1d %02d:%02d", final_tm->tm_hour, final_tm->tm_min);
-```
- の箇所は、仕様に基づいて正しく実装するならば
-```cpp
- snprintf(preview, previewSize, "+%01d %02d:%02d", final_tm->tm_day, final_tm->tm_hour, final_tm->tm_min);
-```
-のようになるはずです。(あくまでも擬似コードである点に注意)
-なぜならば、 入力画面は `99:99` までの値を入力可能なので、最大で `+4d` までの値を取りうるためです。
+#### バグ2: `__:_1` → 期待値: `13:01`, 実際: `00:01`
+**原因**: 同様に部分入力時のプレビュー表示の問題。
 
+### 2. TDDベースの実装手順
 
-追加のコンテキスト
+#### Phase 1: テストファースト（Red）
+**目標**: 失敗するテストケースを作成
 
-関連するバグ
-- 対象画面: 絶対値入力
-- 前提: 
-  - 現在時刻: 12:34 
-- 操作
-  - A
-    - 補足: `__:_1` 
-- expected
-  - プレビューの表示: `13:01` 
-- actual
-  - プレビューの表示: `00:01`
-    - おそらく内部的に `+1d 00:01` になっている。
+**作業内容**:
+1. **新規テストケース作成**
+   ```bash
+   # テストファイルの確認
+   test/pure/test_input_display_pure/test_main.cpp
+   ```
 
-また、バグ1 に関しては actual が `01:00` ではなく、 `10:00` となっている点も踏まえて問題に当たる必要がありそうです。
+2. **バグ再現テストケース追加**
+   ```cpp
+   // test_input_display_pure/test_main.cpp
+   void test_bugfix_1_hour_only_digit() {
+       // 現在時刻を12:34に設定
+       MockTimeProvider mockTimeProvider;
+       mockTimeProvider.setCurrentTime(12, 34);
+       
+       // 入力状態: _1:00
+       InputLogic inputLogic(&mockTimeProvider);
+       inputLogic.setDigit(1, 1);  // 時一桁に1を設定
+       inputLogic.setEntered(1, true);
+       
+       // 絶対時刻入力モードでプレビュー生成
+       InputDisplayState state;
+       state.setInputLogic(&inputLogic);
+       state.setRelativeMode(false);
+       
+       char preview[32] = "";
+       state.generateAbsolutePreview(preview, sizeof(preview));
+       
+       // 期待値: +1d 01:00
+       TEST_ASSERT_EQUAL_STRING("+1d 01:00", preview);
+   }
+   
+   void test_bugfix_2_minute_only_digit() {
+       // 現在時刻を12:34に設定
+       MockTimeProvider mockTimeProvider;
+       mockTimeProvider.setCurrentTime(12, 34);
+       
+       // 入力状態: __:_1
+       InputLogic inputLogic(&mockTimeProvider);
+       inputLogic.setDigit(3, 1);  // 分一桁に1を設定
+       inputLogic.setEntered(3, true);
+       
+       // 絶対時刻入力モードでプレビュー生成
+       InputDisplayState state;
+       state.setInputLogic(&inputLogic);
+       state.setRelativeMode(false);
+       
+       char preview[32] = "";
+       state.generateAbsolutePreview(preview, sizeof(preview));
+       
+       // 期待値: 13:01
+       TEST_ASSERT_EQUAL_STRING("13:01", preview);
+   }
+   ```
 
-期待される動作
-バグ1: _1:00 → プレビュー: +1d 01:00, 確定: 翌日の01:00として保存
-バグ2: __:_1 → プレビュー: +1d 13:01, 確定: **当日**の13:01として保存
+3. **テスト実行（失敗確認）**
+   ```bash
+   # テスト実行（失敗することを確認）
+   pio test -e native -f pure/test_input_display_pure
+   ```
 
+#### Phase 2: 実装（Green）
+**目標**: テストを成功させる最小限の実装
 
-> 現在時刻12:34に対して、__:_1は00:01として解析される
+**作業内容**:
+1. **修正実装**
+   ```cpp
+   // lib/libaimatix/src/InputDisplayState.h
+   // 部分入力時のプレビュー表示ロジック修正
+   
+   // 修正前
+   } else {
+       // 絶対時刻入力モードの場合：確定処理と同じロジックで表示
+       std::string timeStr = PartialInputLogic::formatTime(parsedTime.hour, parsedTime.minute);
+       strncpy(preview, timeStr.c_str(), sizeof(preview) - 1);
+       preview[sizeof(preview) - 1] = '\0';
+   }
+   
+   // 修正後
+   } else {
+       // 絶対時刻入力モードの場合：確定処理と同じロジックで表示
+       generateAbsolutePreview(preview, sizeof(preview));
+   }
+   ```
 
-これが違いますね。
+2. **ビルド確認**
+   ```bash
+   # ビルドエラーチェック
+   pio run -e native
+   ```
 
-現在時刻12:34に対して、`__:_1`は `__:01` として解析される
+3. **テスト実行（成功確認）**
+   ```bash
+   # テスト実行（成功することを確認）
+   pio test -e native -f pure/test_input_display_pure
+   ```
 
-が正しいです。
-時は指定されていないので、分だけで過去か未来かを判定する必要があります。
+#### Phase 3: リファクタリング（Refactor）
+**目標**: コードの品質向上と保守性の確保
 
- ```cpp
-    // 時の解釈（digits[0], digits[1]）
-    if (entered[0] && entered[1]) {
-        // 両方入力済み
-        hour = digits[0] * HOURS_10 + digits[1];
-    } else if (entered[0] && !entered[1]) { // ← これは仕様的にありえないので不要な分岐
-        // 時十桁のみ入力済み → 時一桁を0として補完 
-        hour = digits[0] * HOURS_10 + 0;
-    } else if (!entered[0] && entered[1]) {
-        // 時一桁のみ入力済み → その値を時一桁として解釈（修正）
-        hour = digits[1];
-    } else {
-        // 時が未入力
-        hour = 0; // ← これが間違っている。時は "未入力" という概念があるので、それを別に扱えないといけない。
-    }
-    
-    // 分の解釈（digits[2], digits[3]）
-    if (entered[2] && entered[3]) {
-        // 両方入力済み
-        minute = digits[2] * HOURS_10 + digits[3];
-    } else if (entered[2] && !entered[3]) {  // ← これは仕様的にありえないので不要な分岐
-        // 分十桁のみ入力済み → 分一桁を0として補完
-        minute = digits[2] * HOURS_10 + 0;
-    } else if (!entered[2] && entered[3]) {
-        // 分一桁のみ入力済み → 直感的に分一桁として解釈（桁送りによる移動ではない場合）
-        minute = digits[3];
-    } else {
-        // 分が未入力
-        minute = 0; // ← これが間違っている。分は "未入力" という概念があるので、それを別に扱えないといけない。
-    }
+**作業内容**:
+1. **静的解析実行**
+   ```bash
+   # Clang-Tidy静的解析
+   pio check -e native
+   ```
 
-```
+2. **品質ゲート確認**
+   ```bash
+   # 警告件数の確認（85件以下）
+   Component            HIGH    MEDIUM    LOW
+   ------------------  ------  --------  -----
+   lib\libaimatix\src    0        78       0
+   src                   0        22       0
+   
+   Total                 0       100       0  # ← 85件以下で合格
+   ```
 
+3. **コードレビュー**
+   - 修正内容が仕様に適合しているか
+   - 既存機能に影響がないか
+   - テストケースが十分か
 
-----------------------
-バグ修正計画を完成させるために、以下の3つの質問があります：
- 
-## 質問
+#### Phase 4: 統合テスト・回帰テスト
+**目標**: 修正による影響範囲の確認
 
-### 1. 仕様的にありえない分岐の扱いについて
-現在の`parsePartialInput`には時十桁のみ入力（`1_:__`）や分十桁のみ入力（`__:3_`）の分岐がありますが、これらを「無効として扱う」のか、それとも「削除してコンパイルエラーにする」のか、どちらが適切でしょうか？
-→ 責務的には invalid として扱うべきでしょうが、未入力 として扱っても実害がないので、単に分岐を消して良い気がします。
+**作業内容**:
+1. **全テスト実行**
+   ```bash
+   # 全テスト実行
+   pio test -e native
+   ```
 
-### 2. 未入力状態の表現方法について
-`ParsedTime`構造体に`hourSpecified`と`minuteSpecified`フラグを追加する案を提案しましたが、これ以外の方法（例：特殊値を使用する、別の構造体を使用するなど）はありますか？
-→ 提案の内容で問題ないと思います。 強いて言えば、 `minuteSpecified` フラグが false だと isValud が false になるはずなので、なくてもコードは書けると思います。
+2. **カバレッジ測定**
+   ```bash
+   # テストカバレッジ測定
+   python scripts/test_coverage.py
+   ```
 
-### 3. 後続処理での未入力状態の扱いについて
-`AlarmLogic::addAlarmFromPartialInput`や`InputDisplayState::generateAbsolutePreview`で、時が未入力の場合の処理ロジックは「分のみで過去か未来かを判定」で正しいでしょうか？それとも別の仕様がありますか？
-→ yes.
+3. **既存テストケースの確認**
+   ```bash
+   # 関連テストの実行
+   pio test -e native -f pure/test_partial_input_logic_pure
+   pio test -e native -f pure/test_alarm_logic_pure
+   ```
 
+#### Phase 5: 最終検証・品質保証
+**目標**: 修正内容の最終確認と品質保証
 
-----------------
+**作業内容**:
+1. **最終テスト実行**
+   ```bash
+   # 最終テスト実行
+   pio test -e native
+   ```
+
+2. **最終静的解析**
+   ```bash
+   # 最終静的解析
+   pio check -e native
+   ```
+
+3. **品質チェックリスト確認**
+   - [ ] 修正内容が仕様に適合しているか
+   - [ ] 既存機能に影響がないか
+   - [ ] テストケースが十分か
+   - [ ] 静的解析警告が適切に対処されているか
+   - [ ] 品質ゲート基準（85件以下）を満たしているか
+
+### 3. TDDサイクル詳細
+
+#### サイクル1: バグ1の修正
+1. **Red**: `test_bugfix_1_hour_only_digit()`を作成（失敗）
+2. **Green**: 最小限の修正でテストを成功
+3. **Refactor**: コード品質の向上
+
+#### サイクル2: バグ2の修正
+1. **Red**: `test_bugfix_2_minute_only_digit()`を作成（失敗）
+2. **Green**: 最小限の修正でテストを成功
+3. **Refactor**: コード品質の向上
+
+#### サイクル3: 統合確認
+1. **Red**: 既存テストの確認
+2. **Green**: 全テストが成功
+3. **Refactor**: 最終品質チェック
+
+### 4. 成功基準
+
+#### 機能面
+- ✅ バグ1: `_1:00` → `+1d 01:00`が正しく表示される
+- ✅ バグ2: `__:_1` → `13:01`が正しく表示される
+- ✅ 既存機能に影響がない
+
+#### 品質面
+- ✅ ビルドエラーなし
+- ✅ 全テスト成功
+- ✅ 中重要度警告85件以下
+- ✅ 既存カバレッジ維持
+
+### 5. リスク管理
+
+#### 低リスク項目
+- 既存の完全入力時の処理は変更なし
+- 相対時刻入力モードは影響なし
+- 確定処理は既に正しく動作している
+
+#### 注意点
+- 部分入力時のプレビュー表示のみ変更
+- 既存のテストケースへの影響を確認
+- 静的解析警告の増加を監視
 
 ## 回答
 
-### 1. エラーハンドリングの詳細について
-`std::snprintf`や`localtime`の戻り値チェックを追加しましたが、エラー時のフォールバック動作（例：`"00:00"`を返す）は適切でしょうか？それとも別の処理（例：空文字列を返す、例外を投げるなど）が望ましいでしょうか？
-→ 「空文字列を返す」が正しい気がします。 ユーザーが入力中は invalid な入力値になることを許容しておいて、確定時まで invalid であればメッセージを出す設計になっているはずです。
+1. **テストケースの追加場所**: バグ修正用のテストケースは`test_input_display_pure`に追加するべきでしょうか？それとも`test_partial_input_logic_pure`に追加するべきでしょうか？
+→ lib/libaimatix/src/InputDisplayState.h しか変更しないのであれば test_input_display_pure のみ追加でOKです。
 
-### 2. 定数定義の場所について
-`STRING_BUFFER_SIZE`などの定数を`PartialInputLogic.h`に追加しましたが、これらは既存の`ui_constants.h`に移動すべきでしょうか？それとも各クラス固有の定数として保持すべきでしょうか？
-→ 外部から参照されないと思うので `PartialInputLogic.h` に追加するでokです。
+2. **モックの必要性**: テストケースで`MockTimeProvider`を使用して現在時刻を固定する必要がありますが、既存のモック実装で十分でしょうか？
+→ おそらく yes. 不足なら変更してください。
 
-### 3. テストケースの追加範囲について
-TDDアプローチでテストケースを追加する際、既存のテストファイル（`test_partial_input_logic_pure`）に追加するだけで十分でしょうか？それとも新しいテストファイル（例：`test_alarm_logic_pure`や`test_input_display_pure`）にも関連するテストケースを追加すべきでしょうか？
-→ yes.
-
-
-- バグ1:
-  - 前提: 
-    - 現在時刻: `12:34`
-  - Input: _1:00
-  - expected:
-    - プレビュー: `+1d 01:00`, 確定: 翌日の01:00として保存
-  - actual:
-    - プレビュー: `01:00`, 確定: 翌日の01:00として保存
-- バグ2:
-  - 前提
-    - 現在時刻: `12:34`
-  - Input: `__:_1` 
-  - exptected:
-    -  プレビュー: `13:01`, 確定: 当日の`13:01`として保存
-  - actual:
-    -  プレビュー: `00:01`, 確定: 当日の`13:01`として保存
--  
-
-
-----------------
-Read file: lib/libaimatix/src/InputDisplayState.h
-Read file: lib/libaimatix/src/InputDisplayState.h
-`generateAbsolutePreview`と`generateRelativePreview`の違いを説明いたします。
-
-## 主な違い
-
-### 1. **入力値の解釈方法**
-
-#### `generateRelativePreview`
-- **入力**: 相対時刻（例：`_2:30` = 現在時刻 + 2時間30分）
-- **処理**: `inputLogic->getAbsoluteValue()`を使用 // ← 
-- **計算**: 現在時刻に相対値を加算
-
-#### `generateAbsolutePreview`
-- **入力**: 絶対時刻（例：`_1:00` = 翌日の01:00）
-- **処理**: `PartialInputLogic::parsePartialInput()`を使用 // ← 
-- **計算**: 入力された時分を絶対時刻として解釈
-
-なんか、設計上統一感がない気がしますね…
-
-### 2. **時刻計算ロジック**
-
-#### `generateRelativePreview`
-```cpp
-time_t relativeTime = inputLogic->getAbsoluteValue();
-// 現在時刻 + 入力値 = 結果時刻
-// 日付跨ぎ判定のみ
-bool nextDay = (result_tm.tm_mday != now_tm.tm_mday);
-```
-
-#### `generateAbsolutePreview`
-```cpp
-// 複雑な絶対時刻処理
-// 1. 時が未入力の場合の処理
-if (!parsedTime.hourSpecified) {
-    // 分のみで過去か未来かを判定
-    if (minute <= now_tm->tm_min) {
-        hour = (now_tm->tm_hour + 1) % 24;  // 次の時間
-    } else {
-        hour = now_tm->tm_hour;  // 現在時間
-    }
-}
-// 2. 過去時刻の翌日処理
-if (candidate <= now) {
-    alarm_tm.tm_mday += 1;  // 翌日
-}
-```
-
-### 3. **表示形式**
-
-#### `generateRelativePreview`
-- 日付跨ぎ時: `+1d HH:MM`
-- 同日時: `HH:MM`
-
-#### `generateAbsolutePreview`
-- 日付跨ぎ時: `+Nd HH:MM`（N日後）
-- 同日時: `HH:MM`
-
-### 4. **具体的な動作例**
-
-**現在時刻: 12:34**
-
-#### `generateRelativePreview`（相対時刻入力）
-- 入力: `_2:00` → 表示: `14:34`（12:34 + 2:00）
-- 入力: `_15:00` → 表示: `+1d 03:34`（12:34 + 15:00 = 翌日03:34）
-
-#### `generateAbsolutePreview`（絶対時刻入力）
-- 入力: `_1:00` → 表示: `+1d 01:00`（過去時刻なので翌日）
-- 入力: `__:_1` → 表示: `13:01`（分のみ入力、現在分より小さいので次の時間）
-
-### 5. **バグの原因**
-
-現在のコードでは、部分入力時に絶対時刻入力モードでも`PartialInputLogic::formatTime`を使用しているため、過去時刻の翌日処理が適用されていません。
-
-**修正が必要な理由**：
-- 絶対時刻入力モードでは、過去時刻を翌日として扱う必要がある
-- `generateAbsolutePreview`はこの処理を含んでいる
-- 部分入力時も同じロジックを使用すべき
+3. **TDサイクルの粒度**: バグ1とバグ2を別々のサイクルで修正するべきでしょうか？それとも一つのサイクルで両方修正するべきでしょうか？
+→ 同一箇所の問題であれば1サイクルでよいのでは?
