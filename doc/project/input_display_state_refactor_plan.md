@@ -784,6 +784,7 @@ pio test -e native
 - `doc/design/architecture.md`: アーキテクチャ設計
 - `doc/operation/testing_strategy.md`: テスト戦略
 - `doc/operation/quality_gates.md`: 品質ゲート基準
+- [カバレッジ向上戦略](./coverage_strategy.md) - 効率的なカバレッジ向上の戦略と注意事項
 
 ---
 

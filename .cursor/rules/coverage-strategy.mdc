@@ -1,0 +1,98 @@
+# カバレッジ向上戦略
+
+## 基本方針
+
+### 1. 分岐カバレッジ優先戦略
+- **目標**: 分岐カバレッジ向上 → 自然にprivate関数もカバー
+- **理由**: public関数の分岐をテスト → private関数も実行される
+- **効率性**: 1つのテストで複数の関数をカバー
+
+### 2. 段階的テスト追加 + 即座評価
+```
+1. テストA追加 → カバレッジ測定
+2. 変動なし → テストA削除
+3. テストB追加 → カバレッジ測定
+4. 変動あり → テストB保持
+```
+
+### 3. 避けるべき無駄なテスト
+- ❌ private関数の直接テスト
+- ❌ 既に十分カバーされている関数の追加テスト
+- ❌ 効果のない分岐テスト
+
+## 実行戦略
+
+### Phase 2 Step 2-5: 分岐カバレッジ向上（効率的版）
+
+#### Step 1: 分岐カバレッジが低い関数を特定
+```
+- AlarmLogic::addAlarmFromPartialInput (public, 44.7%)
+- AlarmLogic::initAlarms (public, 50.0%)
+- DateTimeInputState::moveCursorLeft (public, 0.0%)
+```
+
+#### Step 2: 1関数ずつテスト追加
+```
+1. 関数Aの分岐テスト追加
+2. カバレッジ測定
+3. 効果あり → 保持、効果なし → 削除
+4. 次の関数に移行
+```
+
+## 成功パターン
+
+### 効果的なテスト例
+```cpp
+// DisplayCommonの分岐テスト（+0.6%改善）
+void test_display_common_null_pointer_branches() {
+    // nullptr分岐のテスト
+    drawButtonHintsGrid(mockDisplay.get(), nullptr, nullptr, nullptr);
+    // 充電状態分岐のテスト
+    drawTitleBar(mockDisplay.get(), "TEST", 50, true);
+}
+```
+
+### 無駄なテスト例
+```cpp
+// 削除した無駄なテスト（0.0%変動）
+void test_input_display_state_ondraw_comprehensive() {
+    state.onDraw(); // 既に十分カバーされている
+    TEST_ASSERT_TRUE(true); // 効果なし
+}
+```
+
+## カバレッジ測定コマンド
+
+```bash
+# クイック測定
+python scripts/test_coverage.py --quick
+
+# 詳細測定
+python scripts/test_coverage.py
+
+# 特定テスト実行
+pio test -e native -f pure/test_input_display_pure
+```
+
+## 品質ゲート
+
+- **目標**: 85.0%以上
+- **現在**: 78.2%
+- **必要改善**: +6.8%
+
+## 注意事項
+
+1. **private関数**: 直接テストせず、public関数経由で間接的にテスト
+2. **分岐カバレッジ**: 条件分岐の両方をテスト
+3. **効果測定**: 各テスト追加後に必ずカバレッジ測定
+4. **無駄削除**: 効果のないテストは即座に削除
+
+## 参考ドキュメント
+
+- [カバレッジ向上戦略](mdc:doc/project/coverage_strategy.md)
+- [テスト戦略](mdc:doc/operation/testing_strategy.md)
+- [品質ゲート基準](mdc:doc/operation/quality_gates.md)
+description:
+globs:
+alwaysApply: false
+---

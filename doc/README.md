@@ -121,6 +121,12 @@ Aimatixプロジェクトのドキュメント集です。各ドキュメント�
 開発時のコーディング規約は `guide/developer_guide.md` を参照してください。
 特に、ファイル名の命名規則（クラス名をスネークケースに変換）を遵守してください。
 
+## 開発ガイド
+
+- [開発者ガイド](./guide/developer_guide.md) - 開発の基本方針
+- [テスト戦略](./operation/testing_strategy.md) - テストの実行方法
+- [カバレッジ向上戦略](./project/coverage_strategy.md) - 効率的なカバレッジ向上の戦略
+
 ---
 
 **作成日**: 2025年1月  
