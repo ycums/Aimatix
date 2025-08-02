@@ -283,7 +283,20 @@ bool displayTimeInput(time_t time, int x, int y);
 2. 外部ライブラリ
 3. プロジェクト内
 
-#### 6.3.4 関数サイズ制限
+#### 6.3.4 インクルード禁止事項
+- **禁止**: `.cpp`ファイルの直接include
+- **理由**: コンパイルエラーの原因となる
+- **例**:
+  ```cpp
+  // ❌ 悪い例
+  #include "SettingsLogic.cpp"
+  
+  // ✅ 良い例
+  #include "SettingsLogic.h"
+  ```
+- **対策**: 実装は`.h`ファイルにinline関数として記述するか、適切なライブラリ構成にする
+
+#### 6.3.5 関数サイズ制限
 - **原則**: 関数は50行以内を目安とする
 - **説明**: 長い関数は分割し、単一責任の原則に従います。
 - **例外**: UI描画関数など、分割が困難な場合は適切にコメントで説明
@@ -308,7 +321,7 @@ bool displayTimeInput(time_t time, int x, int y);
 
 #### 6.4.3 品質ゲート基準
 - **High**: 高重要度の警告は0件以下
-- **Medium**: 中重要度の警告は80件以下（ゲート基準）
+- **Medium**: 中重要度の警告は19件以下（ゲート基準）
 - **Low**: 低重要度の警告は50件以下
 
 ### 6.5 Clang-Tidy警告防止ガイドライン
@@ -522,7 +535,109 @@ bool isValidInput(int input) {
 - 早期リターンでネストを減らす
 - 複雑な条件は別関数に分離
 
-#### 6.5.9 開発時のチェックリスト
+#### 6.5.9 重複分岐の統合
+**警告**: `bugprone-branch-clone`
+**対策**:
+```cpp
+// ❌ 悪い例
+if (condition1) {
+    maxValue = MAX_DIGIT_9;
+} else if (condition2) {
+    maxValue = MAX_DIGIT_9;
+} else if (condition3) {
+    maxValue = MAX_DIGIT_9;
+}
+
+// ✅ 良い例
+if (condition1 || condition2 || condition3) {
+    // maxValue = MAX_DIGIT_9; // デフォルト値と同じなので設定不要
+} else if (special_condition) {
+    maxValue = SPECIAL_VALUE;
+}
+```
+
+**ルール**:
+- 同じ処理を行う分岐は統合する
+- デフォルト値と同じ設定は省略する
+- コメントでデフォルト値であることを明記
+
+#### 6.5.10 疑わしいincludeの禁止
+**警告**: `bugprone-suspicious-include`
+**対策**:
+```cpp
+// ❌ 悪い例
+#include "SettingsLogic.cpp"
+
+// ✅ 良い例
+#include "SettingsLogic.h"
+```
+
+**ルール**:
+- `.cpp`ファイルの直接includeは禁止
+- 実装は`.h`ファイルにinline関数として記述するか、適切なライブラリ構成にする
+- コンパイルエラーの原因となるため厳格に禁止
+
+#### 6.5.11 const修飾子の適用基準
+**警告**: `misc-const-correctness`
+**適用基準**:
+```cpp
+// ✅ 適用可能な例
+const PartialInputLogic::ParsedTime parsedTime = PartialInputLogic::parsePartialInput(digits, entered);
+
+// ❌ 適用不可な例（関数の制約）
+char buffer[32] = {};  // snprintfで書き込まれるためconst不可
+int totalWidth = 0;    // 計算中に変更されるためconst不可
+```
+
+**ルール**:
+- 初期化後変更されない変数は`const`にする
+- 関数の制約（例：`snprintf`の引数）がある場合は適用しない
+- 計算中に変更される変数は`const`にしない
+
+#### 6.5.12 静的メソッド宣言の型指定方法
+**警告**: `readability-convert-member-functions-to-static`
+**対策**:
+```cpp
+// ❌ 悪い例
+static auto initAlarms(std::vector<time_t>& alarms, time_t now) -> void;
+
+// ✅ 良い例
+static void initAlarms(std::vector<time_t>& alarms, time_t now);
+```
+
+**ルール**:
+- `static auto ... -> type;`ではなく`static type ...();`を使用
+- Clang-Tidyが`static`メソッドを正しく認識するため
+- 戻り値型は明示的に指定する
+
+#### 6.5.13 メンバー関数のstatic化基準
+**警告**: `readability-convert-member-functions-to-static`
+**適用基準**:
+```cpp
+// ✅ static化可能な例
+class DateTimeInputState {
+    static int getDigitValue(int position) {
+        // インスタンス変数を使用しない純粋な計算
+        return position >= 0 ? position : 0;
+    }
+};
+
+// ❌ static化不可な例
+class DateTimeInputState {
+    int getDigitValue(int position) const {
+        return dateTimeDigits[position];  // メンバー変数を使用
+    }
+private:
+    std::vector<int> dateTimeDigits;
+};
+```
+
+**ルール**:
+- インスタンス変数を使用しないメソッドは`static`にする
+- メンバー変数にアクセスするメソッドは`static`にしない
+- 引数にポインタや参照がある場合は`static`化を慎重に検討
+
+#### 6.5.14 開発時のチェックリスト
 新しいコードを書く際は以下を確認：
 
 1. **変数初期化**: すべての変数が初期化されているか
@@ -533,6 +648,10 @@ bool isValidInput(int input) {
 6. **範囲チェック**: 実行時インデックスに範囲チェックがあるか
 7. **現代的なC++**: 適切な初期化子と戻り値型を使用しているか
 8. **関数サイズ**: 認知複雑度が適切か
+9. **重複分岐**: 同じ処理を複数箇所で重複していないか
+10. **include**: `.cpp`ファイルを直接includeしていないか
+11. **const修飾子**: 適用可能な箇所で`const`を使用しているか
+12. **静的メソッド宣言**: `static type ...();`形式を使用しているか
 
 ## 7. トラブルシューティング
 
@@ -622,7 +741,7 @@ Serial.printf("Processing time: %lu ms\n", endTime - startTime);
 - **対象**: 全ソースコード
 - **環境**: native環境
 - **頻度**: 各開発ステップで実行
-- **品質ゲート**: 中重要度警告85件以下
+- **品質ゲート**: 中重要度警告19件以下
 
 #### 8.2.2 静的解析の活用
 - **バグ検出**: 潜在的なバグの早期発見
@@ -637,10 +756,10 @@ pio check -e native
 # 結果確認
 Component            HIGH    MEDIUM    LOW
 ------------------  ------  --------  -----
-lib\libaimatix\src    0        78       0
-src                   0        22       0
+lib\libaimatix\src    0        17       0
+src                   0        2        0
 
-Total                 0       100       0  # ← 85件以下で合格
+Total                 0        19       0  # ← 19件以下で合格
 ```
 
 ### 8.3 コードレビュー
@@ -862,5 +981,5 @@ cat .cursor/rules/testing.mdc
 **作成日**: 2025年1月  
 **バージョン**: 2.1.0  
 **更新日**: 2025年1月  
-**品質ゲート基準**: 中重要度警告85件以下  
+**品質ゲート基準**: 中重要度警告19件以下  
 **Cursor Rules**: 自動生成・手動調整対応 

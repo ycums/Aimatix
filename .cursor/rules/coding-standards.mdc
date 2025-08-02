@@ -1,0 +1,155 @@
+# コーディング規約と静的解析
+
+## Clang-Tidy静的解析
+
+### 品質ゲート基準
+- **High**: 高重要度の警告は0件以下
+- **Medium**: 中重要度の警告は19件以下（ゲート基準）
+- **Low**: 低重要度の警告は50件以下
+
+### 静的解析実行
+```bash
+# 静的解析実行
+pio check -e native
+
+# 特定の重要度の警告のみ表示
+pio check -e native --severity=high
+
+# 詳細な結果を表示
+pio check -e native --verbose
+```
+
+## 主要な警告防止ガイドライン
+
+### 1. 重複分岐の統合
+**警告**: `bugprone-branch-clone`
+**対策**:
+```cpp
+// ❌ 悪い例
+if (condition1) {
+    maxValue = MAX_DIGIT_9;
+} else if (condition2) {
+    maxValue = MAX_DIGIT_9;
+} else if (condition3) {
+    maxValue = MAX_DIGIT_9;
+}
+
+// ✅ 良い例
+if (condition1 || condition2 || condition3) {
+    // maxValue = MAX_DIGIT_9; // デフォルト値と同じなので設定不要
+} else if (special_condition) {
+    maxValue = SPECIAL_VALUE;
+}
+```
+
+### 2. 疑わしいincludeの禁止
+**警告**: `bugprone-suspicious-include`
+**対策**:
+```cpp
+// ❌ 悪い例
+#include "SettingsLogic.cpp"
+
+// ✅ 良い例
+#include "SettingsLogic.h"
+```
+
+### 3. const修飾子の適用基準
+**警告**: `misc-const-correctness`
+**適用基準**:
+```cpp
+// ✅ 適用可能な例
+const PartialInputLogic::ParsedTime parsedTime = PartialInputLogic::parsePartialInput(digits, entered);
+
+// ❌ 適用不可な例（関数の制約）
+char buffer[32] = {};  // snprintfで書き込まれるためconst不可
+int totalWidth = 0;    // 計算中に変更されるためconst不可
+```
+
+### 4. 静的メソッド宣言の型指定方法
+**警告**: `readability-convert-member-functions-to-static`
+**対策**:
+```cpp
+// ❌ 悪い例
+static auto initAlarms(std::vector<time_t>& alarms, time_t now) -> void;
+
+// ✅ 良い例
+static void initAlarms(std::vector<time_t>& alarms, time_t now);
+```
+
+### 5. メンバー関数のstatic化基準
+**警告**: `readability-convert-member-functions-to-static`
+**適用基準**:
+```cpp
+// ✅ static化可能な例
+class DateTimeInputState {
+    static int getDigitValue(int position) {
+        // インスタンス変数を使用しない純粋な計算
+        return position >= 0 ? position : 0;
+    }
+};
+
+// ❌ static化不可な例
+class DateTimeInputState {
+    int getDigitValue(int position) const {
+        return dateTimeDigits[position];  // メンバー変数を使用
+    }
+private:
+    std::vector<int> dateTimeDigits;
+};
+```
+
+## 開発時のチェックリスト
+
+新しいコードを書く際は以下を確認：
+
+1. **変数初期化**: すべての変数が初期化されているか
+2. **静的関数**: インスタンス変数を使用しない関数は`static`か
+3. **パラメータ設計**: 同じ型の連続パラメータは避けているか
+4. **グローバル変数**: 必要最小限で`const`を検討しているか
+5. **ポインタ操作**: 安全な配列アクセスを使用しているか
+6. **範囲チェック**: 実行時インデックスに範囲チェックがあるか
+7. **現代的なC++**: 適切な初期化子と戻り値型を使用しているか
+8. **関数サイズ**: 認知複雑度が適切か
+9. **重複分岐**: 同じ処理を複数箇所で重複していないか
+10. **include**: `.cpp`ファイルを直接includeしていないか
+11. **const修飾子**: 適用可能な箇所で`const`を使用しているか
+12. **静的メソッド宣言**: `static type ...();`形式を使用しているか
+
+## 技術的制約による解決困難な警告
+
+以下の警告は技術的制約により解決困難です：
+
+### 1. 関数の制約によるconst修飾子適用不可
+- `snprintf`の引数は非constである必要がある
+- 計算中に変更される変数はconstにできない
+
+### 2. メンバー変数アクセスによるstatic化不可
+- インスタンス変数にアクセスするメソッドはstaticにできない
+- 引数にポインタや参照がある場合はstatic化を慎重に検討
+
+### 3. autoキーワードによる静的メソッド認識問題
+- `static auto ... -> type;`形式ではClang-Tidyが正しく認識しない
+- `static type ...();`形式を使用する必要がある
+
+## 品質改善の成果
+
+### Phase 7 静的解析改善の成果
+- **警告削減**: 25件 → 19件（6件の改善）
+- **実施した改善**:
+  1. 重複分岐統合（2件削減）
+  2. 疑わしいinclude削除（1件削減）
+  3. const修飾子追加（1件削減）
+  4. autoキーワード修正（2件削減）
+
+### 現在の警告状況（19件）
+技術的制約により解決困難な警告が残っていますが、これらは適切な理由により修正できないものです。
+- **AlarmLogic.cpp** (8件): 静的メソッド警告（技術的制約）
+- **DateTimeInputState.cpp** (5件): const修飾子、静的メソッド警告（技術的制約）
+- **PartialInputLogic.cpp** (1件): const修飾子警告（snprintf制約）
+- **TimePreviewLogic.cpp** (3件): 静的メソッド警告（引数制約）
+- **DateTimeInputViewImpl.cpp** (2件): const修飾子、静的メソッド警告（技術的制約）
+---
+description: コーディング規約と静的解析のガイドライン
+globs: ["**/*.cpp", "**/*.h", "**/*.hpp"]
+alwaysApply: false
+---
