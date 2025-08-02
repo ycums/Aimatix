@@ -72,87 +72,234 @@ public:
     }
 
     void onDraw() override {
-        if (inputLogic && view) {
-            const int* digits = inputLogic->getDigits();
-            const bool* entered = inputLogic->getEntered();
-            bool needsUpdate = false;
-            
-            // 入力値の変化をチェック
-            for (int i = 0; i < 4; ++i) {
-                if (digits[i] != lastDigits[i] || entered[i] != lastEntered[i]) {
-                    needsUpdate = true;
-                    break;
-                }
-            }
-            
-            // 入力値が変化した場合のみ更新
-            if (needsUpdate) {
-                for (int i = 0; i < 4; ++i) {
-                    view->showDigit(i, digits[i], entered[i]);
-                    lastDigits[i] = digits[i];
-                    lastEntered[i] = entered[i];
-                }
-            }
+        updateDigitDisplay();
+        updatePreviewDisplay();
+        updateColonDisplay();
+    }
+    
+    // Public methods
+    void setView(IInputDisplayView* v) { view = v; }
+    // StateManager, MainDisplayStateのsetterを追加
+    void setManager(StateManager* m) { manager = m; }
+    void setMainDisplayState(IState* mainState) { mainDisplayState = mainState; }
+    
+    // 相対値入力モードの設定
+    void setRelativeMode(bool relative) { isRelativeMode = relative; }
+    bool getRelativeMode() const { return isRelativeMode; }
+    
+    // テスト用: inputLogicを直接セット
+    void setInputLogicForTest(InputLogic* logic) { inputLogic = logic; }
+    
+    // ITimeProviderのsetter
+    void setTimeProvider(ITimeProvider* timeProvider) { timeProvider_ = timeProvider; }
+
+private:
+    InputLogic* inputLogic;
+    IInputDisplayView* view;
+    ITimeProvider* timeProvider_;
+    int lastDigits[4] = {-1,-1,-1,-1};
+    bool lastEntered[4] = {false,false,false,false};
+    StateManager* manager;
+    IState* mainDisplayState;
+    bool isRelativeMode;
+    
+    // エラーメッセージ表示管理
+    std::string errorMessage;
+    bool showError;
+    time_t errorStartTime;
+    
+    // プレビュー内容の変化チェック用
+    std::string lastPreview;
+
+    // 数字表示の更新
+    void updateDigitDisplay() {
+        if (!inputLogic || !view) {
+            return;
         }
         
-        // プレビュー表示 - 入力値が変更されたら即座に更新
-        int value = inputLogic ? inputLogic->getValue() : InputLogic::EMPTY_VALUE;
+        const int* digits = inputLogic->getDigits();
+        const bool* entered = inputLogic->getEntered();
+        
+        if (hasInputChanged(digits, entered)) {
+            for (int i = 0; i < 4; ++i) {
+                view->showDigit(i, digits[i], entered[i]);
+                lastDigits[i] = digits[i];
+                lastEntered[i] = entered[i];
+            }
+        }
+    }
+    
+    // プレビュー表示の更新
+    void updatePreviewDisplay() {
+        if (!view) {
+            return;
+        }
+        
+        char preview[32] = "";
+        generatePreviewText(preview, sizeof(preview));
+        
+        // プレビュー内容の変化チェック
+        std::string currentPreview(preview);
+        if (currentPreview != lastPreview) {
+            view->showPreview(preview);
+            lastPreview = currentPreview;
+        }
+    }
+    
+    // コロン表示の更新
+    void updateColonDisplay() {
         if (view) {
-            char preview[32] = "";
-            
-            // エラーメッセージ表示の管理
-            if (showError) {
-                // エラーメッセージを3秒間表示
-                time_t currentTime = timeProvider_ ? timeProvider_->now() : 0;
-                if (currentTime - errorStartTime >= 3) {
-                    showError = false;
-                    errorMessage = "";
-                } else {
-                    strncpy(preview, errorMessage.c_str(), sizeof(preview) - 1);
-                    preview[sizeof(preview) - 1] = '\0';
-                }
-            } else if (value != InputLogic::EMPTY_VALUE) {
-                // 完全入力時のプレビュー表示（絶対値・相対値共通）
-                if (isRelativeMode) {
-                    generateRelativePreview(preview, sizeof(preview));
-                } else {
-                    // 絶対時刻入力モードの場合：過去時刻の翌日処理を含む
-                    generateAbsolutePreview(preview, sizeof(preview));
-                }
-            } else {
-                // 部分入力時のプレビュー表示（絶対値・相対値共通）
-                const int* digits = inputLogic ? inputLogic->getDigits() : nullptr;
-                const bool* entered = inputLogic ? inputLogic->getEntered() : nullptr;
-                if (digits && entered) {
-                    // PartialInputLogicを使用して確定処理と同じロジックでプレビュー生成
-                    auto parsedTime = PartialInputLogic::parsePartialInput(digits, entered);
-                    bool hasInput = false;
-                    for (int i = 0; i < 4; ++i) {
-                        if (entered[i]) {
-                            hasInput = true;
-                            break;
-                        }
-                    }
-                    if (hasInput && parsedTime.isValid) {
-                        if (isRelativeMode) {
-                            generateRelativePreview(preview, sizeof(preview));
-                        } else {
-                            // 修正: 部分入力時もgenerateAbsolutePreviewを使う
-                            generateAbsolutePreview(preview, sizeof(preview));
-                        }
-                    }
-                }
-            }
-            
-            // プレビュー内容の変化チェック
-            std::string currentPreview(preview);
-            if (currentPreview != lastPreview) {
-                view->showPreview(preview);
-                lastPreview = currentPreview;
-            }
             view->showColon();
         }
-
+    }
+    
+    // 入力値の変化をチェック
+    bool hasInputChanged(const int* digits, const bool* entered) {
+        if (!digits || !entered) {
+            return false;
+        }
+        
+        for (int i = 0; i < 4; ++i) {
+            if (digits[i] != lastDigits[i] || entered[i] != lastEntered[i]) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    // プレビューテキスト生成
+    void generatePreviewText(char* preview, size_t previewSize) {
+        if (!preview || previewSize == 0) {
+            return;
+        }
+        
+        // エラーメッセージ表示の管理
+        if (showError) {
+            handleErrorDisplay(preview, previewSize);
+            return;
+        }
+        
+        int value = inputLogic ? inputLogic->getValue() : InputLogic::EMPTY_VALUE;
+        
+        if (value != InputLogic::EMPTY_VALUE) {
+            // 完全入力時のプレビュー表示
+            generateCompleteInputPreview(preview, previewSize);
+        } else {
+            // 部分入力時のプレビュー表示
+            generatePartialInputPreview(preview, previewSize);
+        }
+    }
+    
+    // エラー表示の処理
+    void handleErrorDisplay(char* preview, size_t previewSize) {
+        time_t currentTime = timeProvider_ ? timeProvider_->now() : 0;
+        if (currentTime - errorStartTime >= 3) {
+            showError = false;
+            errorMessage = "";
+        } else {
+            strncpy(preview, errorMessage.c_str(), previewSize - 1);
+            preview[previewSize - 1] = '\0';
+        }
+    }
+    
+    // 完全入力時のプレビュー生成
+    void generateCompleteInputPreview(char* preview, size_t previewSize) {
+        if (isRelativeMode) {
+            generateRelativePreview(preview, previewSize);
+        } else {
+            generateAbsolutePreview(preview, previewSize);
+        }
+    }
+    
+    // 部分入力時のプレビュー生成
+    void generatePartialInputPreview(char* preview, size_t previewSize) {
+        const int* digits = inputLogic ? inputLogic->getDigits() : nullptr;
+        const bool* entered = inputLogic ? inputLogic->getEntered() : nullptr;
+        
+        if (!digits || !entered) {
+            return;
+        }
+        
+        auto parsedTime = PartialInputLogic::parsePartialInput(digits, entered);
+        if (!hasAnyInput(entered) || !parsedTime.isValid) {
+            return;
+        }
+        
+        if (isRelativeMode) {
+            generateRelativePreview(preview, previewSize);
+        } else {
+            generateAbsolutePreview(preview, previewSize);
+        }
+    }
+    
+    // 入力があるかチェック
+    bool hasAnyInput(const bool* entered) {
+        if (!entered) {
+            return false;
+        }
+        
+        for (int i = 0; i < 4; ++i) {
+            if (entered[i]) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    // 相対値モードの確定処理
+    void handleRelativeModeSubmit(bool& success, bool& error) {
+        time_t relativeTime = inputLogic->getAbsoluteValue();
+        if (relativeTime != -1) {
+            success = addAlarmAtTime(relativeTime);
+            if (!success) {
+                handleError("Failed to add alarm.");
+                error = true;
+            }
+        } else {
+            handleError("Input is empty.");
+            error = true;
+        }
+    }
+    
+    // 絶対値モードの確定処理
+    void handleAbsoluteModeSubmit(bool& success, bool& error) {
+        const int* digits = inputLogic->getDigits();
+        const bool* entered = inputLogic->getEntered();
+        if (digits && entered) {
+            time_t now = time(nullptr);
+            extern std::vector<time_t> alarm_times;
+            AlarmLogic::AddAlarmResult result;
+            std::string msg;
+            bool ok = AlarmLogic::addAlarmFromPartialInput(alarm_times, now, digits, entered, result, msg);
+            if (ok) {
+                success = true;
+            } else {
+                handleError(msg);
+                error = true;
+            }
+        }
+    }
+    
+    // アラーム追加処理
+    bool addAlarmAtTime(time_t time) {
+        extern std::vector<time_t> alarm_times;
+        AlarmLogic::AddAlarmResult result;
+        std::string msg;
+        return AlarmLogic::addAlarmAtTime(alarm_times, time, result, msg);
+    }
+    
+    // メイン画面への遷移
+    void transitionToMainDisplay() {
+        if (manager && mainDisplayState) {
+            manager->setState(mainDisplayState);
+        }
+    }
+    
+    // 共通エラー処理
+    void handleError(const std::string& message) {
+        showError = true;
+        errorMessage = message;
+        errorStartTime = timeProvider_ ? timeProvider_->now() : 0;
     }
     void onButtonA() override {
         if (inputLogic) {
@@ -177,52 +324,13 @@ public:
         bool error = false;
         
         if (isRelativeMode) {
-            // 相対値入力モード: InputLogicから相対値を取得してアラーム追加
-            time_t relativeTime = inputLogic->getAbsoluteValue();
-            if (relativeTime != -1) {
-                extern std::vector<time_t> alarm_times;
-                AlarmLogic::AddAlarmResult result;
-                std::string msg;
-                
-                // 絶対時刻としてアラーム追加
-                success = AlarmLogic::addAlarmAtTime(alarm_times, relativeTime, result, msg);
-                if (!success) {
-                    error = true;
-                    showError = true;
-                    errorMessage = msg;
-                    errorStartTime = timeProvider_ ? timeProvider_->now() : 0;
-                }
-            } else {
-                error = true;
-                showError = true;
-                errorMessage = "Input is empty.";
-                errorStartTime = timeProvider_ ? timeProvider_->now() : 0;
-            }
+            handleRelativeModeSubmit(success, error);
         } else {
-            // 絶対時刻入力モード: 既存のロジックを使用
-            extern std::vector<time_t> alarm_times;
-            const int* digits = inputLogic->getDigits();
-            const bool* entered = inputLogic->getEntered();
-            if (digits && entered) {
-                time_t now = time(nullptr);
-                AlarmLogic::AddAlarmResult result;
-                std::string msg;
-                bool ok = AlarmLogic::addAlarmFromPartialInput(alarm_times, now, digits, entered, result, msg);
-                if (ok) {
-                    success = true;
-                } else {
-                    error = true;
-                    showError = true;
-                    errorMessage = msg;
-                    errorStartTime = timeProvider_ ? timeProvider_->now() : 0;
-                }
-            }
+            handleAbsoluteModeSubmit(success, error);
         }
         
         if (success && !error) {
-            if (manager && mainDisplayState) {
-                manager->setState(mainDisplayState);
-            }
+            transitionToMainDisplay();
         }
     }
     void onButtonALongPress() override {
@@ -243,37 +351,4 @@ public:
             manager->setState(mainDisplayState);
         }
     }
-    void setView(IInputDisplayView* v) { view = v; }
-    // StateManager, MainDisplayStateのsetterを追加
-    void setManager(StateManager* m) { manager = m; }
-    void setMainDisplayState(IState* mainState) { mainDisplayState = mainState; }
-    
-    // 相対値入力モードの設定
-    void setRelativeMode(bool relative) { isRelativeMode = relative; }
-    bool getRelativeMode() const { return isRelativeMode; }
-    
-    // テスト用: inputLogicを直接セット
-    void setInputLogicForTest(InputLogic* logic) { inputLogic = logic; }
-    
-    // ITimeProviderのsetter
-    void setTimeProvider(ITimeProvider* timeProvider) { timeProvider_ = timeProvider; }
-    
-private:
-    InputLogic* inputLogic;
-    IInputDisplayView* view;
-    ITimeProvider* timeProvider_;
-    int lastDigits[4] = {-1,-1,-1,-1};
-    bool lastEntered[4] = {false,false,false,false};
-    StateManager* manager;
-    IState* mainDisplayState;
-    bool isRelativeMode;
-    
-    // エラーメッセージ表示管理
-    std::string errorMessage;
-    bool showError;
-    time_t errorStartTime;
-    
-    // プレビュー内容の変化チェック用
-    std::string lastPreview;
-
 }; 
