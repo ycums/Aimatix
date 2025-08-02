@@ -54,7 +54,7 @@ int AlarmLogic::getRemainPercent(int remainSec, int totalSec) {
 
 void AlarmLogic::getAlarmTimeStrings(const std::vector<time_t>& alarms, std::vector<std::string>& out) {
     out.clear();
-    for (auto t : alarms) {
+    for (const time_t& t : alarms) {
         std::tm* tm_alarm = std::localtime(&t);
         std::ostringstream oss;
         oss << std::setfill('0') << std::setw(2) << tm_alarm->tm_hour << ":"
@@ -98,43 +98,37 @@ bool AlarmLogic::addAlarm(std::vector<time_t>& alarms, time_t now, time_t input,
                 if (minute <= now_tm->tm_min) {
                     hour += 1;
                 }
-            } else {
-                hour += now_tm->tm_hour;
             }
         } else {
-            hour = now_tm->tm_hour + 1;
-        }
-        // 繰り上げ
-        if (hour >= HOURS_24) { hour -= HOURS_24; add_day = 1; }
-        alarm_tm.tm_hour = hour;
-        alarm_tm.tm_min = minute;
-        alarm_tm.tm_mday += add_day;
-        
-        // 過去時刻チェック（分のみ指定の場合も）
-        const time_t candidate = mktime(&alarm_tm);
-        if (candidate <= now) {
-            // 現在時刻より前なら翌日
-            alarm_tm.tm_mday += 1;
+            // 分が現在分以下の場合、次の時間の同じ分として設定
+            hour = (now_tm->tm_hour + 1) % HOURS_24;
         }
     } else {
-        // 時分指定
+        // 時分指定（HHMM形式）
         hour = input / HOURS_100;
         minute = input % HOURS_100;
+        
         // 分繰り上げ
-        if (minute >= MINUTES_60) { hour += minute / MINUTES_60; minute = minute % MINUTES_60; }
+        if (minute >= MINUTES_60) { 
+            hour += minute / MINUTES_60; 
+            minute = minute % MINUTES_60; 
+        }
         // 時繰り上げ
-        const int add_day = hour / HOURS_24;
+        add_day = hour / HOURS_24;
         hour = hour % HOURS_24;
-        alarm_tm.tm_hour = hour;
-        alarm_tm.tm_min = minute;
         alarm_tm.tm_mday += add_day;
+        
         const time_t candidate = mktime(&alarm_tm);
         if (candidate <= now) {
-            // 現在時刻より前なら翌日
+            // 過去時刻の場合：翌日の同じ時刻として処理
             alarm_tm.tm_mday += 1;
         }
     }
-            const time_t alarmTime = mktime(&alarm_tm);
+    
+    alarm_tm.tm_hour = hour;
+    alarm_tm.tm_min = minute;
+    
+    const time_t alarmTime = mktime(&alarm_tm);
     
     // 最大数チェック
     constexpr int MAX_ALARMS = 5;
@@ -145,7 +139,7 @@ bool AlarmLogic::addAlarm(std::vector<time_t>& alarms, time_t now, time_t input,
     }
     
     // 重複チェック
-    for (auto existing : alarms) {
+    for (const time_t& existing : alarms) {
         if (existing == alarmTime) {
             result = AddAlarmResult::ErrorDuplicate;
             errorMsg = "Duplicate alarm time";
@@ -170,7 +164,7 @@ bool AlarmLogic::addAlarmAtTime(std::vector<time_t>& alarms, time_t alarmTime, A
     }
     
     // 重複チェック
-    for (auto existing : alarms) {
+    for (const time_t& existing : alarms) {
         if (existing == alarmTime) {
             result = AddAlarmResult::ErrorDuplicate;
             errorMsg = "Duplicate alarm time";
@@ -201,7 +195,7 @@ bool AlarmLogic::addAlarmFromPartialInput(
     }
     
     // 部分的な入力状態を完全な時分に変換（PartialInputLogicを使用）
-    auto parsedTime = PartialInputLogic::parsePartialInput(digits, entered);
+    PartialInputLogic::ParsedTime parsedTime = PartialInputLogic::parsePartialInput(digits, entered);
     if (!parsedTime.isValid) {
         result = AddAlarmResult::ErrorInvalid;
         errorMsg = "Invalid time format";
@@ -266,7 +260,7 @@ bool AlarmLogic::addAlarmFromPartialInput(
     }
     
     // 重複チェック
-    for (const auto& existing : alarms) {
+    for (const time_t& existing : alarms) {
         if (existing == alarmTime) {
             result = AddAlarmResult::ErrorDuplicate;
             errorMsg = "Duplicate alarm time";

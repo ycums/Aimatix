@@ -12,7 +12,7 @@ TimePreviewLogic::PreviewResult TimePreviewLogic::generatePreview(
     result.isValid = false;
     result.preview = "";
     
-    if (!timeProvider || !digits || !entered) {
+    if (timeProvider == nullptr || digits == nullptr || entered == nullptr) {
         return result;
     }
     
@@ -41,7 +41,7 @@ TimePreviewLogic::PreviewResult TimePreviewLogic::generateRelativePreview(
     result.isValid = false;
     result.preview = "";
     
-    if (!timeProvider || relativeTime == -1) {
+    if (timeProvider == nullptr || relativeTime == -1) {
         return result;
     }
     
@@ -55,7 +55,7 @@ time_t TimePreviewLogic::calculateAbsoluteTime(
     const bool* entered, 
     ITimeProvider* timeProvider
 ) {
-    if (!timeProvider || !digits || !entered) {
+    if (timeProvider == nullptr || digits == nullptr || entered == nullptr) {
         return -1;
     }
     
@@ -122,7 +122,7 @@ std::string TimePreviewLogic::formatPreview(
     ITimeProvider* timeProvider,
     bool isRelativeMode
 ) {
-    if (!timeProvider) {
+    if (timeProvider == nullptr) {
         return "";
     }
     
@@ -132,7 +132,7 @@ std::string TimePreviewLogic::formatPreview(
     // 静的バッファ問題を回避するため、値をコピー
     time_t time_copy = time;
     struct tm* time_tm = timeProvider->localtime(&time_copy);
-    if (!time_tm) {
+    if (time_tm == nullptr) {
         return "";
     }
     
@@ -168,7 +168,7 @@ int TimePreviewLogic::calculateDayDifference(
     time_t currentTime,
     ITimeProvider* timeProvider
 ) {
-    if (!timeProvider) {
+    if (timeProvider == nullptr) {
         return 0;
     }
     
@@ -177,7 +177,7 @@ int TimePreviewLogic::calculateDayDifference(
     time_t current_copy1 = currentTime;
     
     struct tm* target_tm = timeProvider->localtime(&target_copy1);
-    if (!target_tm) {
+    if (target_tm == nullptr) {
         return 0;
     }
     
@@ -187,7 +187,7 @@ int TimePreviewLogic::calculateDayDifference(
     // 別の変数でcurrent_tmを取得
     time_t current_copy2 = currentTime;
     struct tm* current_tm = timeProvider->localtime(&current_copy2);
-    if (!current_tm) {
+    if (current_tm == nullptr) {
         return 0;
     }
     

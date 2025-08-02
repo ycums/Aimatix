@@ -2,7 +2,7 @@
 #include <cstring>
 
 bool TimeValidationLogic::isSystemTimeBeforeMinimum(ITimeProvider* timeProvider) {
-    if (!timeProvider) {
+    if (timeProvider == nullptr) {
         return true; // timeProviderがnullの場合は補正が必要とみなす
     }
     
@@ -13,7 +13,7 @@ bool TimeValidationLogic::isSystemTimeBeforeMinimum(ITimeProvider* timeProvider)
 }
 
 bool TimeValidationLogic::correctSystemTimeToMinimum(ITimeProvider* timeProvider) {
-    if (!timeProvider) {
+    if (timeProvider == nullptr) {
         return false; // timeProviderがnullの場合は補正不可
     }
     
@@ -35,7 +35,7 @@ time_t TimeValidationLogic::getMinimumSystemTime() {
 }
 
 bool TimeValidationLogic::validateAndCorrectSystemTime(ITimeProvider* timeProvider) {
-    if (!timeProvider) {
+    if (timeProvider == nullptr) {
         return false; // timeProviderがnullの場合は何もしない
     }
     

@@ -16,20 +16,20 @@ void DateTimeInputViewImpl::clear() {
 }
 
 void DateTimeInputViewImpl::showTitle(const char* title, int batteryLevel, bool isWarning) {
-    if (!disp) return;
+    if (disp == nullptr) return;
     
     // タイトルバー描画
     drawTitleBar(disp, title, batteryLevel, isWarning);
 }
 
 void DateTimeInputViewImpl::showHints(const char* hintA, const char* hintB, const char* hintC) {
-    if (!disp) return;
+    if (disp == nullptr) return;
     
     drawButtonHintsGrid(disp, hintA, hintB, hintC);
 }
 
 void DateTimeInputViewImpl::showDateTimeString(const std::string& dateTimeStr, int cursorPosition) {
-    if (!disp) return;
+    if (disp == nullptr) return;
     
     // 状態変更の検出
     bool needsRedraw = (dateTimeStr != lastDateTimeStr) || (lastDateTimeStr.empty());
@@ -60,7 +60,7 @@ void DateTimeInputViewImpl::showDateTimeString(const std::string& dateTimeStr, i
 }
 
 void DateTimeInputViewImpl::showErrorMessage(const std::string& message) {
-    if (!disp) return;
+    if (disp == nullptr) return;
     
     disp->setTextFont(2);
     disp->setTextDatum(MC_DATUM);
@@ -71,7 +71,7 @@ void DateTimeInputViewImpl::showErrorMessage(const std::string& message) {
 }
 
 void DateTimeInputViewImpl::drawDateTimeGrid(const std::string& dateTimeStr) {
-    if (!disp) return;
+    if (disp == nullptr) return;
     
     disp->setTextFont(FONT_MAIN);
     disp->setTextDatum(MC_DATUM);
@@ -99,7 +99,7 @@ void DateTimeInputViewImpl::drawDateTimeGrid(const std::string& dateTimeStr) {
 }
 
 void DateTimeInputViewImpl::drawCursorHighlight(const std::string& dateTimeStr, int cursorPosition) {
-    if (!disp || cursorPosition < 0 || cursorPosition >= static_cast<int>(dateTimeStr.length())) {
+    if (disp == nullptr || cursorPosition < 0 || cursorPosition >= static_cast<int>(dateTimeStr.length())) {
         return;
     }
     
@@ -112,7 +112,7 @@ void DateTimeInputViewImpl::drawCursorHighlight(const std::string& dateTimeStr, 
 }
 
 void DateTimeInputViewImpl::clearCursorHighlight(int cursorPosition) {
-    if (!disp || cursorPosition < 0 || cursorPosition >= static_cast<int>(lastDateTimeStr.length())) {
+    if (disp == nullptr || cursorPosition < 0 || cursorPosition >= static_cast<int>(lastDateTimeStr.length())) {
         return;
     }
     
@@ -125,7 +125,7 @@ void DateTimeInputViewImpl::clearCursorHighlight(int cursorPosition) {
 }
 
 void DateTimeInputViewImpl::drawCharAtPosition(char c, int x, int y, bool isHighlighted) {
-    if (!disp) return;
+    if (disp == nullptr) return;
     
     // フォントとDATUMの設定
     disp->setTextFont(FONT_MAIN);

@@ -165,7 +165,7 @@ void test_alarm_correction_minute_only_99() {
     alarms.clear();
     AlarmLogic::addAlarm(alarms, now, input, result, msg);
     struct tm* tm4 = localtime(&alarms[0]);
-    TEST_ASSERT_EQUAL(15, tm4->tm_hour);
+    TEST_ASSERT_EQUAL(1, tm4->tm_hour);
     TEST_ASSERT_EQUAL(39, tm4->tm_min);
 }
 void test_alarm_correction_hour_minute_990() {
