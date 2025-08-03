@@ -132,7 +132,7 @@ void setup() {
     alarm_times.clear();
     
     // 状態管理初期化
-    state_manager.initialize(&main_display_state);
+    state_manager.setState(&main_display_state);
     
     // 描画関数の設定
     setFillRectImpl(m5_fill_rect_impl);
