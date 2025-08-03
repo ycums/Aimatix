@@ -31,9 +31,6 @@
 // 定数定義
 constexpr int LOOP_DELAY_MS = 50;
 
-extern void setFillRectImpl(void (*impl)(int, int, int, int, int));
-extern void setFillProgressBarSpriteImpl(void (*impl)(int, int, int, int, int));
-
 // 統一された描画関数（全デバイス共通）
 auto m5_rect_impl(int pos_x, int pos_y, int width, int height) -> void {
     M5.Display.drawRect(pos_x, pos_y, width, height, AMBER_COLOR);
@@ -133,10 +130,6 @@ void setup() {
     
     // 状態管理初期化
     state_manager.setState(&main_display_state);
-    
-    // 描画関数の設定
-    setFillRectImpl(m5_fill_rect_impl);
-    setFillProgressBarSpriteImpl(m5_progress_bar_impl);
 }
 #endif
 
