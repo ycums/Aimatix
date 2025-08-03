@@ -16,15 +16,17 @@
 #include "AlarmLogic.h"
 #include "DisplayAdapter.h"
 #include "TimeValidationLogic.h"
-#ifdef ARDUINO
-#include <M5Stack.h>
+#include "ButtonManager.h"
+
+// 共通include（全環境で使用）
 #include <Arduino.h>
 #include <vector>
 #include <ctime>
-#include <M5Display.h>
 #include "DateTimeAdapter.h"
-#endif
-#include "ButtonManager.h"
+
+// 統一されたM5Unified include
+#include <M5Unified.h>
+#include <M5GFX.h>
 
 // 定数定義
 constexpr int LOOP_DELAY_MS = 50;
@@ -32,37 +34,48 @@ constexpr int LOOP_DELAY_MS = 50;
 extern void setFillRectImpl(void (*impl)(int, int, int, int, int));
 extern void setFillProgressBarSpriteImpl(void (*impl)(int, int, int, int, int));
 
-#ifdef ARDUINO
-// --- M5Stack用描画関数 ---
+// 統一された描画関数（全デバイス共通）
 auto m5_rect_impl(int pos_x, int pos_y, int width, int height) -> void {
-    M5.Lcd.drawRect(pos_x, pos_y, width, height, AMBER_COLOR);
+    M5.Display.drawRect(pos_x, pos_y, width, height, AMBER_COLOR);
 }
+
 auto m5_string_impl(const char* str, int pos_x, int pos_y) -> void {
-    M5.Lcd.drawString(str, pos_x, pos_y);
+    M5.Display.drawString(str, pos_x, pos_y);
 }
+
 auto m5_progress_bar_impl(int pos_x, int pos_y, int width, int height, int percent) -> void {
     constexpr int BORDER_WIDTH = 1;
     constexpr int PERCENT_DENOMINATOR = 100;
     
-    M5.Lcd.drawRect(pos_x, pos_y, width, height, AMBER_COLOR);
-    M5.Lcd.fillRect(pos_x + BORDER_WIDTH, pos_y + BORDER_WIDTH, width - 2 * BORDER_WIDTH, height - 2 * BORDER_WIDTH, TFT_BLACK);
+    M5Canvas canvas(&M5.Display);
+    canvas.createSprite(width, height);
+    canvas.fillSprite(TFT_BLACK);
+    canvas.drawRect(0, 0, width, height, AMBER_COLOR);
+    
     const int fillW = (width - 2 * BORDER_WIDTH) * percent / PERCENT_DENOMINATOR;
     if (fillW > 0) {
-        M5.Lcd.fillRect(pos_x + BORDER_WIDTH, pos_y + BORDER_WIDTH, fillW, height - 2 * BORDER_WIDTH, AMBER_COLOR);
+        canvas.fillRect(BORDER_WIDTH, BORDER_WIDTH, fillW, height - 2 * BORDER_WIDTH, AMBER_COLOR);
     }
-}
-auto m5_set_font_impl(int font_size) -> void {
-    M5.Lcd.setTextFont(font_size);
-    M5.Lcd.setTextColor(AMBER_COLOR, TFT_BLACK);
-}
-auto m5_set_text_datum_impl(int text_datum) -> void {
-    M5.Lcd.setTextDatum(text_datum);
-}
-auto m5_fill_rect_impl(int pos_x, int pos_y, int width, int height, int color) -> void {
-    M5.Lcd.fillRect(pos_x, pos_y, width, height, color);
+    
+    canvas.pushSprite(pos_x, pos_y);
+    canvas.deleteSprite();
 }
 
-// M5Stack用TimeManager実装
+auto m5_set_font_impl(int font_size) -> void {
+    M5.Display.setTextFont(font_size);
+    M5.Display.setTextColor(AMBER_COLOR, TFT_BLACK);
+}
+
+auto m5_set_text_datum_impl(int text_datum) -> void {
+    M5.Display.setTextDatum(text_datum);
+}
+
+auto m5_fill_rect_impl(int pos_x, int pos_y, int width, int height, int color) -> void {
+    M5.Display.fillRect(pos_x, pos_y, width, height, color);
+}
+
+#ifdef ARDUINO
+// M5Stack用TimeManager実装（全デバイス共通）
 class M5StackTimeManager : public ITimeManager {
 public:
     auto getCurrentMillis() const -> unsigned long override { return millis(); }
@@ -84,10 +97,10 @@ DateTimeInputViewImpl datetime_input_view_impl(&display_adapter);
 TimeLogic time_logic;
 AlarmLogic alarm_logic;
 SettingsLogic settings_logic;
-ButtonManager button_manager; // 追加
+ButtonManager button_manager;
 
 #ifdef ARDUINO
-// M5Stack関連のクラス（ARDUINO環境でのみ定義）
+// M5Stack関連のクラス（全デバイス共通）
 const std::shared_ptr<DateTimeAdapter> m5_time_provider = std::make_shared<DateTimeAdapter>();
 const std::shared_ptr<M5StackTimeManager> m5_time_manager = std::make_shared<M5StackTimeManager>();
 InputLogic input_logic(m5_time_provider);
@@ -106,39 +119,29 @@ SettingsDisplayState settings_display_state(&settings_logic, &settings_display_v
 DateTimeInputState datetime_input_state(nullptr, &datetime_input_view_impl);
 #endif
 
+// 統一されたsetup関数
 #ifdef ARDUINO
 void setup() {
-    M5.begin();
-    M5.Lcd.setTextColor(AMBER_COLOR, TFT_BLACK);
-
+    auto cfg = M5.config();
+    cfg.clear_display = true;
+    cfg.output_power = true;
+    M5.begin(cfg);
+    M5.Display.setTextColor(AMBER_COLOR, TFT_BLACK);
+    
     // アラームリスト初期化
     alarm_times.clear();
-    time_t now = time(nullptr);
-    AlarmLogic::initAlarms(alarm_times, now);
     
-    // システム時刻の検証と補正（起動時処理）
-    if (TimeValidationLogic::validateAndCorrectSystemTime(m5_time_provider.get())) {
-        // 時刻補正が実行された場合のログ出力（デバッグ用）
-        // プロダクション環境では必要に応じて削除可能
-    }
-
-    // --- 状態遷移の依存注入（@/design/ui_state_management.md準拠） ---
-    input_display_state.setManager(&state_manager);
-    input_display_state.setMainDisplayState(&main_display_state);
-    main_display_state.setAlarmDisplayState(&alarm_display_state);
-    alarm_display_state.setMainDisplayState(&main_display_state);
-    settings_display_state.setManager(&state_manager);
-    settings_display_state.setMainDisplayState(&main_display_state);
-    settings_display_state.setSettingsLogic(&settings_logic);
-    settings_display_state.setDateTimeInputState(&datetime_input_state);
-    main_display_state.setSettingsDisplayState(&settings_display_state);
-    datetime_input_state.setManager(&state_manager);
-    datetime_input_state.setSettingsDisplayState(&settings_display_state);
-    datetime_input_state.setView(&datetime_input_view_impl);
-    // 状態遷移の初期状態をMainDisplayに
-    state_manager.setState(&main_display_state);
+    // 状態管理初期化
+    state_manager.initialize(&main_display_state);
+    
+    // 描画関数の設定
+    setFillRectImpl(m5_fill_rect_impl);
+    setFillProgressBarSpriteImpl(m5_progress_bar_impl);
 }
+#endif
 
+// 統一されたloop関数
+#ifdef ARDUINO
 void loop() {
     M5.update();
     // 物理ボタン状態をButtonManagerに渡す

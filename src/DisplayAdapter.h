@@ -1,71 +1,61 @@
 #pragma once
 #include "IDisplay.h"
-#ifdef ARDUINO
-#include <M5Stack.h>
-#endif
+#include <Arduino.h>
+#include <M5Unified.h>
+#include <M5GFX.h>
 
 class DisplayAdapter : public IDisplay {
 public:
     void clear() override {
-#ifdef ARDUINO
-        M5.Lcd.fillScreen(TFT_BLACK);
-#endif
+        M5.Display.fillScreen(TFT_BLACK);
     }
+    
     void drawText(int x, int y, const char* text, int fontSize) override {
-#ifdef ARDUINO
-        M5.Lcd.setTextFont(fontSize);
-        M5.Lcd.drawString(text, x, y);
-#endif
+        M5.Display.setTextFont(fontSize);
+        M5.Display.drawString(text, x, y);
     }
+    
     void setTextColor(uint32_t color, uint32_t bgColor) override {
-#ifdef ARDUINO
-        M5.Lcd.setTextColor(color, bgColor);
-#endif
+        M5.Display.setTextColor(color, bgColor);
     }
+    
     void fillRect(int x, int y, int w, int h, uint32_t color) override {
-#ifdef ARDUINO
-        M5.Lcd.fillRect(x, y, w, h, color);
-#endif
+        M5.Display.fillRect(x, y, w, h, color);
     }
+    
     void drawRect(int x, int y, int w, int h, uint32_t color) override {
-#ifdef ARDUINO
-        M5.Lcd.drawRect(x, y, w, h, color);
-#endif
+        M5.Display.drawRect(x, y, w, h, color);
     }
+    
     void setTextDatum(int datum) override {
-#ifdef ARDUINO
-        M5.Lcd.setTextDatum(datum);
-#endif
+        M5.Display.setTextDatum(datum);
     }
+    
     void setTextFont(int font) override {
-#ifdef ARDUINO
-        M5.Lcd.setTextFont(font);
-#endif
+        M5.Display.setTextFont(font);
     }
+    
     void fillProgressBarSprite(int x, int y, int w, int h, int percent) override {
-#ifdef ARDUINO
-        TFT_eSprite sprite(&M5.Lcd);
-        sprite.createSprite(w, h);
-        sprite.fillRect(0, 0, w, h, TFT_BLACK);
-        sprite.drawRect(0, 0, w, h, AMBER_COLOR);
+        // M5GFXの正しいスプライト実装
+        M5Canvas canvas(&M5.Display);
+        canvas.createSprite(w, h);
+        canvas.fillSprite(TFT_BLACK);
+        canvas.drawRect(0, 0, w, h, AMBER_COLOR);
+        
         int fillW = (w - 2) * percent / 100;
         if (fillW > 0) {
-            sprite.fillRect(1, 1, fillW, h - 2, AMBER_COLOR);
+            canvas.fillRect(1, 1, fillW, h - 2, AMBER_COLOR);
         }
-        sprite.pushSprite(x, y);
-        sprite.deleteSprite();
-#endif
+        
+        canvas.pushSprite(x, y);
+        canvas.deleteSprite();
     }
+    
     void drawLine(int x0, int y0, int x1, int y1, uint32_t color) override {
-#ifdef ARDUINO
-        M5.Lcd.drawLine(x0, y0, x1, y1, color);
-#endif
+        M5.Display.drawLine(x0, y0, x1, y1, color);
     }
+    
     int getTextDatum() const override {
-#ifdef ARDUINO
-        return M5.Lcd.getTextDatum();
-#else
-        return 0;
-#endif
+        return M5.Display.getTextDatum();
     }
 }; 
