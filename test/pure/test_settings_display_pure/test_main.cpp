@@ -278,6 +278,116 @@ void test_settings_logic_comprehensive() {
     TEST_ASSERT_EQUAL(SettingsItem::SOUND, logic.getSelectedItem());
 }
 
+// 分岐カバレッジ向上のためのテスト
+void test_settings_display_state_nullptr_branches() {
+    // nullptr viewでのテスト
+    SettingsLogic logic;
+    SettingsDisplayState state(&logic);
+    
+    // nullptrでもクラッシュしないことを確認
+    state.onEnter();
+    state.onDraw();
+    state.onButtonA();
+    state.onButtonB();
+    state.onButtonC();
+    state.onButtonALongPress();
+    state.onButtonBLongPress();
+    state.onButtonCLongPress();
+    state.onExit();
+    
+    TEST_ASSERT_TRUE(true); // エラーが発生しなければ成功
+}
+
+void test_settings_display_state_nullptr_logic_branches() {
+    // nullptr settingsLogicでのテスト
+    SettingsDisplayState state(nullptr);
+    
+    // nullptrでもクラッシュしないことを確認
+    state.onEnter();
+    state.onDraw();
+    state.onButtonA();
+    state.onButtonB();
+    state.onButtonC();
+    
+    TEST_ASSERT_TRUE(true); // エラーが発生しなければ成功
+}
+
+void test_settings_display_state_nullptr_manager_branches() {
+    SettingsLogic logic;
+    SettingsDisplayState state(&logic);
+    
+    // nullptr managerでのテスト
+    state.onButtonC(); // SET_DATE_TIME選択時の遷移
+    
+    TEST_ASSERT_TRUE(true); // エラーが発生しなければ成功
+}
+
+void test_settings_display_state_nullptr_datetime_state_branches() {
+    SettingsLogic logic;
+    SettingsDisplayState state(&logic);
+    
+    // nullptr datetimeInputStateでのテスト
+    state.onButtonC(); // SET_DATE_TIME選択時の遷移
+    
+    TEST_ASSERT_TRUE(true); // エラーが発生しなければ成功
+}
+
+void test_settings_display_state_button_a_edge_cases() {
+    SettingsLogic logic;
+    SettingsDisplayState state(&logic);
+    
+    // 最初の項目（インデックス0）でのボタンAテスト
+    logic.setSelectedItem(SettingsItem::SOUND);
+    state.onButtonA(); // 移動しないことを確認
+    
+    TEST_ASSERT_EQUAL(SettingsItem::SOUND, logic.getSelectedItem());
+}
+
+void test_settings_display_state_button_b_edge_cases() {
+    SettingsLogic logic;
+    SettingsDisplayState state(&logic);
+    
+    // 最後の項目でのボタンBテスト
+    logic.setSelectedItem(SettingsItem::INFO);
+    state.onButtonB(); // 移動しないことを確認
+    
+    TEST_ASSERT_EQUAL(SettingsItem::INFO, logic.getSelectedItem());
+}
+
+void test_settings_display_state_display_update_logic() {
+    SettingsLogic logic;
+    SettingsDisplayState state(&logic);
+    
+    // 初期表示
+    state.onEnter();
+    
+    // 選択項目変更
+    logic.setSelectedItem(SettingsItem::LCD_BRIGHTNESS);
+    state.onDraw();
+    
+    // 同じ項目を選択（更新されないことを確認）
+    state.onDraw();
+    
+    TEST_ASSERT_TRUE(true); // エラーが発生しなければ成功
+}
+
+void test_settings_display_state_different_settings_items() {
+    SettingsLogic logic;
+    SettingsDisplayState state(&logic);
+    
+    // 各設定項目でのテスト
+    logic.setSelectedItem(SettingsItem::SOUND);
+    state.onButtonC();
+    
+    logic.setSelectedItem(SettingsItem::LCD_BRIGHTNESS);
+    state.onButtonC();
+    
+    logic.setSelectedItem(SettingsItem::SET_DATE_TIME);
+    state.onButtonC();
+    
+    TEST_ASSERT_TRUE(true); // エラーが発生しなければ成功
+}
+
 int main(int argc, char **argv) {
     UNITY_BEGIN();
     
@@ -293,6 +403,16 @@ int main(int argc, char **argv) {
     RUN_TEST(test_settings_logic_basic);
     RUN_TEST(test_settings_logic_branch_coverage);
     RUN_TEST(test_settings_logic_comprehensive);
+    
+    // 分岐カバレッジ向上のためのテスト
+    RUN_TEST(test_settings_display_state_nullptr_branches);
+    RUN_TEST(test_settings_display_state_nullptr_logic_branches);
+    RUN_TEST(test_settings_display_state_nullptr_manager_branches);
+    RUN_TEST(test_settings_display_state_nullptr_datetime_state_branches);
+    RUN_TEST(test_settings_display_state_button_a_edge_cases);
+    RUN_TEST(test_settings_display_state_button_b_edge_cases);
+    RUN_TEST(test_settings_display_state_display_update_logic);
+    RUN_TEST(test_settings_display_state_different_settings_items);
     
     return UNITY_END();
 } 

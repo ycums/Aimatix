@@ -74,6 +74,10 @@ class CoverageMeasurementSystem:
             return self.get_default_config()
         except json.JSONDecodeError as e:
             raise CoverageMeasurementError(f"設定ファイルのJSON形式エラー: {e}")
+        except UnicodeDecodeError as e:
+            print(f"警告: 設定ファイル {config_path} のエンコーディングエラー: {e}")
+            print("デフォルト設定を使用します。")
+            return self.get_default_config()
     
     def get_default_config(self) -> dict:
         """

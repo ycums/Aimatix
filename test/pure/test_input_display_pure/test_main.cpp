@@ -1002,6 +1002,8 @@ void test_display_common_grid_lines_branches() {
     TEST_ASSERT_TRUE(mockDisplay->drawRectCallCount > 0);
 }
 
+
+
 int main(int argc, char **argv) {
     UNITY_BEGIN();
     RUN_TEST(test_basic_input_logic);
@@ -1031,6 +1033,8 @@ int main(int argc, char **argv) {
     RUN_TEST(test_display_common_null_pointer_branches);
     RUN_TEST(test_display_common_battery_charging_branches);
     RUN_TEST(test_display_common_grid_lines_branches);
+    
+
     
     UNITY_END();
     return 0;

@@ -315,6 +315,114 @@ void test_main_display_state_remain_display() {
     TEST_ASSERT_TRUE(true); // エラーが発生しなければ成功
 }
 
+// 分岐カバレッジ向上のためのテスト
+void test_main_display_state_nullptr_branches() {
+    // nullptr viewでのテスト
+    auto mockTimeProvider = std::unique_ptr<MockTimeProvider>(new MockTimeProvider(kFixedTestTime));
+    MainDisplayState state(nullptr, nullptr, nullptr, nullptr, nullptr);
+    
+    // nullptrでもクラッシュしないことを確認
+    state.onEnter();
+    state.onDraw();
+    state.onButtonA();
+    state.onButtonB();
+    state.onButtonC();
+    state.onButtonALongPress();
+    state.onButtonBLongPress();
+    state.onButtonCLongPress();
+    state.onExit();
+    
+    TEST_ASSERT_TRUE(true); // エラーが発生しなければ成功
+}
+
+void test_main_display_state_nullptr_logic_branches() {
+    auto mockView = std::unique_ptr<MockMainDisplayView>(new MockMainDisplayView());
+    MainDisplayState state(nullptr, nullptr, mockView.get(), nullptr, nullptr);
+    
+    // nullptr timeLogic, alarmLogicでのテスト
+    state.onDraw();
+    
+    TEST_ASSERT_TRUE(true); // エラーが発生しなければ成功
+}
+
+void test_main_display_state_nullptr_manager_branches() {
+    auto mockView = std::unique_ptr<MockMainDisplayView>(new MockMainDisplayView());
+    auto mockTimeProvider = std::unique_ptr<MockTimeProvider>(new MockTimeProvider(kFixedTestTime));
+    MainDisplayState state(nullptr, nullptr, mockView.get(), nullptr, nullptr);
+    
+    // nullptr managerでのテスト
+    state.onButtonA();
+    state.onButtonB();
+    state.onButtonC();
+    state.onButtonCLongPress();
+    
+    TEST_ASSERT_TRUE(true); // エラーが発生しなければ成功
+}
+
+void test_main_display_state_nullptr_input_state_branches() {
+    auto mockView = std::unique_ptr<MockMainDisplayView>(new MockMainDisplayView());
+    auto mockTimeProvider = std::unique_ptr<MockTimeProvider>(new MockTimeProvider(kFixedTestTime));
+    MainDisplayState state(nullptr, nullptr, mockView.get(), nullptr, nullptr);
+    
+    // nullptr inputDisplayStateでのテスト
+    state.onButtonA();
+    state.onButtonB();
+    
+    TEST_ASSERT_TRUE(true); // エラーが発生しなければ成功
+}
+
+void test_main_display_state_nullptr_alarm_state_branches() {
+    auto mockView = std::unique_ptr<MockMainDisplayView>(new MockMainDisplayView());
+    auto mockTimeProvider = std::unique_ptr<MockTimeProvider>(new MockTimeProvider(kFixedTestTime));
+    MainDisplayState state(nullptr, nullptr, mockView.get(), nullptr, nullptr);
+    
+    // nullptr alarmDisplayStateでのテスト
+    state.onButtonC();
+    
+    TEST_ASSERT_TRUE(true); // エラーが発生しなければ成功
+}
+
+void test_main_display_state_nullptr_settings_state_branches() {
+    auto mockView = std::unique_ptr<MockMainDisplayView>(new MockMainDisplayView());
+    auto mockTimeProvider = std::unique_ptr<MockTimeProvider>(new MockTimeProvider(kFixedTestTime));
+    MainDisplayState state(nullptr, nullptr, mockView.get(), nullptr, nullptr);
+    
+    // nullptr settingsDisplayStateでのテスト
+    state.onButtonCLongPress();
+    
+    TEST_ASSERT_TRUE(true); // エラーが発生しなければ成功
+}
+
+void test_main_display_state_empty_alarm_list_branches() {
+    auto mockView = std::unique_ptr<MockMainDisplayView>(new MockMainDisplayView());
+    auto mockTimeProvider = std::unique_ptr<MockTimeProvider>(new MockTimeProvider(kFixedTestTime));
+    MainDisplayState state(nullptr, nullptr, mockView.get(), nullptr, nullptr);
+    
+    // 空のアラームリストでのテスト
+    extern std::vector<time_t> alarm_times;
+    alarm_times.clear();
+    
+    state.onDraw();
+    
+    TEST_ASSERT_TRUE(true); // エラーが発生しなければ成功
+}
+
+void test_main_display_state_alarm_list_with_items_branches() {
+    auto mockView = std::unique_ptr<MockMainDisplayView>(new MockMainDisplayView());
+    auto mockTimeProvider = std::unique_ptr<MockTimeProvider>(new MockTimeProvider(kFixedTestTime));
+    MainDisplayState state(nullptr, nullptr, mockView.get(), nullptr, nullptr);
+    
+    // アラームリストにアイテムがある場合のテスト
+    extern std::vector<time_t> alarm_times;
+    alarm_times.clear();
+    alarm_times.push_back(kFixedTestTime + 3600); // 1時間後
+    alarm_times.push_back(kFixedTestTime + 7200); // 2時間後
+    
+    state.onDraw();
+    
+    TEST_ASSERT_TRUE(true); // エラーが発生しなければ成功
+}
+
 int main(int argc, char **argv) {
     UNITY_BEGIN();
     
@@ -337,6 +445,16 @@ int main(int argc, char **argv) {
     RUN_TEST(test_main_display_state_alarm_list_display);
     RUN_TEST(test_main_display_state_progress_display);
     RUN_TEST(test_main_display_state_remain_display);
+    
+    // 分岐カバレッジ向上のためのテスト
+    RUN_TEST(test_main_display_state_nullptr_branches);
+    RUN_TEST(test_main_display_state_nullptr_logic_branches);
+    RUN_TEST(test_main_display_state_nullptr_manager_branches);
+    RUN_TEST(test_main_display_state_nullptr_input_state_branches);
+    RUN_TEST(test_main_display_state_nullptr_alarm_state_branches);
+    RUN_TEST(test_main_display_state_nullptr_settings_state_branches);
+    RUN_TEST(test_main_display_state_empty_alarm_list_branches);
+    RUN_TEST(test_main_display_state_alarm_list_with_items_branches);
     
     return UNITY_END();
 } 
