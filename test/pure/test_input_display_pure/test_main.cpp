@@ -862,7 +862,7 @@ void test_display_common_null_pointer_branches() {
             fillRectCallCount++;
         }
         void drawRect(int x, int y, int w, int h, uint16_t color) override { drawRectCalled = true; }
-        void setTextDatum(int datum) override { setTextDatumCalled = true; }
+        void setTextDatum(uint8_t datum) override { setTextDatumCalled = true; }
         void setTextFont(int font) override { setTextFontCalled = true; }
         void fillProgressBarSprite(int x, int y, int w, int h, int percent) override { fillProgressBarSpriteCalled = true; }
         void drawLine(int x0, int y0, int x1, int y1, uint16_t color) override { drawLineCalled = true; }
@@ -923,7 +923,7 @@ void test_display_common_battery_charging_branches() {
         void setTextColor(uint16_t color, uint16_t bgColor) override { setTextColorCalled = true; }
         void fillRect(int x, int y, int w, int h, uint16_t color) override { fillRectCalled = true; }
         void drawRect(int x, int y, int w, int h, uint16_t color) override { drawRectCalled = true; }
-        void setTextDatum(int datum) override { setTextDatumCalled = true; }
+        void setTextDatum(uint8_t datum) override { setTextDatumCalled = true; }
         void setTextFont(int font) override { setTextFontCalled = true; }
         void fillProgressBarSprite(int x, int y, int w, int h, int percent) override { fillProgressBarSpriteCalled = true; }
         void drawLine(int x0, int y0, int x1, int y1, uint16_t color) override { drawLineCalled = true; }
@@ -974,7 +974,7 @@ void test_display_common_grid_lines_branches() {
             drawRectCalled = true; 
             drawRectCallCount++;
         }
-        void setTextDatum(int datum) override { setTextDatumCalled = true; }
+        void setTextDatum(uint8_t datum) override { setTextDatumCalled = true; }
         void setTextFont(int font) override { setTextFontCalled = true; }
         void fillProgressBarSprite(int x, int y, int w, int h, int percent) override { fillProgressBarSpriteCalled = true; }
         void drawLine(int x0, int y0, int x1, int y1, uint16_t color) override { drawLineCalled = true; }

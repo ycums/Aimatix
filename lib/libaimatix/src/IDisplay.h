@@ -8,7 +8,7 @@ public:
     virtual void setTextColor(uint16_t color, uint16_t bgColor) = 0;
     virtual void fillRect(int x, int y, int w, int h, uint16_t color) = 0;
     virtual void drawRect(int x, int y, int w, int h, uint16_t color) = 0;
-    virtual void setTextDatum(int datum) = 0;
+    virtual void setTextDatum(uint8_t datum) = 0;
     virtual void setTextFont(int font) = 0;
     virtual void fillProgressBarSprite(int x, int y, int w, int h, int percent) = 0;
     virtual void drawLine(int x0, int y0, int x1, int y1, uint16_t color) = 0;

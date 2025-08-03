@@ -10,6 +10,7 @@ public:
     MainDisplayViewImpl(IDisplay* disp) : disp(disp) {}
     void showTitle(const char* modeName, int batteryLevel, bool isCharging) override {
         drawTitleBar(disp, modeName, batteryLevel, isCharging);
+        // drawGridLines(disp);
     }
     void showTime(const char* currentTime) override {
         disp->setTextColor(AMBER_COLOR, TFT_BLACK);

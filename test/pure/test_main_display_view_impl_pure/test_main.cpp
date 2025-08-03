@@ -16,7 +16,7 @@ public:
                     drawTextCalled(false), fillRectCalled(false), fillProgressBarSpriteCalled(false) {}
     
     void clear() override { clearCalled = true; }
-    void setTextDatum(int datum) override { setTextDatumCalled = true; }
+    void setTextDatum(uint8_t datum) override { setTextDatumCalled = true; }
     void setTextColor(uint16_t color, uint16_t bgColor) override { setTextColorCalled = true; }
     void drawText(int x, int y, const char* text, int fontSize) override { 
         drawTextCalled = true; 

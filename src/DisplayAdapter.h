@@ -15,7 +15,11 @@ public:
     }
     
     void drawText(int x, int y, const char* text, int fontSize) override {
+        // setTextDatumの値を一時保存
+        uint8_t savedDatum = M5.Display.getTextDatum();
         M5.Display.setTextFont(fontSize);
+        // setTextFontの後にsetTextDatumを復元
+        M5.Display.setTextDatum(savedDatum);
         M5.Display.drawString(text, x, y);
     }
     
@@ -31,7 +35,7 @@ public:
         M5.Display.drawRect(x, y, w, h, color);
     }
     
-    void setTextDatum(int datum) override {
+    void setTextDatum(uint8_t datum) override {
         M5.Display.setTextDatum(datum);
     }
     
