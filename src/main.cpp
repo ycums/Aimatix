@@ -127,8 +127,29 @@ void setup() {
     
     // アラームリスト初期化
     alarm_times.clear();
+    time_t now = time(nullptr);
+    AlarmLogic::initAlarms(alarm_times, now);
     
-    // 状態管理初期化
+    // システム時刻の検証と補正（起動時処理）
+    if (TimeValidationLogic::validateAndCorrectSystemTime(m5_time_provider.get())) {
+        // 時刻補正が実行された場合のログ出力（デバッグ用）
+        // プロダクション環境では必要に応じて削除可能
+    }
+
+    // --- 状態遷移の依存注入（@/design/ui_state_management.md準拠） ---
+    input_display_state.setManager(&state_manager);
+    input_display_state.setMainDisplayState(&main_display_state);
+    main_display_state.setAlarmDisplayState(&alarm_display_state);
+    alarm_display_state.setMainDisplayState(&main_display_state);
+    settings_display_state.setManager(&state_manager);
+    settings_display_state.setMainDisplayState(&main_display_state);
+    settings_display_state.setSettingsLogic(&settings_logic);
+    settings_display_state.setDateTimeInputState(&datetime_input_state);
+    main_display_state.setSettingsDisplayState(&settings_display_state);
+    datetime_input_state.setManager(&state_manager);
+    datetime_input_state.setSettingsDisplayState(&settings_display_state);
+    datetime_input_state.setView(&datetime_input_view_impl);
+    // 状態遷移の初期状態をMainDisplayに
     state_manager.setState(&main_display_state);
 }
 #endif
