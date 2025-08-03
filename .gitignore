@@ -9,5 +9,10 @@
 coverage_report.functions.html
 coverage_report.html
 coverage_reports/*
+coverage_report.css
 build/CMakeFiles/cmake.check_cache
 build/.cmake/api/v1/reply/*
+.vscode/
+.cursor/
+.cache/
+build/
