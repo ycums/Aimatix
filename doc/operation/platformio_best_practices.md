@@ -75,11 +75,11 @@ Aimatix/
 
 ```ini
 [platformio]
-default_envs = m5stack-fire
+default_envs = m5stack-esp32
 
-[env:m5stack-fire]
+[env:m5stack-esp32]
 platform = espressif32
-board = m5stack-fire
+board = m5stack-core-esp32
 framework = arduino
 lib_deps =
     m5stack/M5Stack @ ^0.4.3
@@ -107,34 +107,7 @@ lib_deps =
     throwtheswitch/Unity @ ^2.5.2
 build_unflags = -std=gnu++11 
 
-[env:test-m5stack-fire]
-platform = espressif32
-board = m5stack-fire
-framework = arduino
-lib_deps =
-    throwtheswitch/Unity @ ^2.5.2
-    m5stack/M5Stack @ ^0.4.3
-    arduino-libraries/NTPClient @ ^3.2.1
-build_flags = 
-    -DTEST_MODE
-    -DCORE_DEBUG_LEVEL=3
-    -DM5STACK_FIRE
-    -DUNITY_INCLUDE_CONFIG_H
-test_framework = unity
-test_build_src = yes
 
-[env:unit-test-esp32]
-platform = espressif32
-board = esp32dev
-framework = arduino
-lib_deps =
-    throwtheswitch/Unity @ ^2.5.2
-    m5stack/M5Stack @ ^0.4.3
-build_flags = 
-    -DTEST_MODE
-    -DCORE_DEBUG_LEVEL=3
-    -DUNITY_INCLUDE_CONFIG_H
-test_framework = unity
 ```
 
 - **build_src_filter**等は未使用。LDF（Library Dependency Finder）でlib/配下の自作ロジックを自動認識。

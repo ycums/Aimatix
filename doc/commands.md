@@ -5,7 +5,7 @@ pio device list # シリアルポートの確認
 pio device monitor --baud 115200
 
 # テスト実行
-pio test -e test-m5stack-fire -f test_button_manager #テストを実行
+pio test -e native -f test_button_manager_pure #テストを実行
 pio test -e native # native環境でテスト実行
 
 # 静的解析

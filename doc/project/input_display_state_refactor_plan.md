@@ -699,7 +699,7 @@ python scripts/test_coverage.py --quick
 ```bash
 # ビルド確認
 pio run
-pio run -e m5stack-fire
+pio run
 
 # テスト確認
 pio test -e native

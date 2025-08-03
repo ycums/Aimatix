@@ -739,20 +739,22 @@ test_coverage_output = html
 test_coverage_output_dir = coverage_reports/esp32
 ```
 
-### 3.3 test-m5stack-fire環境設定（統合テスト用）
+### 3.3 native環境設定（純粋ロジックテスト用）
 
 ```ini
-[env:test-m5stack-fire]
-platform = espressif32
-board = m5stack-fire
-framework = arduino
+[env:native]
+platform = native
 build_flags = 
-    -DUNITY_INCLUDE_CONFIG_H
+    -DUNITY_INCLUDE_DOUBLE
+    -DUNITY_DOUBLE_PRECISION=1e-12
     -DTEST_MODE
-lib_ldf_mode = deep+
-test_framework = unity
-test_build_src = yes
-test_filter = integration
+    -std=c++11
+    -fprofile-arcs
+    -ftest-coverage
+    -lgcov
+lib_deps =
+    throwtheswitch/Unity @ ^2.5.2
+build_unflags = -std=gnu++11
 ```
 
 ## 4. 設定ファイル仕様

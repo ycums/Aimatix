@@ -56,11 +56,11 @@
 
 #### 2.2.3 統合レイヤー
 - **対象**: 全体システム
-- **環境**: test-m5stack-fire環境
-- **テスト**: 統合テスト
-- **カバレッジ**: 機能カバレッジ（手動計測）
-- **方法**: テスト実行結果の手動集計
-- **実行**: `pio test -e test-m5stack-fire`
+- **環境**: native環境
+- **テスト**: 純粋ロジックテスト
+- **カバレッジ**: コードカバレッジ（自動計測）
+- **方法**: gcov/gcovrによる自動計測
+- **実行**: `pio test -e native`
 
 ### 2.3 データフロー
 
@@ -336,19 +336,21 @@ test_coverage_output = html
 test_coverage_output_dir = coverage_reports/esp32
 ```
 
-#### 3.3.3 test-m5stack-fire環境（統合テスト用）
+#### 3.3.3 native環境（純粋ロジックテスト用）
 ```ini
-[env:test-m5stack-fire]
-platform = espressif32
-board = m5stack-fire
-framework = arduino
+[env:native]
+platform = native
 build_flags = 
-    -DUNITY_INCLUDE_CONFIG_H
+    -DUNITY_INCLUDE_DOUBLE
+    -DUNITY_DOUBLE_PRECISION=1e-12
     -DTEST_MODE
-lib_ldf_mode = deep+
-test_framework = unity
-test_build_src = yes
-test_filter = integration
+    -std=c++11
+    -fprofile-arcs
+    -ftest-coverage
+    -lgcov
+lib_deps =
+    throwtheswitch/Unity @ ^2.5.2
+build_unflags = -std=gnu++11
 ```
 
 ## 4. 運用設計

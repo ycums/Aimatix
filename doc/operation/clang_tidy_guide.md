@@ -31,9 +31,8 @@ check_severity = medium
 
 ```bash
 # 特定の環境で静的解析を実行
-pio check -e m5stack-fire
+pio check
 pio check -e native
-pio check -e test-m5stack-fire
 
 # 全環境で静的解析を実行
 pio check
@@ -159,7 +158,7 @@ check_flags =
 - name: Run Clang-Tidy
   run: |
     pio check -e native
-    pio check -e m5stack-fire
+    pio check
 ```
 
 ### 品質ゲート
