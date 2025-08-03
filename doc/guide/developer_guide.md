@@ -40,16 +40,20 @@ Aimatix/
 
 ### 3.1 基本的なビルド
 
-#### 3.1.1 M5Stack Fire向けビルド
+#### 3.1.1 M5Stack ESP32向けビルド（Fire + Core v1.1対応）
 ```bash
 # ビルド
-pio run -e m5stack-fire
+pio run
 
-# アップロード
-pio run -e m5stack-fire -t upload
+# アップロード（自動検出）
+pio run -t upload
+
+# 特定ポート指定アップロード
+pio run -t upload --upload-port COM3  # Fire
+pio run -t upload --upload-port COM5  # Core v1.1
 
 # シリアルモニター
-pio run -e m5stack-fire -t monitor
+pio run -t monitor
 ```
 
 #### 3.1.2 Native環境向けビルド（テスト用）
@@ -98,7 +102,7 @@ pio check -e native --severity=high
 pio run -t clean
 
 # 特定環境クリーン
-pio run -e m5stack-fire -t clean
+pio run -t clean
 ```
 
 ## 4. 開発ワークフロー
@@ -154,7 +158,7 @@ Serial.printf("Value: %d\n", value);
 #### 5.1.2 シリアルモニター
 ```bash
 # シリアルモニター起動
-pio run -e m5stack-fire -t monitor
+pio run -t monitor
 
 # ボーレート設定
 monitor_speed = 115200

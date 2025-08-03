@@ -143,10 +143,10 @@ pio test -e native -f pure/test_button_manager_pure
 pio test -e native --coverage
 ```
 
-#### 5.1.3 統合テスト実行
+#### 5.1.3 純粋ロジックテスト実行
 ```bash
-# M5Stack環境で統合テスト
-pio test -e test-m5stack-fire
+# Native環境で純粋ロジックテスト
+pio test -e native
 ```
 
 ### 5.2 テスト環境別実行
@@ -163,20 +163,13 @@ pio test -e native
 #### 5.2.2 M5Stack環境
 ```bash
 # ビルド
-pio run -e m5stack-fire
+pio run
 
 # テスト実行
-pio test -e test-m5stack-fire
+pio test -e native
 ```
 
-#### 5.2.3 ESP32環境
-```bash
-# ビルド
-pio run -e unit-test-esp32
 
-# テスト実行
-pio test -e unit-test-esp32
-```
 
 ## 6. モック戦略
 
