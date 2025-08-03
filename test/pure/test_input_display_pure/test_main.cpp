@@ -856,16 +856,16 @@ void test_display_common_null_pointer_branches() {
             drawTextCallCount++;
             lastDrawText = text ? text : "";
         }
-        void setTextColor(uint32_t color, uint32_t bgColor) override { setTextColorCalled = true; }
-        void fillRect(int x, int y, int w, int h, uint32_t color) override { 
+        void setTextColor(uint16_t color, uint16_t bgColor) override { setTextColorCalled = true; }
+        void fillRect(int x, int y, int w, int h, uint16_t color) override { 
             fillRectCalled = true; 
             fillRectCallCount++;
         }
-        void drawRect(int x, int y, int w, int h, uint32_t color) override { drawRectCalled = true; }
+        void drawRect(int x, int y, int w, int h, uint16_t color) override { drawRectCalled = true; }
         void setTextDatum(int datum) override { setTextDatumCalled = true; }
         void setTextFont(int font) override { setTextFontCalled = true; }
         void fillProgressBarSprite(int x, int y, int w, int h, int percent) override { fillProgressBarSpriteCalled = true; }
-        void drawLine(int x0, int y0, int x1, int y1, uint32_t color) override { drawLineCalled = true; }
+        void drawLine(int x0, int y0, int x1, int y1, uint16_t color) override { drawLineCalled = true; }
         int getTextDatum() const override { getTextDatumCalled = true; return 0; }
         
         // Test用フラグ
@@ -920,13 +920,13 @@ void test_display_common_battery_charging_branches() {
             drawTextCallCount++;
             lastDrawText = text ? text : "";
         }
-        void setTextColor(uint32_t color, uint32_t bgColor) override { setTextColorCalled = true; }
-        void fillRect(int x, int y, int w, int h, uint32_t color) override { fillRectCalled = true; }
-        void drawRect(int x, int y, int w, int h, uint32_t color) override { drawRectCalled = true; }
+        void setTextColor(uint16_t color, uint16_t bgColor) override { setTextColorCalled = true; }
+        void fillRect(int x, int y, int w, int h, uint16_t color) override { fillRectCalled = true; }
+        void drawRect(int x, int y, int w, int h, uint16_t color) override { drawRectCalled = true; }
         void setTextDatum(int datum) override { setTextDatumCalled = true; }
         void setTextFont(int font) override { setTextFontCalled = true; }
         void fillProgressBarSprite(int x, int y, int w, int h, int percent) override { fillProgressBarSpriteCalled = true; }
-        void drawLine(int x0, int y0, int x1, int y1, uint32_t color) override { drawLineCalled = true; }
+        void drawLine(int x0, int y0, int x1, int y1, uint16_t color) override { drawLineCalled = true; }
         int getTextDatum() const override { getTextDatumCalled = true; return 0; }
         
         bool clearCalled;
@@ -968,16 +968,16 @@ void test_display_common_grid_lines_branches() {
         
         void clear() override { clearCalled = true; }
         void drawText(int x, int y, const char* text, int fontSize) override { drawTextCalled = true; }
-        void setTextColor(uint32_t color, uint32_t bgColor) override { setTextColorCalled = true; }
-        void fillRect(int x, int y, int w, int h, uint32_t color) override { fillRectCalled = true; }
-        void drawRect(int x, int y, int w, int h, uint32_t color) override { 
+        void setTextColor(uint16_t color, uint16_t bgColor) override { setTextColorCalled = true; }
+        void fillRect(int x, int y, int w, int h, uint16_t color) override { fillRectCalled = true; }
+        void drawRect(int x, int y, int w, int h, uint16_t color) override { 
             drawRectCalled = true; 
             drawRectCallCount++;
         }
         void setTextDatum(int datum) override { setTextDatumCalled = true; }
         void setTextFont(int font) override { setTextFontCalled = true; }
         void fillProgressBarSprite(int x, int y, int w, int h, int percent) override { fillProgressBarSpriteCalled = true; }
-        void drawLine(int x0, int y0, int x1, int y1, uint32_t color) override { drawLineCalled = true; }
+        void drawLine(int x0, int y0, int x1, int y1, uint16_t color) override { drawLineCalled = true; }
         int getTextDatum() const override { getTextDatumCalled = true; return 0; }
         
         bool clearCalled;

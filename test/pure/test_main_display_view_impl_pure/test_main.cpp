@@ -17,19 +17,19 @@ public:
     
     void clear() override { clearCalled = true; }
     void setTextDatum(int datum) override { setTextDatumCalled = true; }
-    void setTextColor(uint32_t color, uint32_t bgColor) override { setTextColorCalled = true; }
+    void setTextColor(uint16_t color, uint16_t bgColor) override { setTextColorCalled = true; }
     void drawText(int x, int y, const char* text, int fontSize) override { 
         drawTextCalled = true; 
         lastDrawText = text ? text : "";
     }
-    void fillRect(int x, int y, int w, int h, uint32_t color) override { fillRectCalled = true; }
-    void drawRect(int x, int y, int w, int h, uint32_t color) override { drawRectCalled = true; }
+    void fillRect(int x, int y, int w, int h, uint16_t color) override { fillRectCalled = true; }
+    void drawRect(int x, int y, int w, int h, uint16_t color) override { drawRectCalled = true; }
     void setTextFont(int font) override { setTextFontCalled = true; }
     void fillProgressBarSprite(int x, int y, int w, int h, int percent) override { 
         fillProgressBarSpriteCalled = true; 
         lastProgressPercent = percent;
     }
-    void drawLine(int x0, int y0, int x1, int y1, uint32_t color) override { drawLineCalled = true; }
+    void drawLine(int x0, int y0, int x1, int y1, uint16_t color) override { drawLineCalled = true; }
     int getTextDatum() const override { getTextDatumCalled = true; return 0; }
     
     // テスト用フラグ
