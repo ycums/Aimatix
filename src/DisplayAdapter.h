@@ -5,6 +5,7 @@
 #include <M5GFX.h>
 // 色定数を追加
 #include "ui_constants.h"
+#include "m5gfx_constants.h"
 
 
 
@@ -15,11 +16,7 @@ public:
     }
     
     void drawText(int x, int y, const char* text, int fontSize) override {
-        // setTextDatumの値を一時保存
-        uint8_t savedDatum = M5.Display.getTextDatum();
         M5.Display.setTextFont(fontSize);
-        // setTextFontの後にsetTextDatumを復元
-        M5.Display.setTextDatum(savedDatum);
         M5.Display.drawString(text, x, y);
     }
     
@@ -36,7 +33,7 @@ public:
     }
     
     void setTextDatum(uint8_t datum) override {
-        M5.Display.setTextDatum(datum);
+        M5.Display.setTextDatum(static_cast<textdatum_t>(datum));
     }
     
     void setTextFont(int font) override {

@@ -25,8 +25,8 @@
 // テキスト描画基準
 #define TL_DATUM 0
 #define TC_DATUM 1
-#define ML_DATUM 3
-#define MC_DATUM 4
+#define ML_DATUM 4
+#define MC_DATUM 5
 
 // AlarmDisplayState用定数
 #define ALARM_DISPLAY_START_Y 40
