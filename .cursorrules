@@ -126,4 +126,34 @@
 ### 将来の拡張
 - AB同時押し、ABC同時押しへの対応
 - シーケンス操作、連続押し判定
-- より複雑なボタン操作パターン 
+- より複雑なボタン操作パターン
+
+## GitHub MCP設定
+
+### リポジトリ情報
+- **Owner**: ycums
+- **Repository**: Aimatix
+- **Default Branch**: main
+
+### MCP設定例
+```bash
+# Issue取得
+github get issues --owner ycums --repo Aimatix
+
+# PR取得
+github get pull-requests --owner ycums --repo Aimatix
+
+# Issue作成
+github create issue --owner ycums --repo Aimatix --title "タイトル" --body "内容"
+```
+
+### エイリアス設定
+```json
+{
+  "aliases": {
+    "github-issues": "github get issues --owner ycums --repo Aimatix",
+    "github-prs": "github get pull-requests --owner ycums --repo Aimatix",
+    "create-issue": "github create issue --owner ycums --repo Aimatix"
+  }
+}
+``` 
