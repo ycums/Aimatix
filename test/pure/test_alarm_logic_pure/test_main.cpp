@@ -185,9 +185,7 @@ void test_alarm_correction_hour_minute_990() {
     TEST_ASSERT_EQUAL(2, tm5->tm_mday);
 }
 void test_alarm_correction_hour_minute_9999() {
-    // 現在時刻: 2024年1月1日 14:35
-    // 入力: 9999（99:99）
-    // 期待値: 2024年1月1日99:99 → 2024年1月5日04:39
+    // 入力: 9999（99:99）→ 2024年1月5日04:39
     std::vector<time_t> alarms;
     time_t now;
     AlarmLogic::AddAlarmResult result;
@@ -243,7 +241,7 @@ void test_partial_input_hour_only() {
     
     struct tm* tm = localtime(&alarms[0]);
     TEST_ASSERT_EQUAL(2, tm->tm_mday); // 翌日（01:00は現在時刻14:35より過去）
-    TEST_ASSERT_EQUAL(1, tm->tm_hour); // 修正後：1（修正前：10）
+    TEST_ASSERT_EQUAL(1, tm->tm_hour); // 時一桁として解釈
     TEST_ASSERT_EQUAL(0, tm->tm_min);
 }
 
@@ -269,7 +267,7 @@ void test_partial_input_minute_only() {
     struct tm* tm = localtime(&alarms[0]);
     TEST_ASSERT_EQUAL(1, tm->tm_mday); // 当日（15:01は現在時刻14:35より未来）
     TEST_ASSERT_EQUAL(15, tm->tm_hour); // 現在時間の次の時間
-    TEST_ASSERT_EQUAL(1, tm->tm_min); // 修正後：分一桁のみ入力時は分一桁として解釈
+    TEST_ASSERT_EQUAL(1, tm->tm_min); // 分一桁として解釈
 }
 
 void test_partial_input_hour_minute_partial() {
@@ -295,7 +293,7 @@ void test_partial_input_hour_minute_partial() {
     struct tm* tm = localtime(&alarms[0]);
     TEST_ASSERT_EQUAL(1, tm->tm_mday); // 当日（時が未入力、分が未入力なので現在時間の次の時間）
     TEST_ASSERT_EQUAL(15, tm->tm_hour); // 現在時間の次の時間
-    TEST_ASSERT_EQUAL(0, tm->tm_min); // 分が未入力なので0
+    TEST_ASSERT_EQUAL(0, tm->tm_min); // 分が未入力として扱う
 }
 
 void test_partial_input_future_time() {
@@ -451,7 +449,7 @@ void test_bugreport_3_0_14_minute_only_5() {
     struct tm* tm = localtime(&alarms[0]);
     TEST_ASSERT_EQUAL(1, tm->tm_mday); // 同日（00:05は未来時刻のため）
     TEST_ASSERT_EQUAL(0, tm->tm_hour);
-    TEST_ASSERT_EQUAL(5, tm->tm_min); // 修正後の期待値：分一桁として解釈
+    TEST_ASSERT_EQUAL(5, tm->tm_min); // 分一桁として解釈
 }
 
 void test_alarmlogic_delete_alarm() {
@@ -491,7 +489,7 @@ void test_alarmlogic_delete_alarm() {
 }
 
 // 未カバー分岐テスト: addAlarmの最大数チェック
-void test_AlarmLogic_AddAlarm_MaxReached() {
+void test_alarm_logic_add_alarm_max_reached() {
     std::vector<time_t> alarms;
     time_t now = 1000;
     
@@ -514,7 +512,7 @@ void test_AlarmLogic_AddAlarm_MaxReached() {
 }
 
 // 未カバー分岐テスト: addAlarmの重複チェック
-void test_AlarmLogic_AddAlarm_Duplicate() {
+void test_alarm_logic_add_alarm_duplicate() {
     std::vector<time_t> alarms;
     time_t now = 1000;
     time_t alarmTime = now + 60;
@@ -536,7 +534,7 @@ void test_AlarmLogic_AddAlarm_Duplicate() {
 }
 
 // 未カバー分岐テスト: addAlarmFromPartialInputのnullptrチェック
-void test_AlarmLogic_AddAlarmFromPartialInput_NullInput() {
+void test_alarm_logic_add_alarm_from_partial_input_null_input() {
     std::vector<time_t> alarms;
     time_t now = 1000;
     
@@ -547,6 +545,126 @@ void test_AlarmLogic_AddAlarmFromPartialInput_NullInput() {
     TEST_ASSERT_FALSE(ok);
     TEST_ASSERT_EQUAL((int)AlarmLogic::AddAlarmResult::ErrorInvalid, (int)result);
     TEST_ASSERT_EQUAL_STRING("Invalid input data", msg.c_str());
+}
+
+// Issue #8 再現テスト: 4:55時点で_5:00を入力した際の問題
+void test_alarm_logic_issue_8_reproduction() {
+    // 現在時刻: 4:55 を設定（Issue #8と同じ条件）
+    struct tm base_tm = {};
+    base_tm.tm_year = 124; base_tm.tm_mon = 0; base_tm.tm_mday = 1; 
+    base_tm.tm_hour = 4; base_tm.tm_min = 55; base_tm.tm_sec = 0;
+    time_t now = mktime(&base_tm);
+    
+    std::vector<time_t> alarms;
+    AlarmLogic::AddAlarmResult result;
+    std::string msg;
+    
+    // _5:00 を入力（部分入力）
+    int digits[4] = {0, 5, 0, 0};
+    bool entered[4] = {false, true, true, true};
+    
+    bool ok = AlarmLogic::addAlarmFromPartialInput(alarms, now, digits, entered, result, msg);
+    TEST_ASSERT_TRUE(ok);
+    TEST_ASSERT_EQUAL((int)AlarmLogic::AddAlarmResult::Success, (int)result);
+    
+    // 期待値: 同日の5:00（+1d 5:00ではなく、5:00）
+    struct tm* tm = localtime(&alarms[0]);
+    TEST_ASSERT_EQUAL(1, tm->tm_mday); // 同日
+    TEST_ASSERT_EQUAL(5, tm->tm_hour); // 5時
+    TEST_ASSERT_EQUAL(0, tm->tm_min);  // 0分
+    TEST_ASSERT_EQUAL(0, tm->tm_sec);  // 0秒
+    
+
+}
+
+// Issue #8 類似ケーステスト: 4:45時点で_5:00を入力
+void test_alarm_logic_issue_8_similar_case_4_45() {
+    // 現在時刻: 4:45 を設定
+    struct tm base_tm = {};
+    base_tm.tm_year = 124; base_tm.tm_mon = 0; base_tm.tm_mday = 1; 
+    base_tm.tm_hour = 4; base_tm.tm_min = 45; base_tm.tm_sec = 0;
+    time_t now = mktime(&base_tm);
+    
+    std::vector<time_t> alarms;
+    AlarmLogic::AddAlarmResult result;
+    std::string msg;
+    
+    // _5:00 を入力（部分入力）
+    int digits[4] = {0, 5, 0, 0};
+    bool entered[4] = {false, true, true, true};
+    
+    bool ok = AlarmLogic::addAlarmFromPartialInput(alarms, now, digits, entered, result, msg);
+    TEST_ASSERT_TRUE(ok);
+    TEST_ASSERT_EQUAL((int)AlarmLogic::AddAlarmResult::Success, (int)result);
+    
+    // 期待値: 同日の5:00
+    struct tm* tm = localtime(&alarms[0]);
+    TEST_ASSERT_EQUAL(1, tm->tm_mday); // 同日
+    TEST_ASSERT_EQUAL(5, tm->tm_hour); // 5時
+    TEST_ASSERT_EQUAL(0, tm->tm_min);  // 0分
+    TEST_ASSERT_EQUAL(0, tm->tm_sec);  // 0秒
+    
+
+}
+
+// Issue #8 類似ケーステスト: 4:59時点で_5:00を入力
+void test_alarm_logic_issue_8_similar_case_4_59() {
+    // 現在時刻: 4:59 を設定
+    struct tm base_tm = {};
+    base_tm.tm_year = 124; base_tm.tm_mon = 0; base_tm.tm_mday = 1; 
+    base_tm.tm_hour = 4; base_tm.tm_min = 59; base_tm.tm_sec = 0;
+    time_t now = mktime(&base_tm);
+    
+    std::vector<time_t> alarms;
+    AlarmLogic::AddAlarmResult result;
+    std::string msg;
+    
+    // _5:00 を入力（部分入力）
+    int digits[4] = {0, 5, 0, 0};
+    bool entered[4] = {false, true, true, true};
+    
+    bool ok = AlarmLogic::addAlarmFromPartialInput(alarms, now, digits, entered, result, msg);
+    TEST_ASSERT_TRUE(ok);
+    TEST_ASSERT_EQUAL((int)AlarmLogic::AddAlarmResult::Success, (int)result);
+    
+    // 期待値: 同日の5:00
+    struct tm* tm = localtime(&alarms[0]);
+    TEST_ASSERT_EQUAL(1, tm->tm_mday); // 同日
+    TEST_ASSERT_EQUAL(5, tm->tm_hour); // 5時
+    TEST_ASSERT_EQUAL(0, tm->tm_min);  // 0分
+    TEST_ASSERT_EQUAL(0, tm->tm_sec);  // 0秒
+    
+
+}
+
+// Issue #8 類似ケーステスト: 23:45時点で_0:00を入力
+void test_alarm_logic_issue_8_similar_case_23_45() {
+    // 現在時刻: 23:45 を設定
+    struct tm base_tm = {};
+    base_tm.tm_year = 124; base_tm.tm_mon = 0; base_tm.tm_mday = 1; 
+    base_tm.tm_hour = 23; base_tm.tm_min = 45; base_tm.tm_sec = 0;
+    time_t now = mktime(&base_tm);
+    
+    std::vector<time_t> alarms;
+    AlarmLogic::AddAlarmResult result;
+    std::string msg;
+    
+    // _0:00 を入力（部分入力）
+    int digits[4] = {0, 0, 0, 0};
+    bool entered[4] = {false, true, true, true};
+    
+    bool ok = AlarmLogic::addAlarmFromPartialInput(alarms, now, digits, entered, result, msg);
+    TEST_ASSERT_TRUE(ok);
+    TEST_ASSERT_EQUAL((int)AlarmLogic::AddAlarmResult::Success, (int)result);
+    
+    // 期待値: 翌日の0:00
+    struct tm* tm = localtime(&alarms[0]);
+    TEST_ASSERT_EQUAL(2, tm->tm_mday); // 翌日
+    TEST_ASSERT_EQUAL(0, tm->tm_hour); // 0時
+    TEST_ASSERT_EQUAL(0, tm->tm_min);  // 0分
+    TEST_ASSERT_EQUAL(0, tm->tm_sec);  // 0秒
+    
+
 }
 
 void setUp(void) {}
@@ -578,9 +696,13 @@ int main(int argc, char **argv) {
     RUN_TEST(test_partial_input_no_input_rejection);
     RUN_TEST(test_bugreport_3_0_14_minute_only_5);
     RUN_TEST(test_alarmlogic_delete_alarm);
-    RUN_TEST(test_AlarmLogic_AddAlarm_MaxReached);
-    RUN_TEST(test_AlarmLogic_AddAlarm_Duplicate);
-    RUN_TEST(test_AlarmLogic_AddAlarmFromPartialInput_NullInput);
+    RUN_TEST(test_alarm_logic_add_alarm_max_reached);
+    RUN_TEST(test_alarm_logic_add_alarm_duplicate);
+    RUN_TEST(test_alarm_logic_add_alarm_from_partial_input_null_input);
+    RUN_TEST(test_alarm_logic_issue_8_reproduction);
+    RUN_TEST(test_alarm_logic_issue_8_similar_case_4_45);
+    RUN_TEST(test_alarm_logic_issue_8_similar_case_4_59);
+    RUN_TEST(test_alarm_logic_issue_8_similar_case_23_45);
     UNITY_END();
     return 0;
 } 

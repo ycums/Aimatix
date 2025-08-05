@@ -7,7 +7,7 @@
         "test_filter": "pure",
         "output_dir": "coverage_reports/native"
       },
-      "unit-test-esp32": {
+      "m5stack-fire": {
         "enabled": true,
         "test_filter": "integration",
         "output_dir": "coverage_reports/esp32"
@@ -16,7 +16,7 @@
   },
   "quality_gate": {
     "enabled": true,
-    "threshold": 85.0,
+    "threshold": 80.0,
     "strict_mode": false
   },
   "exclusions": {

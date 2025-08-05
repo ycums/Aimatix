@@ -145,6 +145,206 @@ void test_time_preview_logic_comprehensive() {
     }
 }
 
+// Issue #8 再現テストケース: 絶対値入力モードで4:45→5:00入力時の問題
+void test_time_preview_logic_absolute_input_4_45_to_5_00() {
+    // 現在時刻: 4:45 を設定
+    struct tm base_tm = {};
+    base_tm.tm_year = 124; base_tm.tm_mon = 0; base_tm.tm_mday = 1; 
+    base_tm.tm_hour = 4; base_tm.tm_min = 45; base_tm.tm_sec = 0;
+    time_t now = mktime(&base_tm);
+    
+    // MockTimeProviderで時刻を固定
+    auto timeProvider = std::make_shared<MockTimeProvider>(now);
+    
+    // _5:00 を入力
+    int digits[4] = {0, 5, 0, 0};
+    bool entered[4] = {false, true, true, true};
+    
+    auto result = TimePreviewLogic::generatePreview(digits, entered, timeProvider.get(), false);
+    TEST_ASSERT_TRUE(result.isValid);
+    
+    // 期待値: 同日の5:00（+1d 5:00ではなく、5:00）
+    TEST_ASSERT_EQUAL_STRING("05:00", result.preview.c_str());
+}
+
+// 類似ケースのテスト: 3:45→4:00
+void test_time_preview_logic_absolute_input_3_45_to_4_00() {
+    // 現在時刻: 3:45 → 入力: _4:00 → 期待値: 同日4:00
+    struct tm base_tm = {};
+    base_tm.tm_year = 124; base_tm.tm_mon = 0; base_tm.tm_mday = 1; 
+    base_tm.tm_hour = 3; base_tm.tm_min = 45; base_tm.tm_sec = 0;
+    time_t now = mktime(&base_tm);
+    
+    auto timeProvider = std::make_shared<MockTimeProvider>(now);
+    
+    // _4:00 を入力
+    int digits[4] = {0, 4, 0, 0};
+    bool entered[4] = {false, true, true, true};
+    
+    auto result = TimePreviewLogic::generatePreview(digits, entered, timeProvider.get(), false);
+    TEST_ASSERT_TRUE(result.isValid);
+    
+    // 期待値: 同日の4:00
+    TEST_ASSERT_EQUAL_STRING("04:00", result.preview.c_str());
+}
+
+// 類似ケースのテスト: 23:45→0:00
+void test_time_preview_logic_absolute_input_23_45_to_0_00() {
+    // 現在時刻: 23:45 → 入力: _0:00 → 期待値: 翌日0:00
+    struct tm base_tm = {};
+    base_tm.tm_year = 124; base_tm.tm_mon = 0; base_tm.tm_mday = 1; 
+    base_tm.tm_hour = 23; base_tm.tm_min = 45; base_tm.tm_sec = 0;
+    time_t now = mktime(&base_tm);
+    
+    auto timeProvider = std::make_shared<MockTimeProvider>(now);
+    
+    // _0:00 を入力
+    int digits[4] = {0, 0, 0, 0};
+    bool entered[4] = {false, true, true, true};
+    
+    auto result = TimePreviewLogic::generatePreview(digits, entered, timeProvider.get(), false);
+    TEST_ASSERT_TRUE(result.isValid);
+    
+    // 期待値: 翌日の0:00
+    TEST_ASSERT_EQUAL_STRING("+1d 00:00", result.preview.c_str());
+}
+
+// 類似ケースのテスト: 23:45→23:50
+void test_time_preview_logic_absolute_input_23_45_to_23_50() {
+    // 現在時刻: 23:45 → 入力: _23:50 → 期待値: 同日23:50
+    struct tm base_tm = {};
+    base_tm.tm_year = 124; base_tm.tm_mon = 0; base_tm.tm_mday = 1; 
+    base_tm.tm_hour = 23; base_tm.tm_min = 45; base_tm.tm_sec = 0;
+    time_t now = mktime(&base_tm);
+    
+    auto timeProvider = std::make_shared<MockTimeProvider>(now);
+    
+    // _23:50 を入力（23は2桁なので、時十=2, 時一=3、両方入力済み）
+    int digits[4] = {2, 3, 5, 0};
+    bool entered[4] = {true, true, true, true};
+    
+    auto result = TimePreviewLogic::generatePreview(digits, entered, timeProvider.get(), false);
+    TEST_ASSERT_TRUE(result.isValid);
+    
+    // 期待値: 同日の23:50
+    TEST_ASSERT_EQUAL_STRING("23:50", result.preview.c_str());
+}
+
+// Issue #8 問題再現テスト: 実際の問題が発生する可能性のあるケース
+void test_time_preview_logic_issue_8_reproduction() {
+    // 現在時刻: 4:45 を設定
+    struct tm base_tm = {};
+    base_tm.tm_year = 124; base_tm.tm_mon = 0; base_tm.tm_mday = 1; 
+    base_tm.tm_hour = 4; base_tm.tm_min = 45; base_tm.tm_sec = 0;
+    time_t now = mktime(&base_tm);
+    
+    auto timeProvider = std::make_shared<MockTimeProvider>(now);
+    
+    // _5:00 を入力
+    int digits[4] = {0, 5, 0, 0};
+    bool entered[4] = {false, true, true, true};
+    
+    auto result = TimePreviewLogic::generatePreview(digits, entered, timeProvider.get(), false);
+    TEST_ASSERT_TRUE(result.isValid);
+    
+    // 期待値: 同日の5:00
+    TEST_ASSERT_EQUAL_STRING("05:00", result.preview.c_str());
+    
+
+}
+
+// Issue #8 問題再現テスト: 実際の問題が発生する可能性のある条件
+void test_time_preview_logic_issue_8_edge_case() {
+    // 現在時刻: 4:59 を設定
+    struct tm base_tm = {};
+    base_tm.tm_year = 124; base_tm.tm_mon = 0; base_tm.tm_mday = 1; 
+    base_tm.tm_hour = 4; base_tm.tm_min = 59; base_tm.tm_sec = 0;
+    time_t now = mktime(&base_tm);
+    
+    auto timeProvider = std::make_shared<MockTimeProvider>(now);
+    
+    // _5:00 を入力
+    int digits[4] = {0, 5, 0, 0};
+    bool entered[4] = {false, true, true, true};
+    
+    auto result = TimePreviewLogic::generatePreview(digits, entered, timeProvider.get(), false);
+    TEST_ASSERT_TRUE(result.isValid);
+    
+    // 期待値: 同日の5:00
+    TEST_ASSERT_EQUAL_STRING("05:00", result.preview.c_str());
+    
+
+}
+
+// Issue #8 問題再現テスト: 4:59→5:00の詳細テスト
+void test_time_preview_logic_issue_8_4_59_to_5_00() {
+    // 現在時刻: 4:59 を設定
+    struct tm base_tm = {};
+    base_tm.tm_year = 124; base_tm.tm_mon = 0; base_tm.tm_mday = 1; 
+    base_tm.tm_hour = 4; base_tm.tm_min = 59; base_tm.tm_sec = 0;
+    time_t now = mktime(&base_tm);
+    
+    auto timeProvider = std::make_shared<MockTimeProvider>(now);
+    
+    // 5:00 を入力（完全入力）
+    int digits[4] = {0, 5, 0, 0};
+    bool entered[4] = {true, true, true, true};
+    
+    auto result = TimePreviewLogic::generatePreview(digits, entered, timeProvider.get(), false);
+    TEST_ASSERT_TRUE(result.isValid);
+    
+    // 期待値: 同日の5:00
+    TEST_ASSERT_EQUAL_STRING("05:00", result.preview.c_str());
+    
+
+}
+
+// Issue #8 問題再現テスト: 4:55→5:00の詳細テスト（更新されたタイトル）
+void test_time_preview_logic_issue_8_4_55_to_5_00() {
+    // 現在時刻: 4:55 を設定
+    struct tm base_tm = {};
+    base_tm.tm_year = 124; base_tm.tm_mon = 0; base_tm.tm_mday = 1; 
+    base_tm.tm_hour = 4; base_tm.tm_min = 55; base_tm.tm_sec = 0;
+    time_t now = mktime(&base_tm);
+    
+    auto timeProvider = std::make_shared<MockTimeProvider>(now);
+    
+    // _5:00 を入力（部分入力）
+    int digits[4] = {0, 5, 0, 0};
+    bool entered[4] = {false, true, true, true};
+    
+    auto result = TimePreviewLogic::generatePreview(digits, entered, timeProvider.get(), false);
+    TEST_ASSERT_TRUE(result.isValid);
+    
+    // 期待値: 同日の5:00
+    TEST_ASSERT_EQUAL_STRING("05:00", result.preview.c_str());
+    
+
+}
+
+// Issue #8 問題再現テスト: 実際の問題が発生する可能性のある条件
+void test_time_preview_logic_issue_8_actual_problem() {
+    // 現在時刻: 4:55 を設定
+    struct tm base_tm = {};
+    base_tm.tm_year = 124; base_tm.tm_mon = 0; base_tm.tm_mday = 1; 
+    base_tm.tm_hour = 4; base_tm.tm_min = 55; base_tm.tm_sec = 0;
+    time_t now = mktime(&base_tm);
+    
+    auto timeProvider = std::make_shared<MockTimeProvider>(now);
+    
+    // _5:00 を入力（部分入力）
+    int digits[4] = {0, 5, 0, 0};
+    bool entered[4] = {false, true, true, true};
+    
+    auto result = TimePreviewLogic::generatePreview(digits, entered, timeProvider.get(), false);
+    TEST_ASSERT_TRUE(result.isValid);
+    
+    // 期待値: 同日の5:00
+    TEST_ASSERT_EQUAL_STRING("05:00", result.preview.c_str());
+    
+
+}
+
 int main(int argc, char **argv) {
     UNITY_BEGIN();
     
@@ -160,6 +360,15 @@ int main(int argc, char **argv) {
     RUN_TEST(test_time_preview_logic_edge_cases);
     RUN_TEST(test_time_preview_logic_branch_coverage);
     RUN_TEST(test_time_preview_logic_comprehensive);
+    RUN_TEST(test_time_preview_logic_absolute_input_4_45_to_5_00);
+    RUN_TEST(test_time_preview_logic_absolute_input_3_45_to_4_00);
+    RUN_TEST(test_time_preview_logic_absolute_input_23_45_to_0_00);
+    RUN_TEST(test_time_preview_logic_absolute_input_23_45_to_23_50);
+    RUN_TEST(test_time_preview_logic_issue_8_reproduction);
+    RUN_TEST(test_time_preview_logic_issue_8_edge_case);
+    RUN_TEST(test_time_preview_logic_issue_8_4_59_to_5_00);
+    RUN_TEST(test_time_preview_logic_issue_8_4_55_to_5_00);
+    RUN_TEST(test_time_preview_logic_issue_8_actual_problem);
     
     UNITY_END();
     return 0;
