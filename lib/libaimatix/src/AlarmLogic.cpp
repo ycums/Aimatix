@@ -239,8 +239,18 @@ bool AlarmLogic::addAlarmFromPartialInput(
         hour = hour % HOURS_24;
         alarm_tm.tm_mday += add_day;
         
+        // 時刻をセット
+        alarm_tm.tm_hour = hour;
+        alarm_tm.tm_min = minute;
+        
         const time_t candidate = mktime(&alarm_tm);
-        if (candidate <= now) {
+        
+        // 現在時刻も秒を0にして比較（秒の差で誤判定されるのを防ぐ）
+        struct tm now_tm_compare = *now_tm;
+        now_tm_compare.tm_sec = 0;
+        time_t now_compare = mktime(&now_tm_compare);
+        
+        if (candidate <= now_compare) {
             // 過去時刻の場合：翌日の同じ時刻として処理
             alarm_tm.tm_mday += 1;
         }
