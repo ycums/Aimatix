@@ -101,7 +101,7 @@ ButtonManager button_manager;
 const std::shared_ptr<DateTimeAdapter> m5_time_provider = std::make_shared<DateTimeAdapter>();
 const std::shared_ptr<M5StackTimeManager> m5_time_manager = std::make_shared<M5StackTimeManager>();
 InputLogic input_logic(m5_time_provider);
-InputDisplayState input_display_state(&input_logic, &input_display_view_impl);
+InputDisplayState input_display_state(&input_logic, &input_display_view_impl, m5_time_provider.get());
 MainDisplayState main_display_state(&state_manager, &input_display_state, &main_display_view_impl, &time_logic, &alarm_logic);
 AlarmDisplayState alarm_display_state(&state_manager, &alarm_display_view_impl, m5_time_provider, m5_time_manager);
 SettingsDisplayState settings_display_state(&settings_logic, &settings_display_view_impl);
@@ -124,6 +124,9 @@ void setup() {
     cfg.output_power = true;
     M5.begin(cfg);
     M5.Display.setTextColor(AMBER_COLOR, TFT_BLACK);
+    
+    // DateTimeAdapterの初期化
+    m5_time_provider->initializeTime();
     
     // アラームリスト初期化
     alarm_times.clear();
