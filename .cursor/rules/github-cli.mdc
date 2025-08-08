@@ -1,0 +1,108 @@
+---
+description: GitHub CLI安全運用（PR/Issue本文の空化防止）
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# GitHub CLI運用ルール（本文空化防止・安全テンプレ）
+
+## 原則（必須）
+- 本文の入力は必ずヒアドキュメント or --body-file を使用する
+  - 文字列直書きの `--body "...\n\n..."` は禁止
+  - ヒアドキュメントは必ず単一引用（例: `<< 'EOF'`）を使用
+- 作成後は本文を検証し、空なら即時に再適用する
+- Windows(msys2)では改行やシェル展開の影響が出やすいので、一時ファイル経由を推奨
+
+## 安全テンプレ（PR作成）
+```bash
+# 1) 本文を一時ファイルに保存（msys2でも安定）
+BODY_FILE="$(mktemp -t gh-pr-body.XXXXXX || echo ./pr_body.md)"
+cat > "$BODY_FILE" << 'EOF'
+## 概要
+変更内容の説明
+
+## 変更内容
+- 修正点1
+- 修正点2
+
+## 確認事項
+- [ ] 期待する動作が満たされること
+EOF
+
+# 2) PR作成（本文はファイルで渡す）
+gh pr create \
+  --base main \
+  --head "$(git rev-parse --abbrev-ref HEAD)" \
+  --title "feat: タイトル" \
+  --body-file "$BODY_FILE"
+
+# 3) 事後検証（本文が空なら再設定）
+PR_NUM="$(gh pr list --state open --head "$(git rev-parse --abbrev-ref HEAD)" --json number --jq '.[0].number')"
+PR_BODY="$(gh pr view "$PR_NUM" --json body --jq '.body // ""')"
+if [ -z "$PR_BODY" ]; then
+  gh pr edit "$PR_NUM" --body-file "$BODY_FILE"
+fi
+```
+
+## 安全テンプレ（Issue作成）
+```bash
+BODY_FILE="$(mktemp -t gh-issue-body.XXXXXX || echo ./issue_body.md)"
+cat > "$BODY_FILE" << 'EOF'
+## バグの概要
+簡潔なバグの説明
+
+## 再現手順
+1. 手順1
+2. 手順2
+
+## 期待される動作
+期待する結果
+
+## 実際の動作
+実際の結果
+
+## 環境情報
+- OS:
+- PlatformIO:
+- Python:
+
+## 修正方針
+- 方針1
+
+## 完了条件
+- [ ] 条件1
+
+## 参照
+- リンク
+EOF
+
+ISSUE_URL="$(gh issue create --title "bug: タイトル" --label bug --body-file "$BODY_FILE" --json url --jq .url)"
+ISSUE_NUM="${ISSUE_URL##*/}"
+ISSUE_BODY="$(gh issue view "$ISSUE_NUM" --json body --jq '.body // ""')"
+[ -z "$ISSUE_BODY" ] && gh issue edit "$ISSUE_NUM" --body-file "$BODY_FILE"
+```
+
+## 既存PR/Issueの安全編集テンプレ
+```bash
+# PR本文を上書き
+gh pr edit <PR番号> --body-file - << 'EOF'
+## 概要
+...
+EOF
+
+# Issue本文を上書き
+gh issue edit <Issue番号> --body-file - << 'EOF'
+## バグの概要
+...
+EOF
+```
+
+## Windows(msys2)の注意
+- `<< 'EOF'` のように単一引用のヒアドキュメントを使う（展開・エスケープ抑止）
+- CRLF混入で不具合が出る場合は `unix2dos`/`dos2unix`、または `tr -d '\r'` で整形
+- `mktemp` が無い場合に備え、`./pr_body.md` などのフォールバックを入れる
+
+## 禁止事項
+- `--body "本文..."` の直接文字列指定（改行エスケープミスの原因）
+- 事後検証なしの作成（空本文の見落とし）
+

@@ -16,3 +16,8 @@ build/.cmake/api/v1/reply/*
 .cursor/
 .cache/
 build/
+ 
+# Allow committing Cursor rules (keep other .cursor contents ignored)
+!.cursor/
+!.cursor/rules/
+!.cursor/rules/*.mdc
