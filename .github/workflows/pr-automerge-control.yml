@@ -1,0 +1,69 @@
+name: pr-automerge-control
+on:
+  pull_request_target:
+    types:
+      - opened
+      - reopened
+      - ready_for_review
+      - converted_to_draft
+      - labeled
+      - unlabeled
+      - edited
+      - synchronize
+
+permissions:
+  pull-requests: write
+
+jobs:
+  control-automerge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Decide eligibility
+        id: gate
+        shell: bash
+        run: |
+          PR_DRAFT='${{ github.event.pull_request.draft }}'
+          LABELS='${{ join(github.event.pull_request.labels.*.name, ",") }}'
+          ASSOC='${{ github.event.pull_request.author_association }}'
+
+          has_label() { echo ",$LABELS," | grep -qi ",$1," ; }
+
+          eligible=true
+
+          # Draft is not eligible
+          [ "$PR_DRAFT" = "true" ] && eligible=false
+
+          # Required labels (automerge or dependencies)
+          if ! has_label automerge && ! has_label dependencies; then
+            eligible=false
+          fi
+
+          # Explicit exclusion labels
+          if has_label no-automerge || has_label hold; then
+            eligible=false
+          fi
+
+          # Exclude external contributions
+          case "$ASSOC" in
+            OWNER|MEMBER|COLLABORATOR) ;;
+            *) eligible=false ;;
+          esac
+
+          echo "eligible=$eligible" >> "$GITHUB_OUTPUT"
+
+      - name: Enable auto-merge (squash)
+        if: steps.gate.outputs.eligible == 'true'
+        uses: peter-evans/enable-pull-request-automerge@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          pull-request-number: ${{ github.event.pull_request.number }}
+          merge-method: squash
+
+      - name: Disable auto-merge (if previously enabled)
+        if: steps.gate.outputs.eligible != 'true'
+        uses: peter-evans/disable-pull-request-automerge@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          pull-request-number: ${{ github.event.pull_request.number }}
+
+
