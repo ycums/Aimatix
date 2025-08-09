@@ -16,4 +16,9 @@ pio check -e native --severity=high # 高重要度警告のみ表示
 # カバレッジ測定
 python scripts/test_coverage.py --quick # クイックカバレッジ測定
 python scripts/test_coverage.py --full # 完全カバレッジ測定
+
+# GitHub PR 安全作成（Windows/msys2 安定運用）
+# 環境変数 TITLE/BASE_BRANCH を必要に応じて指定可能
+# 例: TITLE="ci: update docs" BASE_BRANCH=main bash scripts/gh_pr_safe.sh ./pr_body.md
+TITLE="ci: update" bash scripts/gh_pr_safe.sh # デフォルトテンプレで本文作成
 ```
