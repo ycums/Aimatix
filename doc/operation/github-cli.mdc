@@ -1,0 +1,68 @@
+# GitHub CLI安全運用（PR/Issue本文の空化防止・Windows対応強化）
+
+## 原則（必須）
+- 本文は必ずヒアドキュメント or `--body-file` で渡す
+  - Windows(msys2)では `--body-file` を強制使用（`--body @-` は禁止）
+- 作成後は本文を検証し、空なら即時に再適用する
+- ヒアドキュメント直後に `;` や `&&` を置かない（1行チェーン禁止）
+- 行末CRLFを正規化する（`dos2unix` または `tr -d '\r'`）
+- シェルスクリプトは `set -Eeuo pipefail` を先頭に付与
+
+## 推奨テンプレ
+プロジェクト同梱の `scripts/gh_pr_safe.sh` を使用します。
+
+```bash
+# 例: PR作成（既存Markdownを本文として使用）
+TITLE="feat: implement settings UI" \
+BASE_BRANCH="main" \
+BODY_SOURCE="./.github/pr_bodies/settings_ui.md" \
+bash scripts/gh_pr_safe.sh
+
+# 例: PR作成（テンプレ本文を使用）
+TITLE="fix: correct automerge expression quotes" \
+bash scripts/gh_pr_safe.sh
+```
+
+### スクリプトの動作
+- 本文ファイルを生成（または `BODY_SOURCE` をコピー）
+- CRLFを正規化（`dos2unix` または `tr -d '\r'`）
+- `gh pr create --body-file` でPR作成
+- 作成後に本文長を検証（<10文字なら空と判定）し、`gh pr edit --body-file` で再適用
+
+## 既存スニペットの禁止・置換
+- 禁止（Windows/msys2）：
+  - `gh pr create --body @- << 'EOF' ... EOF`
+  - `cat << 'EOF' ... EOF; gh pr create ...`（ヒアドキュメント直後の連結）
+  - `gh pr create --body "本文\n\n改行"`（直書き）
+
+- 置換例：
+```bash
+# 悪い例（禁止）
+cat > "$BODY_FILE" << 'EOF'
+...
+EOF; gh pr create --title "feat" --body-file "$BODY_FILE"
+
+# 良い例（分離実行）
+cat > "$BODY_FILE" << 'EOF'
+...
+EOF
+gh pr create --title "feat" --body-file "$BODY_FILE"
+```
+
+## 事後検証テンプレ
+```bash
+PR_NUM="$(gh pr list --state open --head "$(git rev-parse --abbrev-ref HEAD)" --json number --jq '.[0].number // empty')"
+if [ -n "$PR_NUM" ]; then
+  BODY_LEN="$(gh pr view "$PR_NUM" --json body --jq '.body // ""' | wc -c | tr -d ' ')"
+  [ "$BODY_LEN" -lt 10 ] && gh pr edit "$PR_NUM" --body-file "$BODY_FILE"
+fi
+```
+
+## トラブルシュート
+- 本文が空になる：`--body-file` に統一、CRLF正規化を追加、本文長で再適用
+- `bash: 予期しないトークン ';'`：ヒアドキュメント直後の連結をやめ、コマンドを分離
+- 認証エラー：`gh auth status` で再ログイン
+
+## 参考
+- GitHub CLI: https://cli.github.com/
+```

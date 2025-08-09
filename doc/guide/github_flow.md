@@ -77,10 +77,11 @@ Closes #$ISSUE_NUMBER"
 # ブランチをプッシュ
 git push origin feature/issue-$ISSUE_NUMBER-settings-ui
 
-# Pull Request作成
-gh pr create --title "feat: 設定画面の項目選択UI実装" \
-  --body "## 概要\n設定画面で項目選択と値変更のUI/UXを実装\n\n## 変更内容\n- 項目選択モードと値変更モードの切り替え\n- 設定保存/復元は未実装（UIのみ）\n\n## テスト\n- [ ] Unit Test追加\n- [ ] カバレッジ85%以上\n- [ ] 静的解析実行\n- [ ] 実機テスト合格\n\n## 関連Issue\nCloses #$ISSUE_NUMBER" \
-  --label "enhancement"
+# Pull Request作成（安全テンプレ via scripts/gh_pr_safe.sh）
+TITLE="feat: 設定画面の項目選択UI実装" \
+BASE_BRANCH="main" \
+BODY_SOURCE="./.github/pr_bodies/feat_settings_ui.md" \
+bash scripts/gh_pr_safe.sh
 ```
 
 ### 5. レビュー・マージ
@@ -107,9 +108,14 @@ git push origin --delete feature/issue-$ISSUE_NUMBER-settings-ui
 
 ### IssueとPRの自動リンク
 ```bash
-# PR作成時にIssueを自動リンク
-gh pr create --title "feat: $(gh issue view --json title --jq .title)" \
-  --body "Closes #$(gh issue view --json number --jq .number)"
+# PR作成時にIssueを自動リンク（本文はファイルで用意）
+ISSUE_TITLE="$(gh issue view --json title --jq .title)"
+ISSUE_NUMBER="$(gh issue view --json number --jq .number)"
+BODY_FILE="$(mktemp -t gh-pr-body.XXXXXX || echo ./pr_body.md)"
+cat > "$BODY_FILE" << EOF
+Closes #$ISSUE_NUMBER
+EOF
+TITLE="feat: $ISSUE_TITLE" BASE_BRANCH="main" BODY_SOURCE="$BODY_FILE" bash scripts/gh_pr_safe.sh
 ```
 
 ### ブランチ名の自動生成
@@ -155,7 +161,9 @@ git commit -m "fix: 緊急修正の説明"
 
 # プッシュ・PR作成
 git push origin hotfix/critical-bug-fix
-gh pr create --title "fix: 緊急修正" --body "緊急修正の詳細"
+TITLE="fix: 緊急修正" \
+BODY_SOURCE="./.github/pr_bodies/hotfix_template.md" \
+bash scripts/gh_pr_safe.sh
 ```
 
 ## 参考
