@@ -30,6 +30,10 @@ public:
             view->showHints("INC", "NEXT", "SET");
             for (int i = 0; i < 4; ++i) { lastDigits[i] = -1; lastEntered[i] = false; }
         }
+        // 絶対入力モードでは初期状態を __:_0（分一桁=0, entered=true）にする
+        if (inputLogic && !isRelativeMode) {
+            inputLogic->incrementInput(0);
+        }
         // エラー状態をリセット
         resetErrorState();
     }
@@ -380,8 +384,12 @@ private:
     }
     void onButtonBLongPress() override {
         if (inputLogic) {
-            // リセット: 入力値を空 (__:__) に戻し、カーソル位置を3に戻す
+            // リセット
             inputLogic->reset();
+            // 絶対入力モードでは __:_0 に統一、REL+は従来どおり完全クリア
+            if (!isRelativeMode) {
+                inputLogic->incrementInput(0);
+            }
             onDraw();
         }
     }

@@ -1,5 +1,6 @@
 #include <unity.h>
 #include "TimePreviewLogic.h"
+#include "InputLogic.h"
 #include "../mock/MockTimeProvider.h"
 #include <memory>
 #include <string>
@@ -114,6 +115,89 @@ void test_time_preview_logic_edge_cases() {
     bool entered2[4] = {true, true, true, true};
     auto result2 = TimePreviewLogic::generatePreview(digits2, entered2, testTimeProvider.get(), false);
     TEST_ASSERT_TRUE(result2.isValid);
+}
+
+// === AIM-11: 追加プレビュー検証 本体 ===
+void test_preview_abs_00_00_from_23_59_is_plus1d_00_00() {
+    // 現在時刻: 23:59
+    struct tm base_tm = {};
+    base_tm.tm_year = 124; base_tm.tm_mon = 0; base_tm.tm_mday = 1; 
+    base_tm.tm_hour = 23; base_tm.tm_min = 59; base_tm.tm_sec = 0;
+    time_t now = mktime(&base_tm);
+    auto provider = std::make_shared<MockTimeProvider>(now);
+
+    int digits[4] = {0,0,0,0};
+    bool entered[4] = {true,true,true,true}; // 00:00 完全入力
+
+    auto result = TimePreviewLogic::generatePreview(digits, entered, provider.get(), false);
+    TEST_ASSERT_TRUE(result.isValid);
+    TEST_ASSERT_EQUAL_STRING("+1d 00:00", result.preview.c_str());
+}
+
+void test_preview_abs_00_00_from_00_00_is_plus1d_00_00() {
+    // 現在時刻: 00:00
+    struct tm base_tm = {};
+    base_tm.tm_year = 124; base_tm.tm_mon = 0; base_tm.tm_mday = 1; 
+    base_tm.tm_hour = 0; base_tm.tm_min = 0; base_tm.tm_sec = 0;
+    time_t now = mktime(&base_tm);
+    auto provider = std::make_shared<MockTimeProvider>(now);
+
+    int digits[4] = {0,0,0,0};
+    bool entered[4] = {true,true,true,true};
+
+    auto result = TimePreviewLogic::generatePreview(digits, entered, provider.get(), false);
+    TEST_ASSERT_TRUE(result.isValid);
+    TEST_ASSERT_EQUAL_STRING("+1d 00:00", result.preview.c_str());
+}
+
+void test_preview_abs___0_from_14_35_is_15_00() {
+    // 現在時刻: 14:35、__:_0 入力
+    struct tm base_tm = {};
+    base_tm.tm_year = 124; base_tm.tm_mon = 0; base_tm.tm_mday = 1; 
+    base_tm.tm_hour = 14; base_tm.tm_min = 35; base_tm.tm_sec = 0;
+    time_t now = mktime(&base_tm);
+    auto provider = std::make_shared<MockTimeProvider>(now);
+
+    int digits[4] = {0,0,0,0};
+    bool entered[4] = {false,false,false,true};
+
+    auto result = TimePreviewLogic::generatePreview(digits, entered, provider.get(), false);
+    TEST_ASSERT_TRUE(result.isValid);
+    TEST_ASSERT_EQUAL_STRING("15:00", result.preview.c_str());
+}
+
+void test_preview_rel_plus_5_min_from_14_35_is_14_40() {
+    // 相対: 5分
+    struct tm base_tm = {};
+    base_tm.tm_year = 124; base_tm.tm_mon = 0; base_tm.tm_mday = 1; 
+    base_tm.tm_hour = 14; base_tm.tm_min = 35; base_tm.tm_sec = 0;
+    time_t now = mktime(&base_tm);
+    auto provider = std::make_shared<MockTimeProvider>(now);
+
+    InputLogic logic(provider);
+    logic.reset();
+    logic.incrementInput(5); // 分一桁のみ 5
+    time_t t = logic.getAbsoluteValue();
+    auto result = TimePreviewLogic::generateRelativePreview(t, provider.get());
+    TEST_ASSERT_TRUE(result.isValid);
+    TEST_ASSERT_EQUAL_STRING("14:40", result.preview.c_str());
+}
+
+void test_preview_rel_plus_0_min_from_14_35_is_14_35() {
+    // 相対: 0分
+    struct tm base_tm = {};
+    base_tm.tm_year = 124; base_tm.tm_mon = 0; base_tm.tm_mday = 1; 
+    base_tm.tm_hour = 14; base_tm.tm_min = 35; base_tm.tm_sec = 0;
+    time_t now = mktime(&base_tm);
+    auto provider = std::make_shared<MockTimeProvider>(now);
+
+    InputLogic logic(provider);
+    logic.reset();
+    logic.incrementInput(0); // 分一桁のみ 0
+    time_t t = logic.getAbsoluteValue();
+    auto result = TimePreviewLogic::generateRelativePreview(t, provider.get());
+    TEST_ASSERT_TRUE(result.isValid);
+    TEST_ASSERT_EQUAL_STRING("14:35", result.preview.c_str());
 }
 
 // 分岐カバレッジ向上のためのテスト
@@ -369,6 +453,19 @@ int main(int argc, char **argv) {
     RUN_TEST(test_time_preview_logic_issue_8_4_59_to_5_00);
     RUN_TEST(test_time_preview_logic_issue_8_4_55_to_5_00);
     RUN_TEST(test_time_preview_logic_issue_8_actual_problem);
+    
+    // === AIM-11: 追加プレビュー検証 ===
+    void test_preview_abs_00_00_from_23_59_is_plus1d_00_00();
+    void test_preview_abs_00_00_from_00_00_is_plus1d_00_00();
+    void test_preview_abs___0_from_14_35_is_15_00();
+    void test_preview_rel_plus_5_min_from_14_35_is_14_40();
+    void test_preview_rel_plus_0_min_from_14_35_is_14_35();
+    
+    RUN_TEST(test_preview_abs_00_00_from_23_59_is_plus1d_00_00);
+    RUN_TEST(test_preview_abs_00_00_from_00_00_is_plus1d_00_00);
+    RUN_TEST(test_preview_abs___0_from_14_35_is_15_00);
+    RUN_TEST(test_preview_rel_plus_5_min_from_14_35_is_14_40);
+    RUN_TEST(test_preview_rel_plus_0_min_from_14_35_is_14_35);
     
     UNITY_END();
     return 0;

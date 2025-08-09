@@ -547,6 +547,33 @@ void test_alarm_logic_add_alarm_from_partial_input_null_input() {
     TEST_ASSERT_EQUAL_STRING("Invalid input data", msg.c_str());
 }
 
+// === AIM-11: 追加確定テスト ===
+void test_alarm_submit_00_00_from_23_59_is_next_day_00_00() {
+    std::vector<time_t> alarms;
+    AlarmLogic::AddAlarmResult result; std::string msg;
+    // 現在: 23:59
+    struct tm base_tm = {}; base_tm.tm_year=124; base_tm.tm_mon=0; base_tm.tm_mday=1; base_tm.tm_hour=23; base_tm.tm_min=59; base_tm.tm_sec=0;
+    time_t now = mktime(&base_tm);
+    int digits[4] = {0,0,0,0}; bool entered[4] = {true,true,true,true};
+    bool ok = AlarmLogic::addAlarmFromPartialInput(alarms, now, digits, entered, result, msg);
+    TEST_ASSERT_TRUE(ok);
+    struct tm* tm_alarm = localtime(&alarms.back());
+    TEST_ASSERT_EQUAL(2, tm_alarm->tm_mday); // 翌日
+}
+
+void test_alarm_submit___0_from_14_35_is_15_00() {
+    std::vector<time_t> alarms;
+    AlarmLogic::AddAlarmResult result; std::string msg;
+    // 現在: 14:35、__:_0
+    struct tm base_tm = {}; base_tm.tm_year=124; base_tm.tm_mon=0; base_tm.tm_mday=1; base_tm.tm_hour=14; base_tm.tm_min=35; base_tm.tm_sec=0;
+    time_t now = mktime(&base_tm);
+    int digits[4] = {0,0,0,0}; bool entered[4] = {false,false,false,true};
+    bool ok = AlarmLogic::addAlarmFromPartialInput(alarms, now, digits, entered, result, msg);
+    TEST_ASSERT_TRUE(ok);
+    struct tm* tm_alarm = localtime(&alarms.back());
+    TEST_ASSERT_EQUAL(15, tm_alarm->tm_hour);
+}
+
 // Issue #8 再現テスト: 4:55時点で_5:00を入力した際の問題
 void test_alarm_logic_issue_8_reproduction() {
     // 現在時刻: 4:55 を設定（Issue #8と同じ条件）

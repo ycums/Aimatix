@@ -1004,6 +1004,128 @@ void test_display_common_grid_lines_branches() {
 
 
 
+// === AIM-11: 追加テスト本体 ===
+void test_abs_init_digit3_entered_true() {
+    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
+    std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
+    InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
+
+    state.setRelativeMode(false);      // 絶対入力
+    state.onEnter();                   // ここで __:_0 になる想定（TDD: 失敗を期待）
+    state.onDraw();
+
+    TEST_ASSERT_TRUE(inputLogic->isEntered(3));
+}
+
+void test_abs_b_short_from___0_to__00() {
+    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
+    std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
+    InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
+
+    state.setRelativeMode(false);
+    state.onEnter();
+    IState* base = static_cast<IState*>(&state);
+    base->onButtonB();                 // B短押し: __:_0 → __:00 を期待
+    state.onDraw();
+
+    TEST_ASSERT_TRUE(inputLogic->isEntered(2));
+}
+
+void test_abs_b_short_from__00_to_0_00() {
+    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
+    std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
+    InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
+
+    state.setRelativeMode(false);
+    state.onEnter();
+    IState* base = static_cast<IState*>(&state);
+    base->onButtonB();                 // __:00
+    base->onButtonB();                 // __:00 → _0:00
+    state.onDraw();
+
+    TEST_ASSERT_TRUE(inputLogic->isEntered(1));
+}
+
+void test_abs_b_short_from_0_00_to_00_00() {
+    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
+    std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
+    InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
+
+    state.setRelativeMode(false);
+    state.onEnter();
+    IState* base = static_cast<IState*>(&state);
+    base->onButtonB();                 // __:00
+    base->onButtonB();                 // _0:00
+    base->onButtonB();                 // 00:00
+    state.onDraw();
+
+    TEST_ASSERT_TRUE(inputLogic->isEntered(0));
+}
+
+void test_abs_b_short_reject_on_00_00() {
+    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
+    std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
+    InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
+
+    state.setRelativeMode(false);
+    state.onEnter();
+    IState* base = static_cast<IState*>(&state);
+    base->onButtonB();                 // __:00
+    base->onButtonB();                 // _0:00
+    base->onButtonB();                 // 00:00
+    bool before = inputLogic->isEntered(0);
+    base->onButtonB();                 // 00:00 → 拒絶（変化なし）
+    state.onDraw();
+
+    TEST_ASSERT_TRUE(before && inputLogic->isEntered(0));
+}
+
+void test_rel_init_all_clear_entered_false() {
+    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
+    std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
+    InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
+
+    state.setRelativeMode(true);
+    state.onEnter();
+    state.onDraw();
+
+    TEST_ASSERT_FALSE(inputLogic->isEntered(3));
+}
+
+void test_rel_init_title_is_REL_plus() {
+    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
+    std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
+    InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
+
+    state.setRelativeMode(true);
+    state.onEnter();
+    state.onDraw();
+
+    TEST_ASSERT_EQUAL_STRING("REL+", mockView->lastTitle.c_str());
+}
+
+void test_abs_reset_long_b_digit3_entered_true() {
+    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
+    std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
+    InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
+
+    state.setRelativeMode(false);
+    // 何か入力してからリセット
+    inputLogic->incrementInput(7);
+    IState* base = static_cast<IState*>(&state);
+    base->onButtonBLongPress();        // 絶対入力では __:_0 に戻す想定（TDD: 失敗を期待）
+    state.onDraw();
+
+    TEST_ASSERT_TRUE(inputLogic->isEntered(3));
+}
 int main(int argc, char **argv) {
     UNITY_BEGIN();
     RUN_TEST(test_basic_input_logic);
@@ -1034,8 +1156,25 @@ int main(int argc, char **argv) {
     RUN_TEST(test_display_common_battery_charging_branches);
     RUN_TEST(test_display_common_grid_lines_branches);
     
-
+    // === AIM-11 TDD: 追加テスト（絶対入力 __:_0 初期化とB操作） ===
+    void test_abs_init_digit3_entered_true();
+    void test_abs_b_short_from___0_to__00();
+    void test_abs_b_short_from__00_to_0_00();
+    void test_abs_b_short_from_0_00_to_00_00();
+    void test_abs_b_short_reject_on_00_00();
+    void test_rel_init_all_clear_entered_false();
+    void test_rel_init_title_is_REL_plus();
+    void test_abs_reset_long_b_digit3_entered_true();
     
+    RUN_TEST(test_abs_init_digit3_entered_true);
+    RUN_TEST(test_abs_b_short_from___0_to__00);
+    RUN_TEST(test_abs_b_short_from__00_to_0_00);
+    RUN_TEST(test_abs_b_short_from_0_00_to_00_00);
+    RUN_TEST(test_abs_b_short_reject_on_00_00);
+    RUN_TEST(test_rel_init_all_clear_entered_false);
+    RUN_TEST(test_rel_init_title_is_REL_plus);
+    RUN_TEST(test_abs_reset_long_b_digit3_entered_true);
+
     UNITY_END();
     return 0;
 } 
