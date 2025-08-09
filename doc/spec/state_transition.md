@@ -10,7 +10,7 @@
 | ABS_TIME_INPUT      | A短押し    | +1      | (遷移なし)              |
 | ABS_TIME_INPUT      | A長押し    | +5      | (遷移なし)              |
 | ABS_TIME_INPUT      | B短押し    | 桁送り | (遷移なし)              |
-| ABS_TIME_INPUT      | B長押し    | 入力クリア   | (遷移なし)              |
+| ABS_TIME_INPUT      | B長押し    | 入力クリア(__:_0へ) | (遷移なし)              |
 | ABS_TIME_INPUT      | C短押し    | 確定      | MAIN_DISPLAY        |
 | ABS_TIME_INPUT      | C長押し    | NOP     | MAIN_DISPLAY        |
 |                     |         |         |                     |
