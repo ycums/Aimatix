@@ -23,7 +23,7 @@ jobs:
         shell: bash
         run: |
           PR_DRAFT='${{ github.event.pull_request.draft }}'
-          LABELS='${{ join(github.event.pull_request.labels.*.name, ",") }}'
+          LABELS='${{ join(github.event.pull_request.labels.*.name, ',') }}'
           ASSOC='${{ github.event.pull_request.author_association }}'
 
           has_label() { echo ",$LABELS," | grep -qi ",$1," ; }
