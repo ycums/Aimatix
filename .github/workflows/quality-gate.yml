@@ -34,9 +34,9 @@ jobs:
       - name: Baseline build (sanity)
         run: pio run -e native
 
-      - name: Run coverage (release mode)
+      - name: Run coverage (quick mode)
         run: |
-          python scripts/test_coverage.py --release
+          python scripts/test_coverage.py --quick
 
       - name: Upload coverage artifacts
         if: always()
