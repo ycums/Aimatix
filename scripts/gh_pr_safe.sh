@@ -1,6 +1,91 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+# Safe GitHub PR creation helper for Windows(msys2) and POSIX shells
+# Usage:
+#   TITLE="feat: something" BASE_BRANCH="main" BODY_SOURCE="./path.md" bash scripts/gh_pr_safe.sh
+#   # BODY_SOURCE is optional. If omitted, a template body will be used.
+
+BASE_BRANCH="${BASE_BRANCH:-main}"
+TITLE="${TITLE:?TITLE is required}"
+BODY_FILE="$(mktemp -t gh-pr-body.XXXXXX 2>/dev/null || echo ./pr_body.md)"
+
+create_body() {
+  if [ -n "${BODY_SOURCE:-}" ] && [ -f "${BODY_SOURCE}" ]; then
+    cp "${BODY_SOURCE}" "${BODY_FILE}"
+  else
+    cat > "${BODY_FILE}" << 'EOF'
+## 概要
+変更内容の説明
+
+## 変更内容
+- 修正点1
+- 修正点2
+
+## テスト
+- [ ] テスト項目1
+- [ ] テスト項目2
+EOF
+  fi
+
+  # Normalize line endings (Windows/msys2 safety)
+  if command -v dos2unix >/dev/null 2>&1; then
+    dos2unix "${BODY_FILE}" || true
+  else
+    tr -d '\r' < "${BODY_FILE}" > "${BODY_FILE}.tmp" && mv "${BODY_FILE}.tmp" "${BODY_FILE}"
+  fi
+}
+
+ensure_env() {
+  gh --version >/dev/null
+  gh auth status >/dev/null
+}
+
+get_head_branch() {
+  git rev-parse --abbrev-ref HEAD
+}
+
+get_open_pr_number_by_head() {
+  local head="$1"
+  gh pr list --state open --head "${head}" --json number --jq '.[0].number // empty'
+}
+
+safe_create_or_update_pr() {
+  local head; head="$(get_head_branch)"
+  local pr_num; pr_num="$(get_open_pr_number_by_head "${head}")"
+
+  if [ -z "${pr_num}" ]; then
+    gh pr create \
+      --base "${BASE_BRANCH}" \
+      --head "${head}" \
+      --title "${TITLE}" \
+      --body-file "${BODY_FILE}"
+    pr_num="$(get_open_pr_number_by_head "${head}")"
+  fi
+
+  # Post-create verification: reapply body if empty
+  local body_len
+  body_len="$(gh pr view "${pr_num}" --json body --jq '.body // ""' | wc -c | tr -d ' ')"
+  if [ "${body_len}" -lt 10 ]; then
+    gh pr edit "${pr_num}" --body-file "${BODY_FILE}"
+  fi
+
+  echo "${pr_num}"
+}
+
+main() {
+  ensure_env
+  create_body
+  local pr
+  pr="$(safe_create_or_update_pr)"
+  echo "PR #${pr}"
+}
+
+main "$@"
+
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
 # GitHub CLI safe PR creation helper (Windows/msys2 friendly)
 # - Uses --body-file only (avoids --body @-)
 # - Normalizes CRLF
