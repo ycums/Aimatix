@@ -759,7 +759,7 @@ build_unflags = -std=gnu++11
 
 ## 4. 設定ファイル仕様
 
-### 4.1 カバレッジ設定ファイル: `coverage_config.json`
+### 4.1 カバレッジ設定ファイル: `coverage_config.json`（数値の正典）
 
 #### 4.1.1 統一設定形式
 ```json
@@ -860,7 +860,7 @@ python scripts/test_coverage.py --verbose
 python scripts/test_coverage.py --debug
 ```
 
-### 5.2 Python API
+### 5.2 Python API（抜粋）
 
 #### 5.2.1 基本使用例
 ```python
