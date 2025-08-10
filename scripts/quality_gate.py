@@ -42,9 +42,13 @@ def _normalize_path(path: str) -> str:
 def _is_excluded(file_path: str, exclude_patterns: List[str]) -> bool:
     normalized = _normalize_path(file_path)
     for pattern in exclude_patterns:
-        # '**' ワイルドカードを考慮した fnmatch
-        if fnmatch(normalized, pattern):
-            return True
+        # 絶対/相対どちらにもマッチするようにパターン拡張
+        patterns_to_try = [pattern]
+        if not pattern.startswith("**/"):
+            patterns_to_try.append(f"**/{pattern}")
+        for p in patterns_to_try:
+            if fnmatch(normalized, p):
+                return True
     return False
 
 
@@ -71,30 +75,43 @@ def run_clang_tidy_json(env: str, src_filter: Optional[List[str]] = None) -> Lis
 
     失敗時は例外を投げる。
     """
-    cmd = ["pio", "check", "-e", env, "--json-output", "--silent"]
-    if src_filter:
-        # pio の --src-filters は次引数でスペース区切り指定（+<...> -<...>）
-        joined = " ".join(src_filter)
-        cmd.extend(["--src-filters", joined])
-    completed = subprocess.run(
-        cmd,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        check=False,
+    variants = [
+        ["--json-output"],
+        ["--json-output", "--no-ansi"],
+        ["--json-output", "--silent"],
+    ]
+    last_output = ""
+    last_rc = None
+    for extra in variants:
+        cmd = ["pio", "check", "-e", env] + extra
+        if src_filter:
+            joined = " ".join(src_filter)
+            cmd.extend(["--src-filters", joined])
+        completed = subprocess.run(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            check=False,
+        )
+        output = completed.stdout.decode("utf-8", errors="replace").strip()
+        last_output = output
+        last_rc = completed.returncode
+        if not output:
+            # 出力が空で rc==0 の場合は欠陥なし扱い
+            if completed.returncode == 0:
+                return []
+            # それ以外は次のバリアントへ
+            continue
+        try:
+            data = json.loads(output)
+            if isinstance(data, list):
+                return data
+        except Exception:
+            # 次のバリアントへ
+            continue
+    raise RuntimeError(
+        "Failed to parse pio check JSON after retries (rc=%s)\nRaw: %s" % (last_rc, last_output[:2048])
     )
-    output = completed.stdout.decode("utf-8", errors="replace").strip()
-    if completed.returncode not in (0,):
-        # pio check は警告があっても 0 を返す運用が多いが、念のためログを含めて扱う
-        # 非0の場合も JSON が出力されている可能性があるため、後段で parse を試みる
-        pass
-    try:
-        data = json.loads(output)
-        if isinstance(data, list):
-            return data
-        raise ValueError("Unexpected JSON root type")
-    except Exception as e:
-        # トラブル時はログを出して失敗
-        raise RuntimeError(f"Failed to parse pio check JSON: {e}\nRaw: {output[:2048]}")
 
 
 def collect_static_analysis(env: str, exclude_patterns: List[str], src_filter: Optional[List[str]] = None) -> Tuple[Dict[str, int], Dict[str, Dict[str, int]]]:
