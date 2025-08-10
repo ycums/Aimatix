@@ -216,7 +216,7 @@ void test_settings_logic_branch_coverage() {
     // getItemDisplayNameの全分岐テスト
     TEST_ASSERT_EQUAL_STRING("SOUND", logic.getItemDisplayName(SettingsItem::SOUND).c_str());
     TEST_ASSERT_EQUAL_STRING("LCD BRIGHTNESS", logic.getItemDisplayName(SettingsItem::LCD_BRIGHTNESS).c_str());
-    TEST_ASSERT_EQUAL_STRING("SET DATE/TIME", logic.getItemDisplayName(SettingsItem::SET_DATE_TIME).c_str());
+    TEST_ASSERT_EQUAL_STRING("TIME SYNC", logic.getItemDisplayName(SettingsItem::SET_DATE_TIME).c_str());
     
     // getItemValueStringの全分岐テスト
     std::string soundValue = logic.getItemValueString(SettingsItem::SOUND);
