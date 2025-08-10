@@ -20,3 +20,19 @@ static_analysis_report.json
 static_analysis_raw.json
 static_analysis_raw.txt
 pio_project_config.json
+
+# Python caches
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Python virtual environments
+.venv/
+venv/
+
+# Coverage generated single files
+coverage_history.json
+coverage_baseline.json
