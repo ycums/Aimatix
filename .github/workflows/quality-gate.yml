@@ -46,6 +46,32 @@ jobs:
       - name: Baseline build (sanity)
         run: pio run -e native
 
+      - name: Print tool versions / PWD / key files
+        run: |
+          pwd
+          ls -la
+          platformio --version || true
+          pio --version || true
+          clang-tidy --version || true
+          python --version
+          test -f platformio.ini && echo "[ok] platformio.ini found" || echo "[ng] platformio.ini not found"
+          test -f .clang-tidy && echo "[ok] .clang-tidy found" || echo "[ng] .clang-tidy not found"
+
+      - name: Cleanup stale analysis outputs
+        run: |
+          rm -f static_analysis_report.json static_analysis_raw.json static_analysis_raw.txt pio_project_config.json || true
+
+      - name: Run pio check (capture raw JSON and text)
+        run: |
+          set -e
+          pio check -e native --json-output > static_analysis_raw.json || true
+          pio check -e native > static_analysis_raw.txt || true
+          echo "JSON_BYTES=$(wc -c < static_analysis_raw.json 2>/dev/null || echo 0)" >> $GITHUB_ENV
+
+      - name: Dump pio project config
+        run: |
+          pio project config --json > pio_project_config.json || true
+
       - name: Run quality gate
         run: |
           python scripts/quality_gate.py
@@ -59,6 +85,9 @@ jobs:
             coverage_reports/**
             coverage_history.json
             static_analysis_report.json
+            static_analysis_raw.json
+            static_analysis_raw.txt
+            pio_project_config.json
           if-no-files-found: warn
 
       - name: Job summary
@@ -71,6 +100,11 @@ jobs:
           echo "- Run ID: $GITHUB_RUN_ID" >> "$GITHUB_STEP_SUMMARY"
           echo "- Artifacts: quality-gate-artifacts-$GITHUB_RUN_ID" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
+
+          echo "### pio check (raw capture)" >> "$GITHUB_STEP_SUMMARY"
+          echo "- JSON bytes: ${JSON_BYTES:-0}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Raw text tail:" >> "$GITHUB_STEP_SUMMARY"
+          (tail -n 20 static_analysis_raw.txt 2>/dev/null | sed 's/^/  /') >> "$GITHUB_STEP_SUMMARY" || true
 
 
       - name: Job summary (coverage)
