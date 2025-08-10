@@ -19,6 +19,15 @@
     "threshold": 80.0,
     "strict_mode": false
   },
+  "static_analysis": {
+    "enabled": true,
+    "tool": "clang-tidy",
+    "severity_thresholds": {
+      "high": 0,
+      "medium": 25,
+      "low": 30
+    }
+  },
   "exclusions": {
     "directories": [
       "test/",
