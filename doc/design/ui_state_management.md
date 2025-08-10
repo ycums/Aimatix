@@ -131,16 +131,20 @@ public:
 ## TIME SYNC (QR)
 
 - Entry: `SETTINGS_MENU` → select "TIME SYNC"
+- Entry (boot auto): `BOOT` → `TIME_SYNC`（条件: `TimeValidationLogic` により時刻が無効〈基準日 `2025-01-01 00:00` 未満〉と判定された場合）
 - Exit:
   - success → `MAIN_DISPLAY`
   - cancel/timeout → `SETTINGS_MENU`
 - Buttons: A = REISSUE, C = EXIT（Bは未使用）
 - Tick policy: `TimeSyncDisplayState.onDraw()` 内で `ITimeSyncController.loopTick()` を毎フレーム呼ぶ（約20Hz）
+- Sync method: SoftAP + QR のみ（本起動時自動同期では NTP 自動同期は使用しない）
+- Dialog policy: 提案ダイアログは表示しない（自動開始）
 
 ```mermaid
 stateDiagram-v2
   [*] --> SETTINGS_MENU
   SETTINGS_MENU --> TIME_SYNC: select "TIME SYNC"
+  [*] --> TIME_SYNC: boot (invalid time)
   TIME_SYNC --> MAIN_DISPLAY: synced (success)
   TIME_SYNC --> SETTINGS_MENU: exit (C) / timeout
 ```
