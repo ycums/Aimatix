@@ -103,32 +103,27 @@ jobs:
             echo "- Actual: (see artifacts)" >> "$GITHUB_STEP_SUMMARY"
           fi
 
-          # Static analysis summary (if report exists)
-          if [ -f static_analysis_report.json ]; then
-            echo "" >> "$GITHUB_STEP_SUMMARY"
-            echo "### Static Analysis (Clang-Tidy)" >> "$GITHUB_STEP_SUMMARY"
-            python - "$GITHUB_STEP_SUMMARY" << 'PY'
-import json,sys
-out_path = sys.argv[1]
-try:
-    with open('static_analysis_report.json','r',encoding='utf-8') as f:
-        data=json.load(f)
-    t=data.get('totals',{})
-    th=data.get('thresholds',{})
-    passed=data.get('passed',False)
-    lines = []
-    lines.append(f"- Environment: {data.get('environment','native')}")
-    lines.append(f"- Totals: High={t.get('high',0)}, Medium={t.get('medium',0)}, Low={t.get('low',0)}")
-    lines.append(f"- Thresholds: High={th.get('high','-')}, Medium={th.get('medium','-')}, Low={th.get('low','-')}")
-    lines.append(f"- Status: {'✅ Passed' if passed else '❌ Failed'}")
-    with open(out_path,'a',encoding='utf-8') as g:
-        for line in lines:
-            g.write(line + '\n')
-except Exception as e:
-    with open(out_path,'a',encoding='utf-8') as g:
-        g.write(f"- Static analysis summary error: {e}\n")
-PY
-          fi
+          # (static analysis summary moved to a dedicated python step below)
+
+      - name: Job summary (static analysis)
+        if: always()
+        shell: python
+        run: |
+          import json, os
+          p = 'static_analysis_report.json'
+          s = os.environ.get('GITHUB_STEP_SUMMARY')
+          if s and os.path.exists(p):
+              with open(p, encoding='utf-8') as f:
+                  d = json.load(f)
+              t = d.get('totals', {})
+              th = d.get('thresholds', {})
+              passed = d.get('passed', False)
+              with open(s, 'a', encoding='utf-8') as g:
+                  g.write("\n### Static Analysis (Clang-Tidy)\n")
+                  g.write(f"- Environment: {d.get('environment','native')}\n")
+                  g.write(f"- Totals: High={t.get('high',0)}, Medium={t.get('medium',0)}, Low={t.get('low',0)}\n")
+                  g.write(f"- Thresholds: High={th.get('high','-')}, Medium={th.get('medium','-')}, Low={th.get('low','-')}\n")
+                  g.write(f"- Status: {'✅ Passed' if passed else '❌ Failed'}\n")
 
 
   automerge:
