@@ -61,7 +61,7 @@ jobs:
             static_analysis_report.json
           if-no-files-found: warn
 
-      - name: Job summary
+      - name: Job summary (header & threshold)
         if: always()
         shell: bash
         run: |
@@ -88,38 +88,56 @@ jobs:
             echo "- Threshold: (from coverage_config.json or default 80%)" >> "$GITHUB_STEP_SUMMARY"
           fi
 
-          # Coverage summary (from latest JSON report if available)
-          if [ -f coverage_reports/coverage_summary.json ]; then
-            echo "" >> "$GITHUB_STEP_SUMMARY"
-            echo "### Coverage" >> "$GITHUB_STEP_SUMMARY"
-            python - "$GITHUB_STEP_SUMMARY" << 'PY'
-import json, sys
-outp = sys.argv[1]
-try:
-    with open('coverage_reports/coverage_summary.json','r',encoding='utf-8') as f:
-        d=json.load(f)
-    cov = d.get('overall',{}).get('coverage_percentage') or d.get('coverage_percentage')
-    with open(outp,'a',encoding='utf-8') as g:
-        g.write(f"- Actual: {cov}%\n")
-except Exception as e:
-    with open(outp,'a',encoding='utf-8') as g:
-        g.write(f"- Coverage summary error: {e}\n")
-PY
-          else
-            # fallback to history
-            if [ -f coverage_history.json ]; then
-              ACTUAL=$(grep -o '"coverage"\s*:\s*[0-9.]*' coverage_history.json | tail -n 1 | sed 's/[^0-9.]*//g') || true
-              echo "" >> "$GITHUB_STEP_SUMMARY"
-              echo "### Coverage" >> "$GITHUB_STEP_SUMMARY"
-              if [ -n "$ACTUAL" ]; then
-                echo "- Actual: ${ACTUAL}%" >> "$GITHUB_STEP_SUMMARY"
-              else
-                echo "- Actual: (see artifacts)" >> "$GITHUB_STEP_SUMMARY"
-              fi
-            fi
-          fi
-
-          # (static analysis summary moved to a dedicated python step below)
+      - name: Job summary (coverage)
+        if: always()
+        shell: python
+        run: |
+          import json, os
+          outp = os.environ.get('GITHUB_STEP_SUMMARY')
+          cov = None
+          # Prefer latest coverage summary if exists
+          p1 = 'coverage_reports/coverage_summary.json'
+          if os.path.exists(p1):
+              try:
+                  with open(p1, encoding='utf-8') as f:
+                      d = json.load(f)
+                  cov = d.get('overall',{}).get('coverage_percentage') or d.get('coverage_percentage')
+              except Exception:
+                  pass
+          # Fallback to history
+          if cov is None and os.path.exists('coverage_history.json'):
+              try:
+                  with open('coverage_history.json', encoding='utf-8') as f:
+                      txt = f.read()
+                  import re
+                  m = list(re.finditer(r'"coverage"\s*:\s*([0-9.]+)', txt))
+                  if m:
+                      cov = m[-1].group(1)
+              except Exception:
+                  pass
+          # Threshold for display
+          thr = None
+          strict = False
+          if os.path.exists('coverage_config.json'):
+              try:
+                  with open('coverage_config.json', encoding='utf-8') as f:
+                      cfg = json.load(f)
+                  thr = cfg.get('quality_gate',{}).get('threshold')
+                  strict = bool(cfg.get('quality_gate',{}).get('strict_mode'))
+                  if strict:
+                      thr = 85.0
+              except Exception:
+                  pass
+          if outp:
+              with open(outp,'a',encoding='utf-8') as g:
+                  g.write("\n### Coverage\n")
+                  if cov is not None:
+                      g.write(f"- Actual: {cov}%\n")
+                  else:
+                      g.write("- Actual: (see artifacts)\n")
+                  if thr is not None:
+                      g.write(f"- Threshold: {thr}%{' (strict)' if strict else ''}\n")
+                  
 
       - name: Job summary (static analysis)
         if: always()
