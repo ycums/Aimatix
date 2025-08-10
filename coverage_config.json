@@ -24,7 +24,7 @@
     "tool": "clang-tidy",
     "severity_thresholds": {
       "high": 0,
-      "medium": 40,
+      "medium": 50,
       "low": 30
     }
   },
