@@ -107,22 +107,27 @@ jobs:
           if [ -f static_analysis_report.json ]; then
             echo "" >> "$GITHUB_STEP_SUMMARY"
             echo "### Static Analysis (Clang-Tidy)" >> "$GITHUB_STEP_SUMMARY"
-            python - << 'PY'
+            python - "$GITHUB_STEP_SUMMARY" << 'PY'
 import json,sys
+out_path = sys.argv[1]
 try:
     with open('static_analysis_report.json','r',encoding='utf-8') as f:
         data=json.load(f)
     t=data.get('totals',{})
     th=data.get('thresholds',{})
     passed=data.get('passed',False)
-    print(f"- Environment: {data.get('environment','native')}")
-    print(f"- Totals: High={t.get('high',0)}, Medium={t.get('medium',0)}, Low={t.get('low',0)}")
-    print(f"- Thresholds: High={th.get('high','-')}, Medium={th.get('medium','-')}, Low={th.get('low','-')}")
-    print(f"- Status: {'✅ Passed' if passed else '❌ Failed'}")
+    lines = []
+    lines.append(f"- Environment: {data.get('environment','native')}")
+    lines.append(f"- Totals: High={t.get('high',0)}, Medium={t.get('medium',0)}, Low={t.get('low',0)}")
+    lines.append(f"- Thresholds: High={th.get('high','-')}, Medium={th.get('medium','-')}, Low={th.get('low','-')}")
+    lines.append(f"- Status: {'✅ Passed' if passed else '❌ Failed'}")
+    with open(out_path,'a',encoding='utf-8') as g:
+        for line in lines:
+            g.write(line + '\n')
 except Exception as e:
-    print(f"- Static analysis summary error: {e}")
+    with open(out_path,'a',encoding='utf-8') as g:
+        g.write(f"- Static analysis summary error: {e}\n")
 PY
-            | while IFS= read -r line; do echo "$line" >> "$GITHUB_STEP_SUMMARY"; done
           fi
 
 
