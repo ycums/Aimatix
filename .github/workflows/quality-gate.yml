@@ -78,40 +78,29 @@ jobs:
         if: always()
         shell: python
         run: |
-          import json, os
+          import json, os, re
           outp = os.environ.get('GITHUB_STEP_SUMMARY')
           cov = None
-          # Prefer latest coverage summary if exists
-          p1 = 'coverage_reports/coverage_summary.json'
-          if os.path.exists(p1):
-              try:
-                  with open(p1, encoding='utf-8') as f:
-                      d = json.load(f)
-                  cov = d.get('overall',{}).get('coverage_percentage') or d.get('coverage_percentage')
-              except Exception:
-                  pass
-          # Fallback to history
-          if cov is None and os.path.exists('coverage_history.json'):
+          # Use coverage_history.json as the sole source
+          if os.path.exists('coverage_history.json'):
               try:
                   with open('coverage_history.json', encoding='utf-8') as f:
                       txt = f.read()
-                  import re
                   m = list(re.finditer(r'"coverage"\s*:\s*([0-9.]+)', txt))
                   if m:
                       cov = m[-1].group(1)
               except Exception:
                   pass
-          # Threshold for display
+          # Threshold for display (values are defined in coverage_config.json)
           thr = None
           strict = False
           if os.path.exists('coverage_config.json'):
               try:
                   with open('coverage_config.json', encoding='utf-8') as f:
                       cfg = json.load(f)
-                  thr = cfg.get('quality_gate',{}).get('threshold')
-                  strict = bool(cfg.get('quality_gate',{}).get('strict_mode'))
-                  if strict:
-                      thr = 85.0
+                  qg = cfg.get('quality_gate',{}) or {}
+                  thr = qg.get('threshold')
+                  strict = bool(qg.get('strict_mode'))
               except Exception:
                   pass
           if outp:
@@ -123,11 +112,10 @@ jobs:
                       g.write("- Actual: (see artifacts)\n")
                   if thr is not None:
                       g.write(f"- Threshold: {thr}%{' (strict)' if strict else ''}\n")
-                      # 判定表示（グリーン/レッド）
                       try:
-                          cov_val = float(cov)
+                          cov_val = float(cov) if cov is not None else None
                           thr_val = float(thr)
-                          passed = cov_val >= thr_val
+                          passed = (cov_val is not None) and (cov_val >= thr_val)
                           g.write(f"- Status: {'✅ Passed' if passed else '❌ Failed'}\n")
                       except Exception:
                           g.write("- Status: (判定不可)\n")
