@@ -27,6 +27,11 @@
       "lib/**",
       "test/**"
     ],
+    "src_filter": [
+      "+<lib/libaimatix/src/>",
+      "+<src/>",
+      "-<src/spikes/>"
+    ],
     "severity_thresholds": {
       "high": 0,
       "medium": 28,
