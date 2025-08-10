@@ -126,4 +126,27 @@ public:
 
 ---
 
-（2025/01/xx 3-0-4対応 追記） 
+（2025/01/xx 3-0-4対応 追記）
+
+## TIME SYNC (QR)
+
+- Entry: `SETTINGS_MENU` → select "TIME SYNC"
+- Exit:
+  - success → `MAIN_DISPLAY`
+  - cancel/timeout → `SETTINGS_MENU`
+- Buttons: A = REISSUE, C = EXIT（Bは未使用）
+- Tick policy: `TimeSyncDisplayState.onDraw()` 内で `ITimeSyncController.loopTick()` を毎フレーム呼ぶ（約20Hz）
+
+```mermaid
+stateDiagram-v2
+  [*] --> SETTINGS_MENU
+  SETTINGS_MENU --> TIME_SYNC: select "TIME SYNC"
+  TIME_SYNC --> MAIN_DISPLAY: synced (success)
+  TIME_SYNC --> SETTINGS_MENU: exit (C) / timeout
+```
+
+Call flow (proposal A):
+```
+loop() → StateManager.getCurrentState() → onDraw()
+  → TimeSyncDisplayState.onDraw() → controller.loopTick() → view更新
+```

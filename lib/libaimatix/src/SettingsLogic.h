@@ -121,7 +121,7 @@ inline auto SettingsLogic::getItemDisplayName(SettingsItem item) const -> std::s
     switch (item) {
         case SettingsItem::SOUND: return "SOUND";
         case SettingsItem::LCD_BRIGHTNESS: return "LCD BRIGHTNESS";
-        case SettingsItem::SET_DATE_TIME: return "SET DATE/TIME";
+        case SettingsItem::SET_DATE_TIME: return "TIME SYNC";
         case SettingsItem::INFO: return "INFO";
         default: return "UNKNOWN";
     }
