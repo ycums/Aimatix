@@ -88,24 +88,35 @@ jobs:
             echo "- Threshold: (from coverage_config.json or default 80%)" >> "$GITHUB_STEP_SUMMARY"
           fi
 
-          # Actual coverage and status (best-effort from coverage_history.json)
-          if [ -f coverage_history.json ]; then
-            ACTUAL=$(grep -o '"coverage"\s*:\s*[0-9.]*' coverage_history.json | tail -n 1 | sed 's/[^0-9.]*//g') || true
-            QG=$(grep -o '"quality_gate"\s*:\s*\(true\|false\)' coverage_history.json | tail -n 1 | sed 's/.*: //') || true
-            if [ -n "$ACTUAL" ]; then
-              echo "- Actual: ${ACTUAL}%" >> "$GITHUB_STEP_SUMMARY"
-              if [ "$QG" = "true" ]; then
-                echo "- Status: ✅ Passed" >> "$GITHUB_STEP_SUMMARY"
-              elif [ "$QG" = "false" ]; then
-                echo "- Status: ❌ Failed" >> "$GITHUB_STEP_SUMMARY"
-              else
-                echo "- Status: (unknown)" >> "$GITHUB_STEP_SUMMARY"
-              fi
-            else
-              echo "- Actual: (see artifacts)" >> "$GITHUB_STEP_SUMMARY"
-            fi
+          # Coverage summary (from latest JSON report if available)
+          if [ -f coverage_reports/coverage_summary.json ]; then
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "### Coverage" >> "$GITHUB_STEP_SUMMARY"
+            python - "$GITHUB_STEP_SUMMARY" << 'PY'
+import json, sys
+outp = sys.argv[1]
+try:
+    with open('coverage_reports/coverage_summary.json','r',encoding='utf-8') as f:
+        d=json.load(f)
+    cov = d.get('overall',{}).get('coverage_percentage') or d.get('coverage_percentage')
+    with open(outp,'a',encoding='utf-8') as g:
+        g.write(f"- Actual: {cov}%\n")
+except Exception as e:
+    with open(outp,'a',encoding='utf-8') as g:
+        g.write(f"- Coverage summary error: {e}\n")
+PY
           else
-            echo "- Actual: (see artifacts)" >> "$GITHUB_STEP_SUMMARY"
+            # fallback to history
+            if [ -f coverage_history.json ]; then
+              ACTUAL=$(grep -o '"coverage"\s*:\s*[0-9.]*' coverage_history.json | tail -n 1 | sed 's/[^0-9.]*//g') || true
+              echo "" >> "$GITHUB_STEP_SUMMARY"
+              echo "### Coverage" >> "$GITHUB_STEP_SUMMARY"
+              if [ -n "$ACTUAL" ]; then
+                echo "- Actual: ${ACTUAL}%" >> "$GITHUB_STEP_SUMMARY"
+              else
+                echo "- Actual: (see artifacts)" >> "$GITHUB_STEP_SUMMARY"
+              fi
+            fi
           fi
 
           # (static analysis summary moved to a dedicated python step below)

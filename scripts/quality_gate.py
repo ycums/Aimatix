@@ -71,7 +71,7 @@ def run_clang_tidy_json(env: str, src_filter: Optional[List[str]] = None) -> Lis
 
     失敗時は例外を投げる。
     """
-    cmd = ["pio", "check", "-e", env, "--json-output"]
+    cmd = ["pio", "check", "-e", env, "--json-output", "--silent"]
     if src_filter:
         # pio の --src-filters は次引数でスペース区切り指定（+<...> -<...>）
         joined = " ".join(src_filter)
