@@ -16,3 +16,7 @@ build/.cmake/api/v1/reply/*
 .cursor/
 .cache/
 build/
+static_analysis_report.json
+static_analysis_raw.json
+static_analysis_raw.txt
+pio_project_config.json
