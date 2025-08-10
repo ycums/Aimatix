@@ -61,7 +61,7 @@ jobs:
             static_analysis_report.json
           if-no-files-found: warn
 
-      - name: Job summary (header & threshold)
+      - name: Job summary
         if: always()
         shell: bash
         run: |
@@ -72,21 +72,6 @@ jobs:
           echo "- Artifacts: quality-gate-artifacts-$GITHUB_RUN_ID" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
 
-          # Threshold (best-effort from coverage_config.json)
-          THRESHOLD=""
-          if [ -f coverage_config.json ]; then
-            THRESHOLD=$(grep -o '"threshold"\s*:\s*[0-9.]*' coverage_config.json | tail -n 1 | sed 's/[^0-9.]*//g') || true
-            STRICT=$(grep -o '"strict_mode"\s*:\s*\(true\|false\)' coverage_config.json | tail -n 1 | sed 's/.*: //') || true
-          fi
-          if [ -n "$THRESHOLD" ]; then
-            if [ "$STRICT" = "true" ]; then
-              echo "- Threshold: ${THRESHOLD}% (strict)" >> "$GITHUB_STEP_SUMMARY"
-            else
-              echo "- Threshold: ${THRESHOLD}%" >> "$GITHUB_STEP_SUMMARY"
-            fi
-          else
-            echo "- Threshold: (from coverage_config.json or default 80%)" >> "$GITHUB_STEP_SUMMARY"
-          fi
 
       - name: Job summary (coverage)
         if: always()
@@ -137,7 +122,14 @@ jobs:
                       g.write("- Actual: (see artifacts)\n")
                   if thr is not None:
                       g.write(f"- Threshold: {thr}%{' (strict)' if strict else ''}\n")
-                  
+                      # 判定表示（グリーン/レッド）
+                      try:
+                          cov_val = float(cov)
+                          thr_val = float(thr)
+                          passed = cov_val >= thr_val
+                          g.write(f"- Status: {'✅ Passed' if passed else '❌ Failed'}\n")
+                      except Exception:
+                          g.write("- Status: (判定不可)\n")
 
       - name: Job summary (static analysis)
         if: always()
