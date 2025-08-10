@@ -78,10 +78,12 @@ void DateTimeInputViewImpl::drawDateTimeGrid(const std::string& dateTimeStr) {
     disp->setTextColor(AMBER_COLOR, TFT_BLACK);
     
     // 文字列全体の幅を計算
-    int totalWidth = 0;
-    for (size_t i = 0; i < dateTimeStr.length(); ++i) {
-        totalWidth += getCharWidth(dateTimeStr[i]);
-    }
+    const int totalWidth = std::accumulate(
+        dateTimeStr.begin(),
+        dateTimeStr.end(),
+        0,
+        [](int acc, char c) { return acc + getCharWidth(c); }
+    );
     
     // 中央寄せのための開始X座標を計算
     const int startX = (SCREEN_WIDTH - totalWidth) / 2;
@@ -144,7 +146,7 @@ void DateTimeInputViewImpl::drawCharAtPosition(char c, int x, int y, bool isHigh
     disp->drawText(x, y, charStr, FONT_MAIN);
 }
 
-int DateTimeInputViewImpl::getCursorPixelPosition(int cursorPosition) const {
+int DateTimeInputViewImpl::getCursorPixelPosition(int cursorPosition) {
     // 日時文字列の各文字位置を正確に計算
     // "2025/01/01 00:00" 形式での位置計算
     
