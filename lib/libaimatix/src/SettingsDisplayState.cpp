@@ -92,9 +92,9 @@ void SettingsDisplayState::onButtonC() {
     const SettingsItem selectedItem = settingsLogic->getSelectedItem();
     
     if (selectedItem == SettingsItem::SET_DATE_TIME) {
-        // 日時設定画面に遷移
-        if (manager != nullptr && datetimeInputState != nullptr) {
-            manager->setState(datetimeInputState);
+        // TIME SYNC画面に遷移（MVP1: DateTimeInput ではなく TimeSyncDisplayState）
+        if (manager != nullptr && timeSyncDisplayState != nullptr) {
+            manager->setState(timeSyncDisplayState);
         }
     }
     

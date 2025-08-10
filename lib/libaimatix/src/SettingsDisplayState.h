@@ -26,6 +26,7 @@ public:
     void setMainDisplayState(IState* mainState) { mainDisplayState = mainState; }
     void setSettingsLogic(ISettingsLogic* logic) { settingsLogic = logic; }
     void setDateTimeInputState(IState* datetimeState) { datetimeInputState = datetimeState; }
+    void setTimeSyncDisplayState(IState* timeSyncState) { timeSyncDisplayState = timeSyncState; }
     
 private:
     ISettingsLogic* settingsLogic;
@@ -33,6 +34,7 @@ private:
     StateManager* manager;
     IState* mainDisplayState;
     IState* datetimeInputState;
+    IState* timeSyncDisplayState{nullptr};
     
     // ちらつき防止用の状態記憶
     std::vector<std::string> lastDisplayedItems;
