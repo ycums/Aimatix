@@ -132,15 +132,29 @@ public:
 
 - Entry: `SETTINGS_MENU` → select "TIME SYNC"
 - Entry (boot auto): `BOOT` → `TIME_SYNC`（条件: `TimeValidationLogic` により時刻が無効〈基準日 `2025-01-01 00:00` 未満〉と判定された場合）
+- Titles（タイトルバー; 区切りは `>`）:
+  - Step1: "TIME SYNC > JOIN AP"
+  - Step2: "TIME SYNC > OPEN URL"
+  - Success: "TIME SYNC > DONE"（成功画面は固定表示しない方針のためログ用途）
+  - Error: "TIME SYNC > ERROR"
+- Button hints（英語固定）:
+  - A = "REISSUE"
+  - B = 未使用
+  - C = "EXIT"
 - Exit:
-  - success → `MAIN_DISPLAY`
-  - cancel/timeout → `SETTINGS_MENU`
-- Buttons: A = REISSUE, C = EXIT（Bは未使用）
+  - success: SoftAP 停止 → 即時 `MAIN_DISPLAY`
+  - error: SoftAP 停止 → エラーメッセージを2秒表示 → `SETTINGS_MENU`
+  - user exit: C（EXIT）で SoftAP 停止 → `SETTINGS_MENU`
+- Error messages（HTTP応答に対応）:
+  - 窓切れ: "AP WINDOW EXPIRED"
+  - トークン不一致: "TOKEN MISMATCH"
+  - 適用失敗: "APPLY FAILED"
+  - バリデーション: "TIME OUT OF RANGE" / "TZ OFFSET OUT OF RANGE" / "BAD REQUEST"
 - Tick policy: `TimeSyncDisplayState.onDraw()` 内で `ITimeSyncController.loopTick()` を毎フレーム呼ぶ（約20Hz）
 - Sync method: SoftAP + QR のみ（本起動時自動同期では NTP 自動同期は使用しない）
 - Dialog policy: 提案ダイアログは表示しない（自動開始）
- - Boot auto suppression: 本起動中にユーザーが `EXIT` を実行した場合は、同一起動内では再自動開始しない（抑止）。次回起動時に再評価し、引き続き無効時刻であれば自動開始する。
- - Settings policy: 本ポリシーは設定として露出しない（`BOOT TIME SYNC: AUTO/ASK/NEVER` 等のメニューは提供しない）。
+  - Boot auto suppression: 本起動中にユーザーが `EXIT` を実行した場合は、同一起動内では再自動開始しない（抑止）。次回起動時に再評価し、引き続き無効時刻であれば自動開始する。
+  - Settings policy: 本ポリシーは設定として露出しない（`BOOT TIME SYNC: AUTO/ASK/NEVER` 等のメニューは提供しない）。
 
 ```mermaid
 stateDiagram-v2
@@ -148,10 +162,10 @@ stateDiagram-v2
   SETTINGS_MENU --> TIME_SYNC: select "TIME SYNC"
   [*] --> TIME_SYNC: boot (invalid time)
   TIME_SYNC --> MAIN_DISPLAY: synced (success)
-  TIME_SYNC --> SETTINGS_MENU: exit (C) / timeout
+  TIME_SYNC --> SETTINGS_MENU: exit (C) / timeout / error(after 2s)
 ```
 
-Call flow (proposal A):
+Call flow:
 ```
 loop() → StateManager.getCurrentState() → onDraw()
   → TimeSyncDisplayState.onDraw() → controller.loopTick() → view更新

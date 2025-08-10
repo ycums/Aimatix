@@ -30,7 +30,7 @@ public:
 private:
     void drawStatic() {
         if (view) {
-            view->showTitle("TIME SYNC | JOIN AP");
+            view->showTitle("TIME SYNC > JOIN AP");
             view->showHints("REISSUE", "", "EXIT");
         }
     }

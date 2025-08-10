@@ -6,7 +6,7 @@ class ITimeSyncView {
 public:
     virtual ~ITimeSyncView() {}
 
-    // Title bar, e.g., "TIME SYNC | JOIN AP"
+    // Title bar, e.g., "TIME SYNC > JOIN AP"
     virtual void showTitle(const char* text) = 0;
 
     // Three-slot button hints (A/B/C). Empty string allowed for unused slot.
