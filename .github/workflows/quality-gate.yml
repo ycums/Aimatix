@@ -59,6 +59,7 @@ jobs:
             coverage_reports/**
             coverage_history.json
             static_analysis_report.json
+            static_analysis_raw.txt
           if-no-files-found: warn
 
       - name: Job summary

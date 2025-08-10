@@ -48,14 +48,60 @@ def _normalize_path(path: str) -> str:
     return path.replace("\\", "/")
 
 def run_clang_tidy_json() -> List[dict]:
-    completed = subprocess.run(
-        ["pio", "check", "-e", "native", "--json-output"],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        check=False,
-    )
-    output = completed.stdout.decode("utf-8", errors="replace").strip()
-    data = json.loads(output)
+    env = os.environ.copy()
+    env.update({
+        "CI": "1",
+        "PLATFORMIO_CORE_CALLER": "github-actions",
+        "PLATFORMIO_DISABLE_PROGRESSBAR": "1",
+        "PLATFORMIO_NO_COLOR": "1",
+        "PLATFORMIO_SETTING_ENABLE_PROMPTS": "false",
+    })
+
+    def _run(args: List[str]) -> str:
+        completed = subprocess.run(
+            args,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            check=False,
+            cwd=PROJECT_ROOT,
+            env=env,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+        return (completed.stdout or "").strip()
+
+    args = [
+        "pio", "check", "-e", "native", "--json-output", "--project-dir", PROJECT_ROOT
+    ]
+
+    output = _run(args)
+
+    # CI上で稀に空になる対策としてサイレント再試行
+    if not output:
+        output = _run(args + ["--silent"])
+
+    # デバッグ用に常にRAWログを保存
+    raw_path = os.path.join(PROJECT_ROOT, "static_analysis_raw.txt")
+    try:
+        with open(raw_path, "w", encoding="utf-8") as f:
+            f.write(output or "")
+    except Exception:
+        pass
+
+    if not output:
+        raise RuntimeError("pio check produced empty output with --json-output")
+
+    # JSONの前後にノイズが混入するケースへのフォールバック
+    try:
+        data = json.loads(output)
+    except json.JSONDecodeError:
+        import re
+        m = re.search(r"(\[\s*\{[\s\S]*\}\s*\])", output)
+        if not m:
+            raise RuntimeError(f"Failed to parse pio check JSON. Head: {output[:500]}")
+        data = json.loads(m.group(1))
+
     if isinstance(data, list):
         return data
     raise ValueError("Unexpected JSON root type")
