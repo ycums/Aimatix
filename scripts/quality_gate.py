@@ -9,9 +9,7 @@
 - 結果を標準出力と JSON ファイル（static_analysis_report.json）に出力
 
 使用例:
-  python scripts/quality_gate.py --quick
-  python scripts/quality_gate.py --full
-  python scripts/quality_gate.py --release
+  python scripts/quality_gate.py
 """
 
 from __future__ import annotations
@@ -22,38 +20,15 @@ import os
 import subprocess
 import sys
 from dataclasses import dataclass
-from fnmatch import fnmatch
 from typing import Dict, List, Optional, Tuple
 
-
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
-
-
-def _load_config(config_path: str) -> dict:
-    with open(config_path, "r", encoding="utf-8") as f:
-        return json.load(f)
-
-
-def _normalize_path(path: str) -> str:
-    # Windows/Unix 混在に強い正規化（判定は '/' ベースで行う）
-    return path.replace("\\", "/")
-
-
-def _is_excluded(file_path: str, exclude_patterns: List[str]) -> bool:
-    normalized = _normalize_path(file_path)
-    for pattern in exclude_patterns:
-        # '**' ワイルドカードを考慮した fnmatch
-        if fnmatch(normalized, pattern):
-            return True
-    return False
-
 
 @dataclass
 class StaticAnalysisThresholds:
     high: int = 0
     medium: Optional[int] = None
     low: Optional[int] = None
-
 
 @dataclass
 class StaticAnalysisResult:
@@ -65,9 +40,14 @@ class StaticAnalysisResult:
     tool: str
     environment: str
 
+def _load_config(config_path: str) -> dict:
+    with open(config_path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+def _normalize_path(path: str) -> str:
+    return path.replace("\\", "/")
 
 def run_clang_tidy_json() -> List[dict]:
-    """native 環境で pio check を JSON 出力で実行し、結果配列を返す。"""
     completed = subprocess.run(
         ["pio", "check", "-e", "native", "--json-output"],
         stdout=subprocess.PIPE,
@@ -80,14 +60,10 @@ def run_clang_tidy_json() -> List[dict]:
         return data
     raise ValueError("Unexpected JSON root type")
 
-
 def collect_static_analysis() -> Tuple[Dict[str, int], Dict[str, Dict[str, int]]]:
-    """Clang-Tidy の重要度別件数を収集（PlatformIO native 設定に準拠）。"""
     records = run_clang_tidy_json()
     totals = {"high": 0, "medium": 0, "low": 0}
     by_file: Dict[str, Dict[str, int]] = {}
-
-    # records: [{ env, tool, duration, defects: [ {severity, file, ...}, ... ] }]
     for rec in records:
         defects = rec.get("defects", []) or []
         for d in defects:
@@ -95,40 +71,28 @@ def collect_static_analysis() -> Tuple[Dict[str, int], Dict[str, Dict[str, int]]
             file_path = d.get("file") or ""
             if not file_path:
                 continue
-            # 除外は行わず、PlatformIOの設定どおりの結果を集計
             key = "low" if severity == "low" else ("high" if severity == "high" else "medium")
             totals[key] = totals.get(key, 0) + 1
             norm_path = _normalize_path(file_path)
             by_file.setdefault(norm_path, {}).setdefault(key, 0)
             by_file[norm_path][key] += 1
-
     return totals, by_file
-
 
 def evaluate_static_analysis(
     thresholds: StaticAnalysisThresholds,
 ) -> StaticAnalysisResult:
     totals, by_file = collect_static_analysis()
-
-    # 有効なしきい値（None の場合は自動算出: current + auto_medium_margin）
     effective = StaticAnalysisThresholds(
         high=thresholds.high if thresholds.high is not None else 0,
-        medium=(
-            thresholds.medium
-            if thresholds.medium is not None
-            else totals.get("medium", 0) + max(0, int(auto_medium_margin))
-        ),
+        medium=thresholds.medium,
         low=thresholds.low,
     )
-
     high_ok = totals.get("high", 0) <= (effective.high if effective.high is not None else 0)
     medium_ok = True if effective.medium is None else totals.get("medium", 0) <= effective.medium
     low_ok = True
     if effective.low is not None:
         low_ok = totals.get("low", 0) <= effective.low
-
     passed = high_ok and medium_ok and low_ok
-
     return StaticAnalysisResult(
         totals=totals,
         by_file=by_file,
@@ -138,7 +102,6 @@ def evaluate_static_analysis(
         tool="clang-tidy",
         environment="native",
     )
-
 
 def write_static_analysis_report(result: StaticAnalysisResult, output_path: str) -> None:
     data = {
@@ -161,32 +124,19 @@ def write_static_analysis_report(result: StaticAnalysisResult, output_path: str)
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
-
-def run_coverage(mode: str, config_path: str) -> dict:
-    """既存のカバレッジ計測を実行し、品質ゲート判定結果を返す。"""
-    # import パス調整（scripts ディレクトリを import path に追加）
+def run_coverage(config_path: str) -> dict:
     scripts_dir = os.path.join(PROJECT_ROOT, "scripts")
     if scripts_dir not in sys.path:
         sys.path.insert(0, scripts_dir)
-
     try:
         from test_coverage import CoverageMeasurementSystem  # type: ignore
     except Exception as e:
         raise RuntimeError(f"Failed to import CoverageMeasurementSystem: {e}")
-
     system = CoverageMeasurementSystem(config_path)
-    if mode == "quick":
-        system.run_quick_coverage_measurement()
-    elif mode == "full":
-        system.run_full_coverage_measurement()
-    elif mode == "release":
-        system.run_release_coverage_measurement()
-    else:
-        system.run_quick_coverage_measurement()
-
+    # quick のみサポート
+    system.run_quick_coverage_measurement()
     qg = system.check_quality_gate()
     return qg
-
 
 def load_static_analysis_config(config: dict) -> StaticAnalysisThresholds:
     sa_cfg = config.get("static_analysis", {}) or {}
@@ -197,37 +147,19 @@ def load_static_analysis_config(config: dict) -> StaticAnalysisThresholds:
         low=(int(thresholds_cfg.get("low")) if thresholds_cfg.get("low") is not None else None),
     )
 
-
 def main() -> int:
     parser = argparse.ArgumentParser(description="Quality Gate Orchestrator")
     parser.add_argument("--config", default=os.path.join(PROJECT_ROOT, "coverage_config.json"))
-    parser.add_argument(
-        "--quick", action="store_true", help="Use quick coverage mode (default)"
-    )
-    parser.add_argument("--full", action="store_true", help="Use full coverage mode")
-    parser.add_argument("--release", action="store_true", help="Use release coverage mode")
     args = parser.parse_args()
-
-    mode = "quick"
-    if args.full:
-        mode = "full"
-    if args.release:
-        mode = "release"
 
     config_path = args.config
     config = _load_config(config_path)
 
-    # 1) カバレッジ実行 + 判定
-    coverage_qg = run_coverage(mode, config_path)
-
-    # 2) 静的解析 実行 + 判定
+    coverage_qg = run_coverage(config_path)
     thresholds = load_static_analysis_config(config)
     sa_result = evaluate_static_analysis(thresholds=thresholds)
-
-    # 3) 統合判定
     passed = bool(coverage_qg.get("passed")) and sa_result.passed
 
-    # 出力（サマリ）
     print("=== Quality Gate Summary ===")
     print(f"Coverage: {'PASS' if coverage_qg.get('passed') else 'FAIL'} | actual={coverage_qg.get('actual_coverage')} threshold={coverage_qg.get('threshold')} strict={coverage_qg.get('strict_mode')}")
     print(
@@ -243,14 +175,10 @@ def main() -> int:
     )
     print(f"Overall: {'PASS' if passed else 'FAIL'}")
 
-    # 付帯ファイル出力（Step Summary からも読みやすい JSON）
     report_path = os.path.join(PROJECT_ROOT, "static_analysis_report.json")
     write_static_analysis_report(sa_result, report_path)
 
     return 0 if passed else 1
 
-
 if __name__ == "__main__":
     sys.exit(main())
-
-

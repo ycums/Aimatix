@@ -46,9 +46,9 @@ jobs:
       - name: Baseline build (sanity)
         run: pio run -e native
 
-      - name: Run quality gate (quick mode)
+      - name: Run quality gate
         run: |
-          python scripts/quality_gate.py --quick
+          python scripts/quality_gate.py
 
       - name: Upload coverage artifacts
         if: always()
