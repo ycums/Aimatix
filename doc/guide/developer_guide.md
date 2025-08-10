@@ -232,3 +232,15 @@ Serial.printf("TFT_BLACK: 0x%04X\n", TFT_BLACK);
 ### 8.3 テストカバレッジ
 - **目標**: 85%以上
 - **測定**: `python scripts/test_coverage.py` 
+
+## 9. CI自動化（Quality Gate 概要）
+
+- 本プロジェクトの公式CIは `/.github/workflows/quality-gate.yml` に定義されています。
+- PRトリガで `python scripts/quality_gate.py` を実行し、カバレッジと静的解析を実施します。
+- 結果確認方法（Job Summary/アーティファクトの内容・名称）は運用ガイド `doc/operation/quality_gates.md` を参照してください。
+
+### 9.1 ローカル再現手順
+```bash
+pio run -e native
+python scripts/quality_gate.py
+```

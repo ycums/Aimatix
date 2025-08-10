@@ -387,43 +387,19 @@ fswatch -o . | xargs -n1 -I{} python scripts/test_coverage.py --quick
 
 ## 8. 将来の拡張
 
-### 8.1 リモートリポジトリ統合（将来的）
+### 8.1 CI統合（現行: Quality Gate）
 
-#### 8.1.1 GitHub統合
-```yaml
-# .github/workflows/coverage.yml（将来的）
-name: Coverage Measurement
-on: [push]
+- 本プロジェクトの公式CIは `/.github/workflows/quality-gate.yml` です。
+- 運用の詳細および結果確認方法（Job Summary/アーティファクト）は `doc/operation/quality_gates.md` を正典として参照してください。
+- PRトリガで `python scripts/quality_gate.py` を実行し、カバレッジと静的解析の結果をJob Summaryに集約し、アーティファクト（`quality-gate-artifacts-<run_id>`）として保存します。
 
-jobs:
-  coverage:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Run coverage measurement
-        run: python scripts/test_coverage.py --release
-```
+### 8.2 チーム開発対応（現行）
 
-#### 8.1.2 履歴管理
+- プルリクエスト作成/更新時にQuality Gateが自動実行されます（ドラフトPRはスキップ）。
+- ローカルでの再現手順:
 ```bash
-# リモート履歴の同期
-python scripts/test_coverage.py --sync-history
-
-# リモートレポートのアップロード
-python scripts/test_coverage.py --upload-reports
-```
-
-### 8.2 チーム開発対応（将来的）
-
-#### 8.2.1 プルリクエスト統合
-```yaml
-# PR時の自動実行
-on: [pull_request]
-jobs:
-  coverage:
-    steps:
-      - name: Coverage check
-        run: python scripts/test_coverage.py --pr-check
+pio run -e native
+python scripts/quality_gate.py
 ```
 
 ## 9. 参考資料
