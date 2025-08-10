@@ -5,7 +5,6 @@
 #include <M5GFX.h>
 // 色定数を追加
 #include "ui_constants.h"
-#include "m5gfx_constants.h"
 
 
 
