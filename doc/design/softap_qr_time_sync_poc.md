@@ -15,7 +15,7 @@
 2. 画面に Wi‑Fi接続用QR を表示（`WIFI:T:WPA;S:<SSID>;P:<PSK>;H:false;;`）。
 3. スマホが AP に接続すると、自動で URL QR に切替（`http://192.168.4.1/sync?t=<token>`）。
 4. `/sync` HTML が `Date.now()` と `getTimezoneOffset()` を取得し `POST /time/set` を自動送信。
-5. 受理・適用成功で「SYNC OK / AP closed」を表示、AP停止。
+5. 受理・適用成功で AP を停止し、実装では即時に `MAIN_DISPLAY` へ復帰（成功画面の固定表示は行わない）。
 
 ## QR 仕様
 - Wi‑Fi QR: `WIFI:T:WPA;S:<SSID>;P:<PSK>;H:false;;`
@@ -28,7 +28,7 @@
 - quiet zone: 2 モジュール（大きさ優先）
 - 画面余白: 上端 10px を見出し用に確保
 - 配色: 黒背景 + 橙ドット（可読性よりサイズ優先の選定）
-- バージョン目安: Wi‑Fi=7、URL=5
+- バージョン目安: Wi‑Fi=7、URL=5（本実装でも同目安を採用）
 - 切替: APクライアント接続イベントで Wi‑Fi → URL に自動切替
 
 ## API 仕様
@@ -72,7 +72,16 @@
 - 環境: `env:m5stack-core2-aim36-spike`（`upload_port=COM5`）。
 - エントリ: `src/spikes/aim36/main.cpp`
 - 画面: Amber CRTトーン、Wi‑Fi QR → URL QR 切替は APクライアント接続イベントで自動。
-- `/time/set` 成功後は `Local` と `TZ` を表示、AP停止。
+- `/time/set` 成功後は `Local` と `TZ` の情報を Serial ログに出力し AP 停止（本実装では画面固定表示は行わず即時復帰）。
+
+## UI文言（本実装差分）
+- タイトル区切り記号: `|` → `>` に変更
+- Step1 タイトル: "TIME SYNC > JOIN AP"
+- Step2 タイトル: "TIME SYNC > OPEN URL"
+- 成功: "TIME SYNC > DONE"（固定画面は出さずログのみ）
+- エラー: "TIME SYNC > ERROR"
+- ボタンヒント: A="REISSUE" / B=未使用 / C="EXIT"
+- エラー時の動作: SoftAP 停止 → エラーメッセージを2秒表示 → `SETTINGS_MENU`
 
 ## DoD（Issue）
 - 実機での一連フローが再現可能（接続QR → 同期URL QR → 時刻反映 → 自動クローズ）。

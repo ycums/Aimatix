@@ -23,7 +23,7 @@ void test_time_sync_title_join_ap() {
     TimeSyncDisplayState state(&view);
     state.onEnter();
     TEST_ASSERT_TRUE(view.calledShowTitle);
-    TEST_ASSERT_EQUAL_STRING("TIME SYNC | JOIN AP", view.lastTitle.c_str());
+    TEST_ASSERT_EQUAL_STRING("TIME SYNC > JOIN AP", view.lastTitle.c_str());
 }
 
 void test_time_sync_hints_reissue_exit() {
