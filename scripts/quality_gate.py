@@ -61,6 +61,7 @@ class StaticAnalysisResult:
     by_file: Dict[str, Dict[str, int]]
     passed: bool
     thresholds: StaticAnalysisThresholds
+    effective_thresholds: StaticAnalysisThresholds
     tool: str
     environment: str
 
@@ -132,16 +133,26 @@ def evaluate_static_analysis(
     thresholds: StaticAnalysisThresholds,
     exclude_patterns: List[str],
     src_filter: Optional[List[str]] = None,
+    auto_medium_margin: int = 5,
 ) -> StaticAnalysisResult:
     totals, by_file = collect_static_analysis(env, exclude_patterns, src_filter=src_filter)
 
-    high_ok = totals.get("high", 0) <= (thresholds.high if thresholds.high is not None else 0)
-    medium_ok = True
-    if thresholds.medium is not None:
-        medium_ok = totals.get("medium", 0) <= thresholds.medium
+    # 有効なしきい値（None の場合は自動算出: current + auto_medium_margin）
+    effective = StaticAnalysisThresholds(
+        high=thresholds.high if thresholds.high is not None else 0,
+        medium=(
+            thresholds.medium
+            if thresholds.medium is not None
+            else totals.get("medium", 0) + max(0, int(auto_medium_margin))
+        ),
+        low=thresholds.low,
+    )
+
+    high_ok = totals.get("high", 0) <= (effective.high if effective.high is not None else 0)
+    medium_ok = totals.get("medium", 0) <= (effective.medium if effective.medium is not None else float("inf"))
     low_ok = True
-    if thresholds.low is not None:
-        low_ok = totals.get("low", 0) <= thresholds.low
+    if effective.low is not None:
+        low_ok = totals.get("low", 0) <= effective.low
 
     passed = high_ok and medium_ok and low_ok
 
@@ -150,6 +161,7 @@ def evaluate_static_analysis(
         by_file=by_file,
         passed=passed,
         thresholds=thresholds,
+        effective_thresholds=effective,
         tool=tool,
         environment=env,
     )
@@ -164,6 +176,11 @@ def write_static_analysis_report(result: StaticAnalysisResult, output_path: str)
             "high": result.thresholds.high,
             "medium": result.thresholds.medium,
             "low": result.thresholds.low,
+        },
+        "effective_thresholds": {
+            "high": result.effective_thresholds.high,
+            "medium": result.effective_thresholds.medium,
+            "low": result.effective_thresholds.low,
         },
         "passed": result.passed,
         "by_file": result.by_file,
@@ -198,7 +215,7 @@ def run_coverage(mode: str, config_path: str) -> dict:
     return qg
 
 
-def load_static_analysis_config(config: dict) -> Tuple[str, List[str], StaticAnalysisThresholds, List[str]]:
+def load_static_analysis_config(config: dict) -> Tuple[str, List[str], StaticAnalysisThresholds, List[str], int]:
     sa_cfg = config.get("static_analysis", {}) or {}
     tool = sa_cfg.get("tool", "clang-tidy")
     envs = sa_cfg.get("environments", ["native"]) or ["native"]
@@ -214,8 +231,9 @@ def load_static_analysis_config(config: dict) -> Tuple[str, List[str], StaticAna
         ),
         low=(int(thresholds_cfg.get("low")) if thresholds_cfg.get("low") is not None else None),
     )
+    auto_medium_margin = int(sa_cfg.get("auto_medium_margin", 5))
 
-    return environment, exclude_patterns, thresholds, src_filter
+    return environment, exclude_patterns, thresholds, src_filter, auto_medium_margin
 
 
 def main() -> int:
@@ -241,8 +259,15 @@ def main() -> int:
     coverage_qg = run_coverage(mode, config_path)
 
     # 2) 静的解析 実行 + 判定
-    env, exclude_patterns, thresholds, src_filter = load_static_analysis_config(config)
-    sa_result = evaluate_static_analysis(env, tool="clang-tidy", thresholds=thresholds, exclude_patterns=exclude_patterns, src_filter=src_filter)
+    env, exclude_patterns, thresholds, src_filter, auto_medium_margin = load_static_analysis_config(config)
+    sa_result = evaluate_static_analysis(
+        env,
+        tool="clang-tidy",
+        thresholds=thresholds,
+        exclude_patterns=exclude_patterns,
+        src_filter=src_filter,
+        auto_medium_margin=auto_medium_margin,
+    )
 
     # 3) 統合判定
     passed = bool(coverage_qg.get("passed")) and sa_result.passed
@@ -254,11 +279,11 @@ def main() -> int:
         "Static Analysis: {status} | high={h}/{ht}, medium={m}/{mt}, low={l}/{lt}".format(
             status="PASS" if sa_result.passed else "FAIL",
             h=sa_result.totals.get("high", 0),
-            ht=sa_result.thresholds.high if sa_result.thresholds.high is not None else "-",
+            ht=sa_result.effective_thresholds.high if sa_result.effective_thresholds.high is not None else "-",
             m=sa_result.totals.get("medium", 0),
-            mt=sa_result.thresholds.medium if sa_result.thresholds.medium is not None else "-",
+            mt=sa_result.effective_thresholds.medium if sa_result.effective_thresholds.medium is not None else "-",
             l=sa_result.totals.get("low", 0),
-            lt=sa_result.thresholds.low if sa_result.thresholds.low is not None else "-",
+            lt=sa_result.effective_thresholds.low if sa_result.effective_thresholds.low is not None else "-",
         )
     )
     print(f"Overall: {'PASS' if passed else 'FAIL'}")

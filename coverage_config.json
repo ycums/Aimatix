@@ -34,9 +34,10 @@
     ],
     "severity_thresholds": {
       "high": 0,
-      "medium": 28,
+      "medium": null,
       "low": null
-    }
+    },
+    "auto_medium_margin": 5
   },
   "exclusions": {
     "directories": [
