@@ -139,6 +139,8 @@ public:
 - Tick policy: `TimeSyncDisplayState.onDraw()` 内で `ITimeSyncController.loopTick()` を毎フレーム呼ぶ（約20Hz）
 - Sync method: SoftAP + QR のみ（本起動時自動同期では NTP 自動同期は使用しない）
 - Dialog policy: 提案ダイアログは表示しない（自動開始）
+ - Boot auto suppression: 本起動中にユーザーが `EXIT` を実行した場合は、同一起動内では再自動開始しない（抑止）。次回起動時に再評価し、引き続き無効時刻であれば自動開始する。
+ - Settings policy: 本ポリシーは設定として露出しない（`BOOT TIME SYNC: AUTO/ASK/NEVER` 等のメニューは提供しない）。
 
 ```mermaid
 stateDiagram-v2
