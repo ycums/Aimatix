@@ -4,7 +4,7 @@
 
 機能:
 - 既存のカバレッジ計測システム（scripts/test_coverage.py の CoverageMeasurementSystem）を実行
-- Clang-Tidy 静的解析（pio check --json-output）を実行し、重要度別に件数集計
+- Clang-Tidy 静的解析（pio check -e native --json-output）を実行し、重要度別に件数集計
 - 設定ファイル（coverage_config.json）のしきい値に基づき、統合品質ゲートを判定
 - 結果を標準出力と JSON ファイル（static_analysis_report.json）に出力
 
@@ -42,13 +42,9 @@ def _normalize_path(path: str) -> str:
 def _is_excluded(file_path: str, exclude_patterns: List[str]) -> bool:
     normalized = _normalize_path(file_path)
     for pattern in exclude_patterns:
-        # 絶対/相対どちらにもマッチするようにパターン拡張
-        patterns_to_try = [pattern]
-        if not pattern.startswith("**/"):
-            patterns_to_try.append(f"**/{pattern}")
-        for p in patterns_to_try:
-            if fnmatch(normalized, p):
-                return True
+        # '**' ワイルドカードを考慮した fnmatch
+        if fnmatch(normalized, pattern):
+            return True
     return False
 
 
@@ -70,58 +66,24 @@ class StaticAnalysisResult:
     environment: str
 
 
-def run_clang_tidy_json(env: str, src_filter: Optional[List[str]] = None) -> List[dict]:
-    """pio check を JSON 出力で実行し、JSON配列を返す。
-
-    失敗時は例外を投げる。
-    """
-    variants = [
-        ["--json-output"],
-        ["--json-output", "--no-ansi"],
-        ["--json-output", "--silent"],
-    ]
-    last_output = ""
-    last_rc = None
-    for extra in variants:
-        cmd = ["pio", "check", "-e", env] + extra
-        if src_filter:
-            joined = " ".join(src_filter)
-            cmd.extend(["--src-filters", joined])
-        completed = subprocess.run(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            check=False,
-        )
-        output = completed.stdout.decode("utf-8", errors="replace").strip()
-        last_output = output
-        last_rc = completed.returncode
-        if not output:
-            # 出力が空で rc==0 の場合は欠陥なし扱い
-            if completed.returncode == 0:
-                return []
-            # それ以外は次のバリアントへ
-            continue
-        try:
-            data = json.loads(output)
-            if isinstance(data, list):
-                return data
-        except Exception:
-            # 次のバリアントへ
-            continue
-    raise RuntimeError(
-        "Failed to parse pio check JSON after retries (rc=%s)\nRaw: %s" % (last_rc, last_output[:2048])
+def run_clang_tidy_json() -> List[dict]:
+    """native 環境で pio check を JSON 出力で実行し、結果配列を返す。"""
+    completed = subprocess.run(
+        ["pio", "check", "-e", "native", "--json-output"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        check=False,
     )
+    output = completed.stdout.decode("utf-8", errors="replace").strip()
+    data = json.loads(output)
+    if isinstance(data, list):
+        return data
+    raise ValueError("Unexpected JSON root type")
 
 
-def collect_static_analysis(env: str, exclude_patterns: List[str], src_filter: Optional[List[str]] = None) -> Tuple[Dict[str, int], Dict[str, Dict[str, int]]]:
-    """Clang-Tidy の重要度別件数を収集。
-
-    Returns:
-        totals: {"high": int, "medium": int, "low": int}
-        by_file: { filepath: {severity: count} }
-    """
-    records = run_clang_tidy_json(env, src_filter=src_filter)
+def collect_static_analysis() -> Tuple[Dict[str, int], Dict[str, Dict[str, int]]]:
+    """Clang-Tidy の重要度別件数を収集（PlatformIO native 設定に準拠）。"""
+    records = run_clang_tidy_json()
     totals = {"high": 0, "medium": 0, "low": 0}
     by_file: Dict[str, Dict[str, int]] = {}
 
@@ -133,8 +95,7 @@ def collect_static_analysis(env: str, exclude_patterns: List[str], src_filter: O
             file_path = d.get("file") or ""
             if not file_path:
                 continue
-            if _is_excluded(file_path, exclude_patterns):
-                continue
+            # 除外は行わず、PlatformIOの設定どおりの結果を集計
             key = "low" if severity == "low" else ("high" if severity == "high" else "medium")
             totals[key] = totals.get(key, 0) + 1
             norm_path = _normalize_path(file_path)
@@ -145,14 +106,9 @@ def collect_static_analysis(env: str, exclude_patterns: List[str], src_filter: O
 
 
 def evaluate_static_analysis(
-    env: str,
-    tool: str,
     thresholds: StaticAnalysisThresholds,
-    exclude_patterns: List[str],
-    src_filter: Optional[List[str]] = None,
-    auto_medium_margin: int = 5,
 ) -> StaticAnalysisResult:
-    totals, by_file = collect_static_analysis(env, exclude_patterns, src_filter=src_filter)
+    totals, by_file = collect_static_analysis()
 
     # 有効なしきい値（None の場合は自動算出: current + auto_medium_margin）
     effective = StaticAnalysisThresholds(
@@ -166,7 +122,7 @@ def evaluate_static_analysis(
     )
 
     high_ok = totals.get("high", 0) <= (effective.high if effective.high is not None else 0)
-    medium_ok = totals.get("medium", 0) <= (effective.medium if effective.medium is not None else float("inf"))
+    medium_ok = True if effective.medium is None else totals.get("medium", 0) <= effective.medium
     low_ok = True
     if effective.low is not None:
         low_ok = totals.get("low", 0) <= effective.low
@@ -179,8 +135,8 @@ def evaluate_static_analysis(
         passed=passed,
         thresholds=thresholds,
         effective_thresholds=effective,
-        tool=tool,
-        environment=env,
+        tool="clang-tidy",
+        environment="native",
     )
 
 
@@ -232,25 +188,14 @@ def run_coverage(mode: str, config_path: str) -> dict:
     return qg
 
 
-def load_static_analysis_config(config: dict) -> Tuple[str, List[str], StaticAnalysisThresholds, List[str], int]:
+def load_static_analysis_config(config: dict) -> StaticAnalysisThresholds:
     sa_cfg = config.get("static_analysis", {}) or {}
-    tool = sa_cfg.get("tool", "clang-tidy")
-    envs = sa_cfg.get("environments", ["native"]) or ["native"]
-    environment = envs[0]
-    exclude_patterns = sa_cfg.get("exclude_patterns", ["lib/**", "test/**"]) or []
-    src_filter = sa_cfg.get("src_filter", ["+<lib/libaimatix/src/>", "+<src/>", "-<src/spikes/>"]) or []
-
     thresholds_cfg = sa_cfg.get("severity_thresholds", {}) or {}
-    thresholds = StaticAnalysisThresholds(
+    return StaticAnalysisThresholds(
         high=int(thresholds_cfg.get("high", 0)) if thresholds_cfg.get("high", 0) is not None else 0,
-        medium=(
-            int(thresholds_cfg.get("medium")) if thresholds_cfg.get("medium") is not None else None
-        ),
+        medium=(int(thresholds_cfg.get("medium")) if thresholds_cfg.get("medium") is not None else None),
         low=(int(thresholds_cfg.get("low")) if thresholds_cfg.get("low") is not None else None),
     )
-    auto_medium_margin = int(sa_cfg.get("auto_medium_margin", 5))
-
-    return environment, exclude_patterns, thresholds, src_filter, auto_medium_margin
 
 
 def main() -> int:
@@ -276,15 +221,8 @@ def main() -> int:
     coverage_qg = run_coverage(mode, config_path)
 
     # 2) 静的解析 実行 + 判定
-    env, exclude_patterns, thresholds, src_filter, auto_medium_margin = load_static_analysis_config(config)
-    sa_result = evaluate_static_analysis(
-        env,
-        tool="clang-tidy",
-        thresholds=thresholds,
-        exclude_patterns=exclude_patterns,
-        src_filter=src_filter,
-        auto_medium_margin=auto_medium_margin,
-    )
+    thresholds = load_static_analysis_config(config)
+    sa_result = evaluate_static_analysis(thresholds=thresholds)
 
     # 3) 統合判定
     passed = bool(coverage_qg.get("passed")) and sa_result.passed

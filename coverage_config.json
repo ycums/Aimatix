@@ -22,22 +22,11 @@
   "static_analysis": {
     "enabled": true,
     "tool": "clang-tidy",
-    "environments": ["native"],
-    "exclude_patterns": [
-      "lib/**",
-      "test/**"
-    ],
-    "src_filter": [
-      "+<lib/libaimatix/src/>",
-      "+<src/>",
-      "-<src/spikes/>"
-    ],
     "severity_thresholds": {
       "high": 0,
       "medium": null,
       "low": null
-    },
-    "auto_medium_margin": 5
+    }
   },
   "exclusions": {
     "directories": [
