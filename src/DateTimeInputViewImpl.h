@@ -26,7 +26,7 @@ private:
     void drawDateTimeGrid(const std::string& dateTimeStr);
     void drawCursorHighlight(const std::string& dateTimeStr, int cursorPosition);
     void clearCursorHighlight(int cursorPosition);
-    int getCursorPixelPosition(int cursorPosition) const;
+    static int getCursorPixelPosition(int cursorPosition);
     static int getCharWidth(char c);
     void drawCharAtPosition(char c, int x, int y, bool isHighlighted = false);
 }; 

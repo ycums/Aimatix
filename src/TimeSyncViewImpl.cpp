@@ -2,7 +2,7 @@
 #include "DisplayCommon.h"
 
 void TimeSyncViewImpl::showTitle(const char* text) {
-    if (!adapter_) return;
+    if (adapter_ == nullptr) return;
     // 画面初期化は入場時の1回のみ呼ばれる想定
     adapter_->clear();
     constexpr int BATTERY_LEVEL_PLACEHOLDER = 42;
@@ -11,7 +11,7 @@ void TimeSyncViewImpl::showTitle(const char* text) {
 }
 
 void TimeSyncViewImpl::showHints(const char* hintA, const char* hintB, const char* hintC) {
-    if (!adapter_) return;
+    if (adapter_ == nullptr) return;
     drawButtonHintsGrid(adapter_, hintA, hintB, hintC);
 }
 

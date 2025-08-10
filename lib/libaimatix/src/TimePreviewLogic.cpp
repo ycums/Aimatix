@@ -103,17 +103,16 @@ time_t TimePreviewLogic::calculateAbsoluteTime(
     alarm_tm.tm_min = minute;
     
     const time_t candidate = mktime(&alarm_tm);
-    printf("[DEBUG] calculateAbsoluteTime: candidate=%ld, now=%ld, candidate<=now=%s\n", 
-           candidate, now, (candidate <= now) ? "true" : "false");
+    // debug: candidate/now relation
     if (candidate <= now) {
         // 過去時刻の場合：翌日の同じ時刻として処理
         alarm_tm.tm_mday += 1;
         time_t result = mktime(&alarm_tm);
-        printf("[DEBUG] calculateAbsoluteTime: past time, moved to next day, result=%ld\n", result);
+        // debug: moved to next day
         return result;
     }
     
-    printf("[DEBUG] calculateAbsoluteTime: future time, result=%ld\n", candidate);
+    // debug: future time
     return candidate;
 }
 
@@ -218,11 +217,7 @@ int TimePreviewLogic::calculateDayDifference(
         dayDiff = (target_tm_copy.tm_yday - current_tm_copy.tm_yday);
     }
     
-    // デバッグ情報
-    printf("[DEBUG] calculateDayDifference: target=%04d-%02d-%02d %02d:%02d, current=%04d-%02d-%02d %02d:%02d, dayDiff=%d\n",
-           target_tm_copy.tm_year+1900, target_tm_copy.tm_mon+1, target_tm_copy.tm_mday, target_tm_copy.tm_hour, target_tm_copy.tm_min,
-           current_tm_copy.tm_year+1900, current_tm_copy.tm_mon+1, current_tm_copy.tm_mday, current_tm_copy.tm_hour, current_tm_copy.tm_min,
-           dayDiff);
+    // debug: day difference
     
     return dayDiff;
 } 
