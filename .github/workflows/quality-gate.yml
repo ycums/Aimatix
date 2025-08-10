@@ -41,18 +41,19 @@ jobs:
       - name: Baseline build (sanity)
         run: pio run -e native
 
-      - name: Run coverage (quick mode)
+      - name: Run quality gate (quick mode)
         run: |
-          python scripts/test_coverage.py --quick
+          python scripts/quality_gate.py --quick
 
       - name: Upload coverage artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-reports-${{ github.run_id }}
+          name: quality-gate-artifacts-${{ github.run_id }}
           path: |
             coverage_reports/**
             coverage_history.json
+            static_analysis_report.json
           if-no-files-found: warn
 
       - name: Job summary
@@ -63,7 +64,7 @@ jobs:
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "- Workflow: $GITHUB_WORKFLOW" >> "$GITHUB_STEP_SUMMARY"
           echo "- Run ID: $GITHUB_RUN_ID" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Artifacts: coverage-reports-$GITHUB_RUN_ID" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Artifacts: quality-gate-artifacts-$GITHUB_RUN_ID" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
 
           # Threshold (best-effort from coverage_config.json)
@@ -100,6 +101,28 @@ jobs:
             fi
           else
             echo "- Actual: (see artifacts)" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          # Static analysis summary (if report exists)
+          if [ -f static_analysis_report.json ]; then
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "### Static Analysis (Clang-Tidy)" >> "$GITHUB_STEP_SUMMARY"
+            python - << 'PY'
+import json,sys
+try:
+    with open('static_analysis_report.json','r',encoding='utf-8') as f:
+        data=json.load(f)
+    t=data.get('totals',{})
+    th=data.get('thresholds',{})
+    passed=data.get('passed',False)
+    print(f"- Environment: {data.get('environment','native')}")
+    print(f"- Totals: High={t.get('high',0)}, Medium={t.get('medium',0)}, Low={t.get('low',0)}")
+    print(f"- Thresholds: High={th.get('high','-')}, Medium={th.get('medium','-')}, Low={th.get('low','-')}")
+    print(f"- Status: {'✅ Passed' if passed else '❌ Failed'}")
+except Exception as e:
+    print(f"- Static analysis summary error: {e}")
+PY
+            | while IFS= read -r line; do echo "$line" >> "$GITHUB_STEP_SUMMARY"; done
           fi
 
 

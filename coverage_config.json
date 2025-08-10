@@ -19,6 +19,20 @@
     "threshold": 80.0,
     "strict_mode": false
   },
+  "static_analysis": {
+    "enabled": true,
+    "tool": "clang-tidy",
+    "environments": ["native"],
+    "exclude_patterns": [
+      "lib/**",
+      "test/**"
+    ],
+    "severity_thresholds": {
+      "high": 0,
+      "medium": 28,
+      "low": null
+    }
+  },
   "exclusions": {
     "directories": [
       "test/",

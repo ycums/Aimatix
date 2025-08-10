@@ -388,7 +388,7 @@ class CoverageMeasurementSystem:
             # PlatformIOテスト実行（カバレッジ設定はplatformio.iniで有効化）
             result = subprocess.run([
                 'pio', 'test', '-e', 'native'
-            ], capture_output=True, text=True, check=True)
+            ], capture_output=True, text=True, encoding='utf-8', errors='replace', check=True)
             
             # gcovデータ解析
             coverage_data = self.parse_gcov_data('native')
@@ -418,7 +418,7 @@ class CoverageMeasurementSystem:
             # PlatformIOテスト実行（カバレッジ設定はplatformio.iniで有効化）
             result = subprocess.run([
                 'pio', 'test', '-e', 'unit-test-esp32'
-            ], capture_output=True, text=True, check=True)
+            ], capture_output=True, text=True, encoding='utf-8', errors='replace', check=True)
             
             # gcovデータ解析
             coverage_data = self.parse_gcov_data('unit-test-esp32')
@@ -479,7 +479,7 @@ class CoverageMeasurementSystem:
                 '--exclude', '.pio/libdeps/',
                 '--gcov-ignore-errors=no_working_dir_found',
                 '--gcov-ignore-errors=source_not_found'
-            ], capture_output=True, text=True, check=True)
+            ], capture_output=True, text=True, encoding='utf-8', errors='replace', check=True)
             
             coverage_data = json.loads(result.stdout)
             
