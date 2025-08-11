@@ -4,6 +4,7 @@
 #include <sstream>
 #include <iomanip>
 #include <cstdio> // For printf
+#include "TimeThreadSafe.h"
 
 // 定数定義
 constexpr int HOURS_10 = 10;
@@ -55,10 +56,13 @@ int AlarmLogic::getRemainPercent(int remainSec, int totalSec) {
 void AlarmLogic::getAlarmTimeStrings(const std::vector<time_t>& alarms, std::vector<std::string>& out) {
     out.clear();
     for (const time_t& t : alarms) {
-        std::tm* tm_alarm = std::localtime(&t);
+        std::tm tm_alarm{};
+        if (!TimeThreadSafe::toLocalTime(t, tm_alarm)) {
+            continue;
+        }
         std::ostringstream oss;
-        oss << std::setfill('0') << std::setw(2) << tm_alarm->tm_hour << ":"
-            << std::setw(2) << tm_alarm->tm_min;
+        oss << std::setfill('0') << std::setw(2) << tm_alarm.tm_hour << ":"
+            << std::setw(2) << tm_alarm.tm_min;
         out.push_back(oss.str());
     }
 } 
@@ -70,8 +74,13 @@ bool AlarmLogic::addAlarm(std::vector<time_t>& alarms, time_t now, time_t input,
         errorMsg = "Input is empty.";
         return false;
     }
-    struct tm* now_tm = localtime(&now);
-    struct tm alarm_tm = *now_tm;
+    struct tm now_tm_buf{};
+    if (!TimeThreadSafe::toLocalTime(now, now_tm_buf)) {
+        result = AddAlarmResult::ErrorInvalid;
+        errorMsg = "Invalid current time";
+        return false;
+    }
+    struct tm alarm_tm = now_tm_buf;
     alarm_tm.tm_sec = 0;
     alarm_tm.tm_isdst = -1;
     int hour = 0;
@@ -79,34 +88,36 @@ bool AlarmLogic::addAlarm(std::vector<time_t>& alarms, time_t now, time_t input,
     int add_day = 0;
     if (input < HOURS_100) {
         // 分のみ指定
-        minute = input % MINUTES_60;
-        hour = input / MINUTES_60;
+        const long inputLong = static_cast<long>(input);
+        minute = static_cast<int>(inputLong % MINUTES_60);
+        hour = static_cast<int>(inputLong / MINUTES_60);
         if (hour > 0) {
             // 分が60以上の場合、時分に正規化
-            minute = input % MINUTES_60;
-            hour = input / MINUTES_60;
+            minute = static_cast<int>(inputLong % MINUTES_60);
+            hour = static_cast<int>(inputLong / MINUTES_60);
         } else {
             // 分のみの場合
-            minute = input;
+            minute = static_cast<int>(inputLong);
             hour = 0;
         }
         // 現在時刻の次のその時刻を計算
-        if (hour > 0 || minute > now_tm->tm_min) {
+        if (hour > 0 || minute > now_tm_buf.tm_min) {
             // 時が指定されているか、分が現在分より大きい場合
             if (hour == 0) {
-                hour = now_tm->tm_hour;
-                if (minute <= now_tm->tm_min) {
+                hour = now_tm_buf.tm_hour;
+                if (minute <= now_tm_buf.tm_min) {
                     hour += 1;
                 }
             }
         } else {
             // 分が現在分以下の場合、次の時間の同じ分として設定
-            hour = (now_tm->tm_hour + 1) % HOURS_24;
+            hour = (now_tm_buf.tm_hour + 1) % HOURS_24;
         }
     } else {
         // 時分指定（HHMM形式）
-        hour = input / HOURS_100;
-        minute = input % HOURS_100;
+        const long inputLong = static_cast<long>(input);
+        hour = static_cast<int>(inputLong / HOURS_100);
+        minute = static_cast<int>(inputLong % HOURS_100);
         
         // 分繰り上げ
         if (minute >= MINUTES_60) { 
@@ -206,26 +217,26 @@ bool AlarmLogic::addAlarmFromPartialInput(
     int minute = parsedTime.minute;
     
     // 時分を直接指定してアラーム追加
-    struct tm* now_tm = localtime(&now);
-    if (now_tm == nullptr) {
+    struct tm now_tm_buf{};
+    if (!TimeThreadSafe::toLocalTime(now, now_tm_buf)) {
         result = AddAlarmResult::ErrorInvalid;
         errorMsg = "Invalid current time";
         return false;
     }
     
-    struct tm alarm_tm = *now_tm;
+    struct tm alarm_tm = now_tm_buf;
     alarm_tm.tm_sec = 0;
     alarm_tm.tm_isdst = -1;
     
     // 時が指定されていない場合の処理
     if (!parsedTime.hourSpecified) {
         // 分のみで過去か未来かを判定
-        if (minute <= now_tm->tm_min) {
+        if (minute <= now_tm_buf.tm_min) {
             // 分が現在分以下なら、次の時間の同じ分として設定
-            hour = (now_tm->tm_hour + 1) % HOURS_24;
+            hour = (now_tm_buf.tm_hour + 1) % HOURS_24;
         } else {
             // 分が現在分より大きいなら、現在時間の同じ分として設定
-            hour = now_tm->tm_hour;
+            hour = now_tm_buf.tm_hour;
         }
     } else {
         // 時が指定されている場合：通常の処理
@@ -246,9 +257,9 @@ bool AlarmLogic::addAlarmFromPartialInput(
         const time_t candidate = mktime(&alarm_tm);
         
         // 現在時刻も秒を0にして比較（秒の差で誤判定されるのを防ぐ）
-        struct tm now_tm_compare = *now_tm;
+        struct tm now_tm_compare = now_tm_buf;
         now_tm_compare.tm_sec = 0;
-        time_t now_compare = mktime(&now_tm_compare);
+        const time_t now_compare = mktime(&now_tm_compare);
         
         if (candidate <= now_compare) {
             // 過去時刻の場合：翌日の同じ時刻として処理

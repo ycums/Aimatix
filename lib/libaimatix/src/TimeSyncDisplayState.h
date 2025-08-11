@@ -4,7 +4,6 @@
 #include "ITimeSyncController.h"
 #include "TimeSyncCore.h"
 #include <string>
-#include <string>
 
 // Minimal MVP1 state: draws static title/hints and exits to settings on C short press.
 class TimeSyncDisplayState : public IState {

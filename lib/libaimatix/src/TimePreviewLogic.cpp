@@ -23,7 +23,7 @@ TimePreviewLogic::PreviewResult TimePreviewLogic::generatePreview(
     }
     
     // 絶対値モードの場合
-    time_t absoluteTime = calculateAbsoluteTime(digits, entered, timeProvider);
+    const time_t absoluteTime = calculateAbsoluteTime(digits, entered, timeProvider);
     if (absoluteTime == -1) {
         return result;
     }
@@ -125,8 +125,8 @@ std::string TimePreviewLogic::formatPreview(
         return "";
     }
     
-    time_t now = timeProvider->now();
-    int dayDiff = calculateDayDifference(time, now, timeProvider);
+    const time_t now = timeProvider->now();
+    const int dayDiff = calculateDayDifference(time, now, timeProvider);
     
     // 静的バッファ問題を回避するため、値をコピー
     time_t time_copy = time;
@@ -136,7 +136,7 @@ std::string TimePreviewLogic::formatPreview(
     }
     
     // 値をコピーして静的バッファ問題を回避
-    struct tm time_tm_copy = *time_tm;
+    const struct tm time_tm_copy = *time_tm;
     
     char buffer[32];
     if (isRelativeMode) {
@@ -181,7 +181,7 @@ int TimePreviewLogic::calculateDayDifference(
     }
     
     // target_tmの値を先にコピー
-    struct tm target_tm_copy = *target_tm;
+    const struct tm target_tm_copy = *target_tm;
     
     // 別の変数でcurrent_tmを取得
     time_t current_copy2 = currentTime;
@@ -191,7 +191,7 @@ int TimePreviewLogic::calculateDayDifference(
     }
     
     // current_tmの値をコピー
-    struct tm current_tm_copy = *current_tm;
+    const struct tm current_tm_copy = *current_tm;
     
     // 日付跨ぎ判定（現在日付との差分を計算）
     int dayDiff = target_tm_copy.tm_mday - current_tm_copy.tm_mday;
@@ -203,9 +203,9 @@ int TimePreviewLogic::calculateDayDifference(
         temp_tm.tm_mday = 1;
         temp_tm.tm_mon++;
         time_t nextMonth = mktime(&temp_tm);
-        struct tm* nextMonth_tm = localtime(&nextMonth);
+        struct tm* nextMonth_tm = timeProvider->localtime(&nextMonth);
         if (nextMonth_tm != nullptr) {
-            int daysInMonth = nextMonth_tm->tm_mday - 1;
+            const int daysInMonth = nextMonth_tm->tm_mday - 1;
             dayDiff += daysInMonth;
         }
     }

@@ -9,12 +9,12 @@ namespace TimeZoneUtil {
 static void appendTzOffsetString(std::string& out, int tzOffsetMinutes) {
     // POSIX TZ: West is positive, East is negative
     // Our tzOffsetMinutes follows JavaScript: east positive
-    int minutes = tzOffsetMinutes;
+    const int minutes = tzOffsetMinutes;
     const bool isZero = minutes == 0;
     const bool isEast = minutes > 0; // treat 0 specially
-    int absMin = minutes >= 0 ? minutes : -minutes;
-    int hours = absMin / 60;
-    int mins  = absMin % 60;
+    const int absMin = minutes >= 0 ? minutes : -minutes;
+    const int hours = absMin / 60;
+    const int mins  = absMin % 60;
     // Reverse sign for POSIX: east -> '-', west -> '+'
     out.push_back(isZero ? '+' : (isEast ? '-' : '+'));
     char buf[16];
