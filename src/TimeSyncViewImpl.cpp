@@ -1,5 +1,6 @@
 #include "TimeSyncViewImpl.h"
 #include "DisplayCommon.h"
+#include "ui_constants.h"
 #include <string>
 #include <algorithm>
 #ifdef ARDUINO
@@ -30,9 +31,6 @@ void TimeSyncViewImpl::showWifiQr(const char* payload) {
     // 現時点では DisplayAdapter にQR APIが無いため、ここで直接描画する。
     // 実装を後で Adapter へ移譲可能。
 
-    // タイトルバーの下にQRを配置するため上部に余白
-    const int topMargin = 10;
-
 #ifdef ARDUINO
     QRCode qrcode;
     // サイズ決定（Wi‑Fi文字列は比較的長め。version 7目安）
@@ -50,7 +48,8 @@ void TimeSyncViewImpl::showWifiQr(const char* payload) {
     // 最大スケールを計算（画面幅・高さから算出）
     const int screenW = M5.Display.width();
     const int screenH = M5.Display.height();
-    const int availableH = screenH - topMargin;
+    const int availableH = screenH - (TITLE_HEIGHT+ HINT_HEIGHT);
+    const int topMargin = TITLE_HEIGHT;
     const int maxModules = moduleCount + quietZone * 2;
     const int scale = std::max(1, std::min(screenW / maxModules, availableH / maxModules));
     const int qrW = maxModules * scale;
