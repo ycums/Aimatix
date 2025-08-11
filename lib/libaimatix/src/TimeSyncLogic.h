@@ -29,6 +29,19 @@ public:
     bool handleTimeSetRequest(int64_t epochMs, int tzOffsetMin, const std::string& token,
                               ITimeManager* timeManager, ITimeProvider* timeProvider);
 
+    // Window helpers for controllers/adapters
+    bool isWindowExpired(uint32_t nowMs) const {
+        return !TimeSyncCore::isWithinWindow(startMs_, nowMs, windowMs_);
+    }
+    uint32_t getWindowRemainingMs(uint32_t nowMs) const {
+        if (nowMs >= startMs_ && (nowMs - startMs_) <= windowMs_) {
+            return windowMs_ - (nowMs - startMs_);
+        }
+        // handle wraparound and expired cases conservatively
+        const uint32_t elapsed = nowMs - startMs_;
+        return (elapsed <= windowMs_) ? (windowMs_ - elapsed) : 0u;
+    }
+
     Status getStatus() const { return status_; }
     const char* getErrorMessage() const { return lastError_.c_str(); }
     const Credentials& getCredentials() const { return creds_; }
@@ -43,6 +56,7 @@ private:
     std::string lastError_{};
     uint32_t startMs_{0};
     uint32_t windowMs_{60000};
+    bool rateConsumed_{false};
 };
 
 

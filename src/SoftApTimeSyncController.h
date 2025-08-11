@@ -32,6 +32,16 @@ private:
 
     // Pure session logic (lib layer)
     TimeSyncLogic logic_{};
+
+#ifdef ARDUINO
+    // One-shot timer to stop AP when the window expires
+    struct WindowTimerCtx { SoftApTimeSyncController* self; };
+    static void onWindowTimer(void* arg);
+    void startWindowTimer(uint32_t delayMs);
+    void cancelWindowTimer();
+    void stopApInternal();
+    void* windowTimer_{nullptr};
+#endif
 };
 
 

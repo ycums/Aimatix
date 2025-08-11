@@ -11,6 +11,7 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <WebServer.h>
+#include <esp_timer.h>
 static WebServer server(80);
 extern ITimeManager* g_time_manager;   // provided in main.cpp or platform layer
 extern ITimeProvider* g_time_provider; // provided in main.cpp or platform layer
@@ -86,11 +87,20 @@ void SoftApTimeSyncController::begin() {
                     server.send(200, "text/plain", "Time applied");
                     ok = true;
                 } else {
-                    server.send(400, "text/plain", logic_.getErrorMessage());
+                    const char* code = logic_.getErrorMessage();
+                    int status = 400;
+                    const char* msg = "BAD REQUEST";
+                    if (strcmp(code, "window_expired") == 0) { status = 401; msg = "AP WINDOW EXPIRED"; }
+                    else if (strcmp(code, "invalid_token") == 0) { status = 403; msg = "TOKEN MISMATCH"; }
+                    else if (strcmp(code, "rate_limited") == 0) { status = 403; msg = "RATE LIMITED"; }
+                    else if (strcmp(code, "time_out_of_range") == 0) { status = 422; msg = "TIME OUT OF RANGE"; }
+                    else if (strcmp(code, "tz_offset_out_of_range") == 0) { status = 422; msg = "TZ OFFSET OUT OF RANGE"; }
+                    else if (strcmp(code, "apply_failed") == 0) { status = 500; msg = "APPLY FAILED"; }
+                    server.send(status, "text/plain", msg);
                     
                 }
             } else {
-                server.send(403, "text/plain", "invalid_token");
+                server.send(403, "text/plain", "TOKEN MISMATCH");
                 
             }
         } else {
@@ -100,6 +110,21 @@ void SoftApTimeSyncController::begin() {
         if (ok) { server.stop(); WiFi.softAPdisconnect(true); WiFi.mode(WIFI_OFF); }
     });
     server.begin();
+#ifdef ARDUINO
+    // Arm AP stop at window end (success path stops earlier)
+    {
+        const uint32_t nowMs = millis();
+        const uint32_t remain = logic_.getWindowRemainingMs(nowMs);
+        esp_timer_create_args_t args{};
+        args.callback = [](void* /*arg*/){ server.stop(); WiFi.softAPdisconnect(true); WiFi.mode(WIFI_OFF); };
+        args.dispatch_method = ESP_TIMER_TASK;
+        args.name = "ts_window";
+        esp_timer_handle_t h = nullptr;
+        if (esp_timer_create(&args, &h) == ESP_OK) {
+            esp_timer_start_once(h, static_cast<uint64_t>(remain) * 1000ULL);
+        }
+    }
+#endif
 #endif
     running_ = true;
 }

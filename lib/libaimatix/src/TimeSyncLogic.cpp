@@ -35,6 +35,7 @@ void TimeSyncLogic::begin(IRandomProvider* rnd, ITimeManager* timeManager, uint3
     creds_.token = makeToken(rnd->getRandom64());
     startMs_ = static_cast<uint32_t>(timeManager->getCurrentMillis());
     windowMs_ = windowMs;
+    rateConsumed_ = false;
     status_ = Status::Step1;
     lastError_.clear();
 }
@@ -78,6 +79,13 @@ bool TimeSyncLogic::handleTimeSetRequest(int64_t epochMs, int tzOffsetMin, const
         lastError_ = "invalid_token";
         return false;
     }
+    // Rate limit: first attempt consumes the allowance regardless of success
+    if (rateConsumed_) {
+        status_ = Status::Error;
+        lastError_ = "rate_limited";
+        return false;
+    }
+    rateConsumed_ = true;
     // Validate epoch range per spec
     const int64_t minEpoch = 1735689600000LL; // 2025-01-01 UTC in ms
     const int64_t maxEpoch = 4102444800000LL; // 2100-01-01 UTC in ms (time_t width dependent in practice)
