@@ -109,9 +109,10 @@ bool jsonExtractRaw(const std::string& body, const char* key, std::string& out) 
         if (end == std::string::npos) end = body.size();
         out.assign(body.data() + p, end - p);
         // trim both ends
-        size_t b = 0, e = out.size();
-        while (b < e && isSpace(out[b])) ++b;
-        while (e > b && isSpace(out[e - 1])) --e;
+        size_t b = 0;
+        size_t e = out.size();
+        while (b < e && isSpace(out[b])) { ++b; }
+        while (e > b && isSpace(out[e - 1])) { --e; }
         out = out.substr(b, e - b);
         return !out.empty();
     }
@@ -142,5 +143,4 @@ bool jsonExtractInt(const std::string& body, const char* key, int& out) {
 }
 
 }
-
 

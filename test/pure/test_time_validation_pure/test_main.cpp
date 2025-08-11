@@ -1,6 +1,7 @@
 #include <unity.h>
 #include "../../../lib/libaimatix/src/TimeValidationLogic.h"
 #include "../../../lib/libaimatix/src/ITimeProvider.h"
+#include "../../../lib/libaimatix/src/BootAutoSyncPolicy.h"
 #include <ctime>
 
 // モックTimeProviderクラス
@@ -181,6 +182,22 @@ int main() {
     RUN_TEST(test_validateAndCorrectSystemTime_correction_needed);
     RUN_TEST(test_validateAndCorrectSystemTime_no_correction_needed);
     RUN_TEST(test_validateAndCorrectSystemTime_null_provider);
+
+    // AIM-57: BootAutoSyncPolicy の基本仕様検証（1テスト1アサート方針）
+    {
+        BootAutoSyncPolicy p; p.resetForBoot();
+        TEST_ASSERT_TRUE(p.shouldStartAutoSync(true));
+    }
+    {
+        BootAutoSyncPolicy p; p.resetForBoot();
+        (void)p.shouldStartAutoSync(true);
+        TEST_ASSERT_FALSE(p.shouldStartAutoSync(true));
+    }
+    {
+        BootAutoSyncPolicy p; p.resetForBoot();
+        p.suppressForThisBoot();
+        TEST_ASSERT_FALSE(p.shouldStartAutoSync(true));
+    }
     
     return UNITY_END();
 }

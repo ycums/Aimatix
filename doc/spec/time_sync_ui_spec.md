@@ -28,5 +28,5 @@
 
 ## Notes
 - Success Local/TZ: Serial log only
-- Boot auto: if EXIT was used during auto time sync, suppress further auto attempts until next boot
+- Boot auto: auto start runs only once per boot. Manual start does not affect this judgment.
 

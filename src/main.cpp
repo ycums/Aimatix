@@ -16,6 +16,7 @@
 #include "AlarmLogic.h"
 #include "DisplayAdapter.h"
 #include "TimeValidationLogic.h"
+#include "BootAutoSyncPolicy.h"
 #include "ButtonManager.h"
 #include "TimeSyncDisplayState.h"
 #include "TimeSyncViewImpl.h"
@@ -114,6 +115,8 @@ SettingsDisplayState settings_display_state(&settings_logic, &settings_display_v
  TimeSyncViewImpl time_sync_view_impl(&display_adapter);
  SoftApTimeSyncController time_sync_controller;
  TimeSyncDisplayState time_sync_display_state(&time_sync_view_impl, &time_sync_controller);
+ // 起動時自動開始の抑止管理（同一ブート内）
+ BootAutoSyncPolicy g_boot_auto_policy;
 DateTimeInputState datetime_input_state(m5_time_provider.get(), &datetime_input_view_impl);
 #else
 // Native環境用のモック（テスト用）
@@ -148,10 +151,21 @@ void setup() {
     time_t now = time(nullptr);
     AlarmLogic::initAlarms(alarm_times, now);
     
+    // Boot Auto: 無効時刻ならTime Sync自動開始（EXITで同一ブート抑止）
+    // 注意: 自動開始の判定は「補正前の生時刻」で行う
+    g_boot_auto_policy.resetForBoot();
+    const bool isInvalidAtBoot = TimeValidationLogic::isSystemTimeBeforeMinimum(m5_time_provider.get());
+
     // システム時刻の検証と補正（起動時処理）
-    if (TimeValidationLogic::validateAndCorrectSystemTime(m5_time_provider.get())) {
-        // 時刻補正が実行された場合のログ出力（デバッグ用）
-        // プロダクション環境では必要に応じて削除可能
+    (void)TimeValidationLogic::validateAndCorrectSystemTime(m5_time_provider.get());
+
+    if (g_boot_auto_policy.shouldStartAutoSync(isInvalidAtBoot)) {
+        // 直ちにTIME_SYNC状態へ遷移（UI/QRはTimeSyncDisplayStateに委譲）
+        time_sync_display_state.setManager(&state_manager);
+        time_sync_display_state.setSettingsDisplayState(&settings_display_state);
+        time_sync_display_state.setMainDisplayState(&main_display_state);
+        time_sync_display_state.setBootAutoSyncPolicy(&g_boot_auto_policy);
+        state_manager.setState(&time_sync_display_state);
     }
 
     // --- 状態遷移の依存注入（@/design/ui_state_management.md準拠） ---
@@ -168,8 +182,10 @@ void setup() {
     time_sync_display_state.setManager(&state_manager);
     time_sync_display_state.setSettingsDisplayState(&settings_display_state);
     time_sync_display_state.setMainDisplayState(&main_display_state);
-    // 状態遷移の初期状態をMainDisplayに
-    state_manager.setState(&main_display_state);
+    // 状態遷移の初期状態をMainDisplayに（既に他状態へ遷移済みなら変更しない）
+    if (state_manager.getCurrentState() == nullptr) {
+        state_manager.setState(&main_display_state);
+    }
 }
 #endif
 
@@ -203,4 +219,4 @@ int main() {
     // Native環境では何もしない（テスト用）
     return 0;
 }
-#endif 
+#endif
