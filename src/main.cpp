@@ -103,6 +103,9 @@ ButtonManager button_manager;
 // M5Stack関連のクラス（全デバイス共通）
 const std::shared_ptr<DateTimeAdapter> m5_time_provider = std::make_shared<DateTimeAdapter>();
 const std::shared_ptr<M5StackTimeManager> m5_time_manager = std::make_shared<M5StackTimeManager>();
+// Export globals for components in src/ that need time adapters (e.g., SoftApTimeSyncController)
+ITimeProvider* g_time_provider = m5_time_provider.get();
+ITimeManager* g_time_manager = m5_time_manager.get();
 InputLogic input_logic(m5_time_provider);
 InputDisplayState input_display_state(&input_logic, &input_display_view_impl, m5_time_provider.get());
 MainDisplayState main_display_state(&state_manager, &input_display_state, &main_display_view_impl, &time_logic, &alarm_logic);

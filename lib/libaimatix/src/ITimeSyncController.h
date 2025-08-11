@@ -21,6 +21,16 @@ public:
 
     // Get current SSID and PSK (Step1 scope). Implementations copy to outputs.
     virtual void getCredentials(std::string& outSsid, std::string& outPsk) const = 0;
+
+    // Extended status API for Step2 integration
+    enum class Status { Idle, Step1, Step2, AppliedOk, Error };
+    virtual Status getStatus() const = 0;
+
+    // Build/return current URL QR payload (e.g., http://<ip>/sync?t=token)
+    virtual void getUrlPayload(std::string& outUrl) const = 0;
+
+    // Last error reason message (upper layer maps to UI string)
+    virtual const char* getErrorMessage() const = 0;
 };
 
 

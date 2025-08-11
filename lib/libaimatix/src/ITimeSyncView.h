@@ -14,6 +14,12 @@ public:
 
     // Draw Wi‑Fi QR payload (e.g., WIFI:T:WPA;S:...;P:...;H:false;;)
     virtual void showWifiQr(const char* payload) = 0;
+
+    // Draw URL QR payload (e.g., http://192.168.4.1/sync?t=...)
+    virtual void showUrlQr(const char* payload) = 0;
+
+    // Show short error message in the content area
+    virtual void showError(const char* message) = 0;
 };
 
 

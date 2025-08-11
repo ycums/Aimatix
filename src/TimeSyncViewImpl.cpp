@@ -9,7 +9,7 @@ extern "C" {
 #include <qrcode.h>
 }
 #endif
-// QR表示は仕様通り ricmoo/QRCode + M5GFX を用いるが、実装詳細は Adapter 経由へ委譲可能性あり。
+// QR表示は ricmoo/QRCode + M5GFX を用いる。描画領域は TITLE_HEIGHT と HINT_HEIGHT を除いた残り高さ。
 
 void TimeSyncViewImpl::showTitle(const char* text) {
     if (adapter_ == nullptr) return;
@@ -27,7 +27,7 @@ void TimeSyncViewImpl::showHints(const char* hintA, const char* hintB, const cha
 
 void TimeSyncViewImpl::showWifiQr(const char* payload) {
     if (adapter_ == nullptr || payload == nullptr) return;
-    // 仕様: ECC LOW, quiet zone=2, 上余白10px, 黒背景/アンバードット
+    // 仕様: ECC LOW, quiet zone=2。タイトル・ヒントを除いた領域に最大スケールで描画。
     // 現時点では DisplayAdapter にQR APIが無いため、ここで直接描画する。
     // 実装を後で Adapter へ移譲可能。
 
@@ -48,7 +48,7 @@ void TimeSyncViewImpl::showWifiQr(const char* payload) {
     // 最大スケールを計算（画面幅・高さから算出）
     const int screenW = M5.Display.width();
     const int screenH = M5.Display.height();
-    const int availableH = screenH - (TITLE_HEIGHT+ HINT_HEIGHT);
+    const int availableH = screenH - (TITLE_HEIGHT + HINT_HEIGHT);
     const int topMargin = TITLE_HEIGHT;
     const int maxModules = moduleCount + quietZone * 2;
     const int scale = std::max(1, std::min(screenW / maxModules, availableH / maxModules));
@@ -73,6 +73,32 @@ void TimeSyncViewImpl::showWifiQr(const char* payload) {
     free(qrcodeData);
 #else
     (void)payload;
+#endif
+}
+
+void TimeSyncViewImpl::showUrlQr(const char* payload) {
+    // URL QRも同一レンダリングポリシーで描画
+    showWifiQr(payload);
+}
+
+void TimeSyncViewImpl::showError(const char* message) {
+    (void)message;
+#ifdef ARDUINO
+    // 簡易表示: コンテンツ領域をクリアし、中央付近にテキスト描画
+    const int screenW = M5.Display.width();
+    const int screenH = M5.Display.height();
+    const int availableH = screenH - (TITLE_HEIGHT + HINT_HEIGHT);
+    const int topMargin = TITLE_HEIGHT;
+    M5.Display.fillRect(0, topMargin, screenW, availableH, TFT_BLACK);
+    if (message && *message) {
+        M5.Display.setTextDatum(textdatum_t::middle_center);
+        M5.Display.setTextFont(2);
+        M5.Display.setTextColor(AMBER_COLOR, TFT_BLACK);
+        M5.Display.drawString(message, screenW / 2, topMargin + availableH / 2);
+        M5.Display.setTextDatum(textdatum_t::top_left);
+    }
+#else
+    (void)adapter_;
 #endif
 }
 

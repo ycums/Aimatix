@@ -15,6 +15,11 @@ public:
 
     void getCredentials(std::string& outSsid, std::string& outPsk) const override;
 
+    // New ITimeSyncController APIs
+    Status getStatus() const override;
+    void getUrlPayload(std::string& outUrl) const override;
+    const char* getErrorMessage() const override;
+
 private:
     void generateCredentials();
 
@@ -23,6 +28,9 @@ private:
     std::string token_;
 
     bool running_;
+
+    Status status_{Status::Idle};
+    std::string lastError_;
 };
 
 

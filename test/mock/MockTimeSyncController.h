@@ -12,6 +12,10 @@ public:
 
     void getCredentials(std::string& outSsid, std::string& outPsk) const override { outSsid = ssid; outPsk = psk; }
 
+    Status getStatus() const override { return status; }
+    void getUrlPayload(std::string& outUrl) const override { outUrl = urlPayload; }
+    const char* getErrorMessage() const override { return lastError.c_str(); }
+
     void setInitialCredentials(const std::string& s, const std::string& p) { ssid = s; psk = p; }
     void setReissueCredentials(const std::string& s, const std::string& p) { reissueSsid = s; reissuePsk = p; }
 
@@ -24,6 +28,11 @@ public:
     std::string psk;
     std::string reissueSsid;
     std::string reissuePsk;
+
+    // Extended API backing fields (tests may ignore)
+    Status status{Status::Idle};
+    std::string urlPayload;
+    std::string lastError;
 };
 
 

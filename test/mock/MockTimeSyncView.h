@@ -12,13 +12,19 @@ public:
         calledShowHints = true;
     }
     void showWifiQr(const char* payload) override { lastWifiQr = payload ? payload : ""; calledShowWifiQr = true; }
+    void showUrlQr(const char* payload) override { lastUrlQr = payload ? payload : ""; calledShowUrlQr = true; }
+    void showError(const char* message) override { lastError = message ? message : ""; calledShowError = true; }
 
     std::string lastTitle;
     std::string lastHintA, lastHintB, lastHintC;
     std::string lastWifiQr;
+    std::string lastUrlQr;
+    std::string lastError;
     bool calledShowTitle{false};
     bool calledShowHints{false};
     bool calledShowWifiQr{false};
+    bool calledShowUrlQr{false};
+    bool calledShowError{false};
 };
 
 
