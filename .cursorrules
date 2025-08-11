@@ -53,6 +53,51 @@
 - **バグ修正時**: 修正内容のテストカバレッジ確認
 - **リファクタリング時**: 既存テストの動作確認
 
+## CIアーティファクト準拠（静的解析・カバレッジ）
+
+- **唯一の判断基準**: CIのartifactsを基準とする（ローカル結果は参考値）。
+  - 使用ファイル: `static_analysis_report.json`, `static_analysis_raw.txt`, `coverage_history.json`, `coverage_reports/`
+  - artifacts名: `quality-gate-artifacts-<run-id>`
+
+- **取得手順（gh推奨）**
+  ```bash
+  # runメタ情報
+  gh run view <run-id> --json databaseId,headBranch,headSha,displayTitle,conclusion,status,url,workflowName,createdAt,updatedAt --jq '.'
+
+  # artifacts一覧（ID/URL）
+  gh api repos/:owner/:repo/actions/runs/<run-id>/artifacts \
+    --jq '.artifacts[] | {id,name,expired,archive_download_url,size_in_bytes,created_at,expires_at}'
+
+  # ダウンロード先を指定して展開
+  gh run download <run-id> -D ./artifacts/<run-id>
+  ```
+
+- **ゲート判定**:
+  - 静的解析: `static_analysis_report.json.totals.medium <= thresholds.medium` を満たすこと（現行閾値: medium <= 50）。
+  - カバレッジ: CI出力の `coverage_history.json` に基づく（ローカル計測は補助）。
+
+## 静的解析の一致性（CIとローカルの差異最小化）
+
+- **clang-tidyバージョン固定（必須）**:
+  - CIは `tool-clangtidy@1.150005.0` を使用。ローカルも同一に固定する。
+  - 推奨設定（`platformio.ini` → `[env:native]`）:
+    ```ini
+    [env:native]
+    platform = native
+    ; 既存設定に加えて以下を明記
+    platform_packages = tool-clangtidy@1.150005.0
+    check_tool = clangtidy
+    check_flags = 
+        clangtidy: --config-file=.clang-tidy
+    ```
+- **設定ファイル**:
+  - `.clang-tidy` はプロジェクト直下のものを常に使用（CI/ローカルで同一）。
+  - `check_src_filters` はCIと同一範囲（`lib/libaimatix/src/**`, `src/**`、`src/spikes/**`は除外）。
+
+- **運用ルール**:
+  - 実装→ローカルで `pio run -e native` / `pio test -e native` で健全性のみ確認→PR→CI artifactsで最終判定。
+  - ローカル静的解析の数値は「傾向確認」のみ。合否はCI artifactsで判断。
+
 ## GitHub CLI運用ルール（AI Agent必須遵守）
 
 ### エスケープ問題対策
