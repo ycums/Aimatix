@@ -4,6 +4,7 @@
 #include "ITimeManager.h"
 #include "ITimeProvider.h"
 #include "ArduinoRandomProvider.h"
+#include "TimeSyncCore.h"
 
 #ifdef ARDUINO
 #include <Arduino.h>
@@ -16,46 +17,27 @@ extern ITimeProvider* g_time_provider; // provided in main.cpp or platform layer
 
 #include <cstdint>
 
-namespace {
-uint64_t simpleRand64() {
-    // 非暗号用の簡易生成（Step1暫定: PoC準拠64bit相当）
-    uint64_t x = 1469598103934665603ULL;
-    x ^= (uint64_t)millis();
-    x *= 1099511628211ULL;
-    x ^= (uint64_t)micros();
-    x *= 1099511628211ULL;
-    return x;
-}
-
-std::string toHex64(uint64_t v) {
-    static const char* hex = "0123456789abcdef";
-    std::string s(16, '0');
-    for (int i = 15; i >= 0; --i) {
-        s[i] = hex[v & 0xF];
-        v >>= 4;
-    }
-    return s;
-}
-}
+namespace { }
 
 SoftApTimeSyncController::SoftApTimeSyncController()
     : running_(false) {}
 
-void SoftApTimeSyncController::generateCredentials() {
-    const uint64_t r1 = simpleRand64();
-    const uint64_t r2 = simpleRand64();
-    const uint64_t r3 = simpleRand64();
-    ssid_  = std::string("AIM-TS-") + toHex64(r1).substr(0, 8);
-    psk_   = toHex64(r2).substr(0, 16);
-    token_ = toHex64(r3).substr(0, 16);
-}
-
 void SoftApTimeSyncController::begin() {
-    generateCredentials();
 #ifdef ARDUINO
+    // Start pure session logic (generates credentials)
+    ArduinoRandomProvider rnd;
+    logic_.begin(&rnd, g_time_manager, 60000);
+    ssid_  = logic_.getCredentials().ssid;
+    psk_   = logic_.getCredentials().psk;
+    token_ = logic_.getCredentials().token;
     WiFi.mode(WIFI_AP);
     // PSKは最低8文字必要
     WiFi.softAP(ssid_.c_str(), psk_.c_str());
+
+    // Register station-connected event → Step2 昇格
+    WiFi.onEvent([this](WiFiEvent_t /*event*/, WiFiEventInfo_t /*info*/) {
+        logic_.onStationConnected();
+    }, ARDUINO_EVENT_WIFI_AP_STACONNECTED);
     // Setup minimal routes for Step2 (sync + time/set)
     server.on("/sync", HTTP_GET, [this]() {
         // Minimal HTML that auto-posts Date.now()/getTimezoneOffset()
@@ -67,58 +49,52 @@ void SoftApTimeSyncController::begin() {
         html += F("fetch('/time/set',{method:'POST',headers:{'Content-Type':'application/json'},body: JSON.stringify({epochMs, tzOffsetMin, token:TOKEN})}).then(async r=>{document.getElementById('log').textContent=r.ok?('OK\\n'+await r.text()):('ERR '+r.status+'\\n'+await r.text());}).catch(e=>{document.getElementById('log').textContent='ERR\\n'+e;});");
         html += F("</script></body></html>");
         server.send(200, "text/html", html);
+        
     });
     server.on("/time/set", HTTP_POST, [this]() {
         if (!server.hasArg("plain")) { server.send(400, "text/plain", "Bad Request"); return; }
         const String body = server.arg("plain");
-        // very small parser (not robust) to extract numbers/strings
-        auto extract = [](const String& s, const char* key, String& out)->bool{
-            int k = s.indexOf(key);
-            if (k < 0) return false;
-            int c = s.indexOf(':', k);
-            if (c < 0) return false;
-            int q1 = s.indexOf('"', c);
-            int q2 = s.indexOf('"', q1+1);
-            if (q1 >= 0 && q2 > q1) { out = s.substring(q1+1, q2); return true; }
-            // number
-            int e = s.indexOf(',', c); if (e < 0) e = s.indexOf('}', c);
-            if (e < 0) return false; out = s.substring(c+1, e); out.trim(); return true;
-        };
-        String epochStr, tzStr, tokenStr;
-        if (!extract(body, "epochMs", epochStr) || !extract(body, "tzOffsetMin", tzStr) || !extract(body, "token", tokenStr)) {
+        // Use pure JSON extractors from TimeSyncCore
+        std::string bodyStd(body.c_str());
+        int64_t epochMs = 0;
+        int tzOffsetMin = 0;
+        std::string tokenStd;
+        bool okEpoch = TimeSyncCore::jsonExtractInt64(bodyStd, "epochMs", epochMs);
+        bool okTz = TimeSyncCore::jsonExtractInt(bodyStd, "tzOffsetMin", tzOffsetMin);
+        bool okToken = TimeSyncCore::jsonExtractString(bodyStd, "token", tokenStd);
+        if (!okEpoch || !okTz || !okToken) {
             server.send(400, "text/plain", "Invalid JSON"); return;
         }
-        int64_t epochMs = atoll(epochStr.c_str());
-        int tzOffsetMin = atoi(tzStr.c_str());
-        std::string token = tokenStr.c_str();
+        std::string token = tokenStd;
 
         bool ok = false;
         if (g_time_manager && g_time_provider) {
             // Validate token against our one-time token_
-            TimeSyncLogic logic;
-            // begin で時間窓開始（60s）し、期待トークンを our token_ に固定
-            ArduinoRandomProvider rnd;
-            logic.begin(&rnd, g_time_manager, 60000);
-            logic.setExpectedToken(token_.c_str());
+            logic_.setExpectedToken(token_.c_str());
+
+            
             if (token == token_.c_str()) {
-                if (logic.handleTimeSetRequest(epochMs, tzOffsetMin, token, g_time_manager, g_time_provider)) {
+                if (logic_.handleTimeSetRequest(epochMs, tzOffsetMin, token, g_time_manager, g_time_provider)) {
                     server.send(200, "text/plain", "Time applied");
                     ok = true;
+                    
                 } else {
-                    server.send(400, "text/plain", logic.getErrorMessage());
+                    server.send(400, "text/plain", logic_.getErrorMessage());
+                    
                 }
             } else {
                 server.send(403, "text/plain", "invalid_token");
+                
             }
         } else {
             server.send(500, "text/plain", "No time adapters");
+            
         }
-        if (ok) { server.stop(); WiFi.softAPdisconnect(true); WiFi.mode(WIFI_OFF); status_ = Status::AppliedOk; }
+        if (ok) { server.stop(); WiFi.softAPdisconnect(true); WiFi.mode(WIFI_OFF); }
     });
     server.begin();
 #endif
     running_ = true;
-    status_ = Status::Step1;
 }
 
 void SoftApTimeSyncController::cancel() {
@@ -127,16 +103,30 @@ void SoftApTimeSyncController::cancel() {
     WiFi.mode(WIFI_OFF);
 #endif
     running_ = false;
-    status_ = Status::Idle;
 }
 
 void SoftApTimeSyncController::loopTick() {
-    // Step1では特に行うことなし（将来、クライアント接続検出等）
+#ifdef ARDUINO
+    // Handle incoming HTTP requests for /sync and /time/set
+    server.handleClient();
+
+    // Fallback: station count check → Step2
+    if (logic_.getStatus() == TimeSyncLogic::Status::Step1) {
+        const int stations = WiFi.softAPgetStationNum();
+        if (stations > 0) {
+            logic_.onStationConnected();
+        }
+    }
+#endif
 }
 
 void SoftApTimeSyncController::reissue() {
-    generateCredentials();
 #ifdef ARDUINO
+    ArduinoRandomProvider rnd;
+    logic_.reissue(&rnd);
+    ssid_  = logic_.getCredentials().ssid;
+    psk_   = logic_.getCredentials().psk;
+    token_ = logic_.getCredentials().token;
     if (running_) {
         WiFi.softAPdisconnect(true);
         WiFi.softAP(ssid_.c_str(), psk_.c_str());
@@ -150,7 +140,14 @@ void SoftApTimeSyncController::getCredentials(std::string& outSsid, std::string&
 }
 
 auto SoftApTimeSyncController::getStatus() const -> Status {
-    return status_;
+    switch (logic_.getStatus()) {
+        case TimeSyncLogic::Status::Idle: return Status::Idle;
+        case TimeSyncLogic::Status::Step1: return Status::Step1;
+        case TimeSyncLogic::Status::Step2: return Status::Step2;
+        case TimeSyncLogic::Status::AppliedOk: return Status::AppliedOk;
+        case TimeSyncLogic::Status::Error: return Status::Error;
+    }
+    return Status::Idle;
 }
 
 void SoftApTimeSyncController::getUrlPayload(std::string& outUrl) const {
@@ -163,7 +160,7 @@ void SoftApTimeSyncController::getUrlPayload(std::string& outUrl) const {
 }
 
 const char* SoftApTimeSyncController::getErrorMessage() const {
-    return lastError_.c_str();
+    return logic_.getErrorMessage();
 }
 
 

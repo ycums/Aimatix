@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ITimeSyncController.h"
+#include "TimeSyncLogic.h"
 #include <string>
 
 // SoftAP controller for ESP32 (Step1 scope: Wi‑Fi QR only)
@@ -21,16 +22,16 @@ public:
     const char* getErrorMessage() const override;
 
 private:
-    void generateCredentials();
-
+    // Cached credentials mirrored from logic
     std::string ssid_;
     std::string psk_;
     std::string token_;
 
     bool running_;
-
-    Status status_{Status::Idle};
     std::string lastError_;
+
+    // Pure session logic (lib layer)
+    TimeSyncLogic logic_{};
 };
 
 

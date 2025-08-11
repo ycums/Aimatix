@@ -161,6 +161,7 @@ void setup() {
     main_display_state.setSettingsDisplayState(&settings_display_state);
     time_sync_display_state.setManager(&state_manager);
     time_sync_display_state.setSettingsDisplayState(&settings_display_state);
+    time_sync_display_state.setMainDisplayState(&main_display_state);
     // 状態遷移の初期状態をMainDisplayに
     state_manager.setState(&main_display_state);
 }
