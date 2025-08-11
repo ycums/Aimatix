@@ -11,6 +11,9 @@ public:
 
     // Three-slot button hints (A/B/C). Empty string allowed for unused slot.
     virtual void showHints(const char* hintA, const char* hintB, const char* hintC) = 0;
+
+    // Draw Wi‑Fi QR payload (e.g., WIFI:T:WPA;S:...;P:...;H:false;;)
+    virtual void showWifiQr(const char* payload) = 0;
 };
 
 

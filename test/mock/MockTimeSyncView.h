@@ -11,11 +11,14 @@ public:
         lastHintC = c ? c : "";
         calledShowHints = true;
     }
+    void showWifiQr(const char* payload) override { lastWifiQr = payload ? payload : ""; calledShowWifiQr = true; }
 
     std::string lastTitle;
     std::string lastHintA, lastHintB, lastHintC;
+    std::string lastWifiQr;
     bool calledShowTitle{false};
     bool calledShowHints{false};
+    bool calledShowWifiQr{false};
 };
 
 

@@ -2,6 +2,7 @@
 #include "ui_constants.h"
 #include <cstring>
 #include <string>
+#include <numeric>
 #ifdef ARDUINO
 #include <Arduino.h>
 #endif
