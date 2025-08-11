@@ -3,6 +3,7 @@
 #include "ITimeSyncView.h"
 #include "ITimeSyncController.h"
 #include "TimeSyncCore.h"
+#include "BootAutoSyncPolicy.h"
 #include <string>
 
 // Minimal MVP1 state: draws static title/hints and exits to settings on C short press.
@@ -16,6 +17,7 @@ public:
     void setMainDisplayState(IState* st) { mainDisplayState = st; }
     void setView(ITimeSyncView* v) { view = v; }
     void setController(ITimeSyncController* c) { controller = c; }
+     void setBootAutoSyncPolicy(BootAutoSyncPolicy* p) { bootAutoSyncPolicy = p; }
 
     void onEnter() override {
         step2Drawn = false;
@@ -71,7 +73,8 @@ public:
     }
     void onButtonB() override { /* unused */ }
     void onButtonC() override {
-        // EXIT → SETTINGS_MENU
+        // EXIT → SETTINGS_MENU（同一ブートの自動開始抑止はUI層で行う）
+         if (bootAutoSyncPolicy) { bootAutoSyncPolicy->suppressForThisBoot(); }
         if (controller) controller->cancel();
         if (manager != nullptr && settingsDisplayState != nullptr) {
             manager->setState(settingsDisplayState);
@@ -101,6 +104,7 @@ private:
     IState* mainDisplayState{nullptr};
     ITimeSyncView* view;
     ITimeSyncController* controller;
+     BootAutoSyncPolicy* bootAutoSyncPolicy{nullptr};
 
     bool step2Drawn{false};
     int errorCountdownTicks{0};
