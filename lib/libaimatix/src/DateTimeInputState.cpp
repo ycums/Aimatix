@@ -51,7 +51,7 @@ void DateTimeInputState::onExit() {
 
 void DateTimeInputState::onDraw() {
     if (view != nullptr) {
-        std::string dateTimeStr = formatDateTimeString();
+        const std::string dateTimeStr = formatDateTimeString();
         const int stringPosition = dataPositionToStringPosition(cursorPosition);
         view->showDateTimeString(dateTimeStr, stringPosition);
     }
@@ -161,7 +161,7 @@ void DateTimeInputState::incrementCurrentDigit() {
         maxValue = MAX_DAY_TEN_DIGIT_OTHER;
     } else if (cursorPosition == DIGIT_DAY_ONE) { // 日一の位: 十の位と月に応じて決定
         // 現在の月を取得
-        int currentMonth = dateTimeDigits[DIGIT_MONTH_TEN] * 10 + dateTimeDigits[DIGIT_MONTH_ONE];
+        const int currentMonth = dateTimeDigits[DIGIT_MONTH_TEN] * 10 + dateTimeDigits[DIGIT_MONTH_ONE];
         int maxDaysInMonth = DAYS_IN_MONTH_31; // デフォルト
         
         // 月に応じた最大日数を設定

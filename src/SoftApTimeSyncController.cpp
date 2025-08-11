@@ -5,6 +5,7 @@
 #include "ITimeProvider.h"
 #include "ArduinoRandomProvider.h"
 #include "TimeSyncCore.h"
+#include "TimeZoneUtil.h"
 
 #ifdef ARDUINO
 #include <Arduino.h>
@@ -24,6 +25,9 @@ SoftApTimeSyncController::SoftApTimeSyncController()
 
 void SoftApTimeSyncController::begin() {
 #ifdef ARDUINO
+    // WiFi スタックの再初期化で安定性向上（netstack init errors回避）
+    WiFi.mode(WIFI_OFF);
+    delay(100);
     // Start pure session logic (generates credentials)
     ArduinoRandomProvider rnd;
     logic_.begin(&rnd, g_time_manager, 60000);
@@ -62,9 +66,7 @@ void SoftApTimeSyncController::begin() {
         bool okEpoch = TimeSyncCore::jsonExtractInt64(bodyStd, "epochMs", epochMs);
         bool okTz = TimeSyncCore::jsonExtractInt(bodyStd, "tzOffsetMin", tzOffsetMin);
         bool okToken = TimeSyncCore::jsonExtractString(bodyStd, "token", tokenStd);
-        if (!okEpoch || !okTz || !okToken) {
-            server.send(400, "text/plain", "Invalid JSON"); return;
-        }
+        if (!okEpoch || !okTz || !okToken) { server.send(400, "text/plain", "Invalid JSON"); return; }
         std::string token = tokenStd;
 
         bool ok = false;
@@ -75,9 +77,14 @@ void SoftApTimeSyncController::begin() {
             
             if (token == token_.c_str()) {
                 if (logic_.handleTimeSetRequest(epochMs, tzOffsetMin, token, g_time_manager, g_time_provider)) {
+                    // Apply TZ immediately so localtime reflects smartphone's locale
+                    #ifdef ARDUINO
+                    const std::string tz = TimeZoneUtil::buildPosixTzFromOffsetMinutes(tzOffsetMin);
+                    setenv("TZ", tz.c_str(), 1);
+                    tzset();
+                    #endif
                     server.send(200, "text/plain", "Time applied");
                     ok = true;
-                    
                 } else {
                     server.send(400, "text/plain", logic_.getErrorMessage());
                     

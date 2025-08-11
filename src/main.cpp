@@ -129,6 +129,12 @@ DateTimeInputState datetime_input_state(nullptr, &datetime_input_view_impl);
 #ifdef ARDUINO
 void setup() {
     auto cfg = M5.config();
+    // シリアル出力のボーレート設定（platformio.ini の SERIAL_BAUD に準拠）
+#ifdef SERIAL_BAUD
+    cfg.serial_baudrate = SERIAL_BAUD;
+#else
+    cfg.serial_baudrate = 115200;
+#endif
     cfg.clear_display = true;
     cfg.output_power = true;
     M5.begin(cfg);

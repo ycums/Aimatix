@@ -48,7 +48,7 @@ std::string buildUrl(const std::string& ip, const std::string& token) {
 
 std::string formatOffsetHHMM(int tzOffsetMin) {
     const int sign = tzOffsetMin >= 0 ? 1 : -1;
-    int m = tzOffsetMin * sign;
+    const int m = tzOffsetMin * sign;
     const int hh = m / 60;
     const int mm = m % 60;
     char buf[8];
@@ -71,7 +71,7 @@ bool isWithinWindow(uint32_t startMs, uint32_t nowMs, uint32_t windowMs) {
 std::string buildPosixTZ(int tzOffsetMin) {
     // POSIX TZ uses reversed sign: UTC+9 -> "-9"
     int off = tzOffsetMin;
-    int sign = (off >= 0) ? -1 : +1;
+    const int sign = (off >= 0) ? -1 : +1;
     off = off < 0 ? -off : off;
     const int hh = off / 60;
     const int mm = off % 60;

@@ -3,7 +3,7 @@
 namespace {
 std::string toHexN(uint64_t v, int n) {
     static const char* hex = "0123456789abcdef";
-    std::string s(n, '0');
+    auto s = std::string(n, '0');
     for (int i = n - 1; i >= 0; --i) {
         s[i] = hex[v & 0xF];
         v >>= 4;
@@ -67,7 +67,7 @@ bool TimeSyncLogic::handleTimeSetRequest(int64_t epochMs, int tzOffsetMin, const
         lastError_ = "bad_ports";
         return false;
     }
-    const uint32_t nowMs = static_cast<uint32_t>(timeManager->getCurrentMillis());
+    const auto nowMs = static_cast<uint32_t>(timeManager->getCurrentMillis());
     if (!TimeSyncCore::isWithinWindow(startMs_, nowMs, windowMs_)) {
         status_ = Status::Error;
         lastError_ = "window_expired";

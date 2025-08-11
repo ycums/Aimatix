@@ -6,8 +6,8 @@ bool TimeValidationLogic::isSystemTimeBeforeMinimum(ITimeProvider* timeProvider)
         return true; // timeProviderがnullの場合は補正が必要とみなす
     }
     
-    time_t currentTime = timeProvider->now();
-    time_t minimumTime = getMinimumSystemTime();
+    const time_t currentTime = timeProvider->now();
+    const time_t minimumTime = getMinimumSystemTime();
     
     return currentTime < minimumTime;
 }
@@ -17,7 +17,7 @@ bool TimeValidationLogic::correctSystemTimeToMinimum(ITimeProvider* timeProvider
         return false; // timeProviderがnullの場合は補正不可
     }
     
-    time_t minimumTime = getMinimumSystemTime();
+    const time_t minimumTime = getMinimumSystemTime();
     return timeProvider->setSystemTime(minimumTime);
 }
 
