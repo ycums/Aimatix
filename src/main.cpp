@@ -19,6 +19,7 @@
 #include "ButtonManager.h"
 #include "TimeSyncDisplayState.h"
 #include "TimeSyncViewImpl.h"
+#include "SoftApTimeSyncController.h"
 
 // 共通include（全環境で使用）
 #include <Arduino.h>
@@ -107,8 +108,9 @@ InputDisplayState input_display_state(&input_logic, &input_display_view_impl, m5
 MainDisplayState main_display_state(&state_manager, &input_display_state, &main_display_view_impl, &time_logic, &alarm_logic);
 AlarmDisplayState alarm_display_state(&state_manager, &alarm_display_view_impl, m5_time_provider, m5_time_manager);
 SettingsDisplayState settings_display_state(&settings_logic, &settings_display_view_impl);
-TimeSyncViewImpl time_sync_view_impl(&display_adapter);
-TimeSyncDisplayState time_sync_display_state(&time_sync_view_impl);
+ TimeSyncViewImpl time_sync_view_impl(&display_adapter);
+ SoftApTimeSyncController time_sync_controller;
+ TimeSyncDisplayState time_sync_display_state(&time_sync_view_impl, &time_sync_controller);
 DateTimeInputState datetime_input_state(m5_time_provider.get(), &datetime_input_view_impl);
 #else
 // Native環境用のモック（テスト用）
