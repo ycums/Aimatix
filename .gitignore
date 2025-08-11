@@ -10,6 +10,10 @@ coverage_report.functions.html
 coverage_report.html
 coverage_reports/*
 coverage_report.css
+coverage_report_*.html
+coverage_report_*.css
+coverage_report_*.xml
+coverage_report_*.json
 build/CMakeFiles/cmake.check_cache
 build/.cmake/api/v1/reply/*
 .vscode/
@@ -20,6 +24,9 @@ static_analysis_report.json
 static_analysis_raw.json
 static_analysis_raw.txt
 pio_project_config.json
+
+# GitHub Actions artifacts (downloaded locally for analysis)
+artifacts/
 
 # Python caches
 __pycache__/
