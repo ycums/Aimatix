@@ -5,20 +5,20 @@
 #include <WiFi.h>
 #endif
 
-#include <stdint.h>
+#include <cstdint>
 
 namespace {
-static uint64_t simpleRand64() {
+uint64_t simpleRand64() {
     // 非暗号用の簡易生成（Step1暫定: PoC準拠64bit相当）
-    uint64_t x = 1469598103934665603ull;
+    uint64_t x = 1469598103934665603ULL;
     x ^= (uint64_t)millis();
-    x *= 1099511628211ull;
+    x *= 1099511628211ULL;
     x ^= (uint64_t)micros();
-    x *= 1099511628211ull;
+    x *= 1099511628211ULL;
     return x;
 }
 
-static std::string toHex64(uint64_t v) {
+std::string toHex64(uint64_t v) {
     static const char* hex = "0123456789abcdef";
     std::string s(16, '0');
     for (int i = 15; i >= 0; --i) {

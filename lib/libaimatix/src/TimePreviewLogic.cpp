@@ -8,7 +8,7 @@ TimePreviewLogic::PreviewResult TimePreviewLogic::generatePreview(
     ITimeProvider* timeProvider,
     bool isRelativeMode
 ) {
-    PreviewResult result;
+    PreviewResult result{};
     result.isValid = false;
     result.preview = "";
     
@@ -37,7 +37,7 @@ TimePreviewLogic::PreviewResult TimePreviewLogic::generateRelativePreview(
     time_t relativeTime,
     ITimeProvider* timeProvider
 ) {
-    PreviewResult result;
+    PreviewResult result{};
     result.isValid = false;
     result.preview = "";
     

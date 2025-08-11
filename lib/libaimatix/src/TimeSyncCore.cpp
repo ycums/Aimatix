@@ -1,7 +1,7 @@
 #include "TimeSyncCore.h"
 
 namespace {
-static std::string escapeForWifiField(const std::string& input) {
+std::string escapeForWifiField(const std::string& input) {
     std::string out;
     out.reserve(input.size() * 2);
     for (char c : input) {
