@@ -7,6 +7,10 @@ public:
     virtual void drawText(int x, int y, const char* text, int fontSize) = 0;
     virtual void setTextColor(uint16_t color, uint16_t bgColor) = 0;
     virtual void fillRect(int x, int y, int w, int h, uint16_t color) = 0;
+    // Double-buffered fill for flicker-free drawing. Default: fallback to fillRect.
+    virtual void fillRectBuffered(int x, int y, int w, int h, uint16_t color) {
+        fillRect(x, y, w, h, color);
+    }
     virtual void drawRect(int x, int y, int w, int h, uint16_t color) = 0;
     virtual void setTextDatum(uint8_t datum) = 0;
     virtual void setTextFont(int font) = 0;

@@ -27,6 +27,14 @@ public:
         M5.Display.fillRect(x, y, w, h, color);
     }
 
+    void fillRectBuffered(int x, int y, int w, int h, uint16_t color) override {
+        M5Canvas canvas(&M5.Display);
+        canvas.createSprite(w, h);
+        canvas.fillSprite(color);
+        canvas.pushSprite(x, y);
+        canvas.deleteSprite();
+    }
+
     void drawRect(int x, int y, int w, int h, uint16_t color) override {
         M5.Display.drawRect(x, y, w, h, color);
     }

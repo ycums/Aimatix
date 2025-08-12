@@ -18,7 +18,7 @@ public:
         const int fillH = SCREEN_HEIGHT - HINT_HEIGHT - TITLE_HEIGHT;
         const uint16_t color = on ? AMBER_COLOR : TFT_BLACK;
         if (fillH > 0) {
-            disp_->fillRect(fillX, fillY, fillW, fillH, color);
+            disp_->fillRectBuffered(fillX, fillY, fillW, fillH, color);
         }
     }
 
