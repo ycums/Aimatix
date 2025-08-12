@@ -32,23 +32,11 @@ public:
         if (w <= 0 || h <= 0) {
             return;
         }
-        constexpr int kSwitchArea = 0; // 実測上、HW直塗りが常に優位（Core2）
-        const int area = w * h;
-        if (area >= kSwitchArea) {
-            // 単色の大面積はハードウェア直塗りが最速
-            beginUpdate();
-            M5.Display.writeFillRect(x, y, w, h, color);
-            endUpdate();
-            // 転送完了待ちで描画の競合を抑止
-            M5.Display.waitDisplay();
-            return;
-        }
-        ensureOverlaySprite(w, h);
-        overlaySprite_->fillSprite(color);
+        // Always use hardware fill for rectangles (Core2: HW fill is always faster)
         beginUpdate();
-        overlaySprite_->pushSprite(x, y);
+        M5.Display.writeFillRect(x, y, w, h, color);
         endUpdate();
-        // スプライト転送完了待ち
+        // Wait for transfer to complete to avoid drawing conflicts
         M5.Display.waitDisplay();
     }
 
