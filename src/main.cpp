@@ -184,8 +184,6 @@ void setup() {
     if (state_manager.getCurrentState() == nullptr) {
         state_manager.setState(&main_display_state);
     }
-
-    // ベンチ機能は無効化済み
 }
 #endif
 

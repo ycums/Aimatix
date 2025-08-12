@@ -4,7 +4,6 @@
 #include <M5Unified.h>
 #include <M5GFX.h>
 #include <memory>
-#include <mutex>
 // 色定数を追加
 #include "ui_constants.h"
 
@@ -54,15 +53,13 @@ public:
     }
 
     void beginUpdate() override {
-        // 再入可能 + マルチタスク排他
-        std::lock_guard<std::recursive_mutex> lock(updateMutex_);
+        // 再入可能な begin/end 管理
         if (updateDepth_++ == 0) {
             M5.Display.startWrite();
         }
     }
 
     void endUpdate() override {
-        std::lock_guard<std::recursive_mutex> lock(updateMutex_);
         if (updateDepth_ == 0) return;
         if (--updateDepth_ == 0) {
             M5.Display.endWrite();
@@ -102,44 +99,6 @@ private:
     int overlayH_ = 0;
     int updateDepth_ = 0;
     std::recursive_mutex updateMutex_;
-    
-#ifdef ENABLE_FILL_BENCH
-    void benchFill(int w, int h) {
-        const int N = 10;
-        uint32_t t0 = micros();
-        for (int i = 0; i < N; ++i) {
-            beginUpdate();
-            M5.Display.writeFillRect(0, 0, w, h, TFT_BLACK);
-            endUpdate();
-            M5.Display.waitDisplay();
-        }
-        uint32_t hw_us = (micros() - t0) / N;
-        t0 = micros();
-        for (int i = 0; i < N; ++i) {
-            M5Canvas c(&M5.Display);
-            c.createSprite(w, h);
-            c.fillSprite(TFT_BLACK);
-            beginUpdate();
-            c.pushSprite(0, 0);
-            endUpdate();
-            M5.Display.waitDisplay();
-            c.deleteSprite();
-        }
-        uint32_t spr_new_us = (micros() - t0) / N;
-        ensureOverlaySprite(w, h);
-        t0 = micros();
-        for (int i = 0; i < N; ++i) {
-            overlaySprite_->fillSprite(TFT_BLACK);
-            beginUpdate();
-            overlaySprite_->pushSprite(0, 0);
-            endUpdate();
-            M5.Display.waitDisplay();
-        }
-        uint32_t spr_reuse_us = (micros() - t0) / N;
-        Serial.printf("bench %dx%d: HW=%luus, SPR(new)=%luus, SPR(reuse)=%luus\n",
-                      w, h, (unsigned long)hw_us, (unsigned long)spr_new_us, (unsigned long)spr_reuse_us);
-    }
-#endif
 
     void drawRect(int x, int y, int w, int h, uint16_t color) override {
         M5.Display.drawRect(x, y, w, h, color);
