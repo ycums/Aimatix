@@ -3,6 +3,7 @@
 #include <Arduino.h>
 #include <M5Unified.h>
 #include <M5GFX.h>
+#include <memory>
 // 色定数を追加
 #include "ui_constants.h"
 
@@ -28,12 +29,43 @@ public:
     }
 
     void fillRectBuffered(int x, int y, int w, int h, uint16_t color) override {
-        M5Canvas canvas(&M5.Display);
-        canvas.createSprite(w, h);
-        canvas.fillSprite(color);
-        canvas.pushSprite(x, y);
-        canvas.deleteSprite();
+        if (w <= 0 || h <= 0) {
+            return;
+        }
+        constexpr int kSwitchArea = 120 * 120; // 面積しきい値（要調整）
+        const int area = w * h;
+        if (area >= kSwitchArea) {
+            // 単色の大面積はハードウェア直塗りが最速
+            M5.Display.startWrite();
+            M5.Display.writeFillRect(x, y, w, h, color);
+            M5.Display.endWrite();
+            return;
+        }
+        ensureOverlaySprite(w, h);
+        overlaySprite_->fillSprite(color);
+        overlaySprite_->pushSprite(x, y);
     }
+
+private:
+    void ensureOverlaySprite(int w, int h) {
+        if (!overlaySprite_) {
+            overlaySprite_ = std::unique_ptr<M5Canvas>(new M5Canvas(&M5.Display));
+            overlayW_ = 0;
+            overlayH_ = 0;
+        }
+        if (w != overlayW_ || h != overlayH_) {
+            if (overlayW_ > 0 && overlayH_ > 0) {
+                overlaySprite_->deleteSprite();
+            }
+            overlaySprite_->createSprite(w, h);
+            overlayW_ = w;
+            overlayH_ = h;
+        }
+    }
+
+    std::unique_ptr<M5Canvas> overlaySprite_;
+    int overlayW_ = 0;
+    int overlayH_ = 0;
 
     void drawRect(int x, int y, int w, int h, uint16_t color) override {
         M5.Display.drawRect(x, y, w, h, color);
