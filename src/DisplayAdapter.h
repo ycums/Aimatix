@@ -86,7 +86,6 @@ private:
     int overlayW_ = 0;
     int overlayH_ = 0;
     int updateDepth_ = 0;
-    std::recursive_mutex updateMutex_;
 
     void drawRect(int x, int y, int w, int h, uint16_t color) override {
         M5.Display.drawRect(x, y, w, h, color);
