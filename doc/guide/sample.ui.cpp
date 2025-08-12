@@ -186,7 +186,7 @@ bool show_yes_no_dialog(const char* title, const char* detail) {
   }
 }
 
-// drawMainDisplay, drawNTPSync, drawInputMode, drawScheduleSelect, drawAlarmActive, drawSettingsMenu
+// drawMainDisplay, drawTimeSync, drawInputMode, drawScheduleSelect, drawAlarmActive, drawSettingsMenu
 // これらの関数はmain.cppから呼ばれるため、最低限のダミー実装を用意してリンクエラーを防ぐ。
 // 必要に応じて本実装を追加してください。
 
@@ -262,9 +262,9 @@ void draw_main_display(const Settings& settings) {
   sprite.pushSprite(0, 0);
 }
 
-void draw_ntp_sync() {
+void draw_time_sync() {
   sprite.fillSprite(TFT_BLACK);
-  draw_title_bar("NTP SYNC");
+  draw_title_bar("TIME SYNC");
   draw_button_hints_grid(NULL, NULL, "SKIP");
   sprite.setTextDatum(MC_DATUM);
   sprite.setTextColor(AMBER_COLOR);

@@ -34,7 +34,6 @@
       "lib/Arduino.*",
       "lib/M5Stack.*",
       "lib/WiFi.*",
-      "lib/NTPClient.*",
       "coverage_reports/"
     ],
     "files": [

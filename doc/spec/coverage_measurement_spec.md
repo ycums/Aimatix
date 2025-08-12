@@ -110,7 +110,6 @@ class CoverageMeasurementSystem:
                     "lib/Arduino.*",
                     "lib/M5Stack.*",
                     "lib/WiFi.*",
-                    "lib/NTPClient.*",
                     "coverage_reports/"
                 ],
                 "files": [
@@ -265,7 +264,6 @@ class CoverageMeasurementSystem:
                 '--exclude', 'lib/Arduino.*',
                 '--exclude', 'lib/M5Stack.*',
                 '--exclude', 'lib/WiFi.*',
-                '--exclude', 'lib/NTPClient.*'
             ], capture_output=True, text=True, check=True)
             
             coverage_data = json.loads(result.stdout)
@@ -475,7 +473,6 @@ class CoverageReportGenerator:
                 '--exclude', 'lib/Arduino.*',
                 '--exclude', 'lib/M5Stack.*',
                 '--exclude', 'lib/WiFi.*',
-                '--exclude', 'lib/NTPClient.*'
             ], check=True)
             
             return html_file
@@ -790,7 +787,6 @@ build_unflags = -std=gnu++11
       "lib/Arduino.*",
       "lib/M5Stack.*",
       "lib/WiFi.*",
-      "lib/NTPClient.*",
       "coverage_reports/"
     ],
     "files": [
