@@ -36,14 +36,34 @@ public:
         const int area = w * h;
         if (area >= kSwitchArea) {
             // 単色の大面積はハードウェア直塗りが最速
-            M5.Display.startWrite();
+            beginUpdate();
             M5.Display.writeFillRect(x, y, w, h, color);
-            M5.Display.endWrite();
+            endUpdate();
+            // 転送完了待ちで描画の競合を抑止
+            M5.Display.waitDisplay();
             return;
         }
         ensureOverlaySprite(w, h);
         overlaySprite_->fillSprite(color);
+        beginUpdate();
         overlaySprite_->pushSprite(x, y);
+        endUpdate();
+        // スプライト転送完了待ち
+        M5.Display.waitDisplay();
+    }
+
+    void beginUpdate() override {
+        // 再入可能な begin/end 管理
+        if (updateDepth_++ == 0) {
+            M5.Display.startWrite();
+        }
+    }
+
+    void endUpdate() override {
+        if (updateDepth_ == 0) return;
+        if (--updateDepth_ == 0) {
+            M5.Display.endWrite();
+        }
     }
 
 private:
@@ -66,6 +86,7 @@ private:
     std::unique_ptr<M5Canvas> overlaySprite_;
     int overlayW_ = 0;
     int overlayH_ = 0;
+    int updateDepth_ = 0;
 
     void drawRect(int x, int y, int w, int h, uint16_t color) override {
         M5.Display.drawRect(x, y, w, h, color);
