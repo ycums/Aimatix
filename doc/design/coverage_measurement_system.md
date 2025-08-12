@@ -241,7 +241,6 @@ class CoverageReportGenerator:
             '--exclude', 'lib/Arduino.*',
             '--exclude', 'lib/M5Stack.*',
             '--exclude', 'lib/WiFi.*',
-            '--exclude', 'lib/NTPClient.*'
         ], check=True)
         
         return html_file
@@ -269,7 +268,6 @@ class CoverageReportGenerator:
             '--exclude', 'lib/Arduino.*',
             '--exclude', 'lib/M5Stack.*',
             '--exclude', 'lib/WiFi.*',
-            '--exclude', 'lib/NTPClient.*'
         ], check=True)
         
         return xml_file

@@ -229,7 +229,7 @@ public:
 
 ### 6.1 時刻データフロー
 ```
-NTP Server → WiFi → TimeSync → TimeLogic → UI Display
+Smartphone → SoftAP (local) → TimeSync → TimeLogic → UI Display
 ```
 
 ### 6.2 アラームデータフロー

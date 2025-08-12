@@ -70,7 +70,7 @@ void clear_warning_message();
 
 // Screen drawing functions
 void draw_main_display(const Settings& settings);
-void draw_ntp_sync();
+void draw_time_sync();
 void draw_input_mode(const DigitEditTimeInputState& state);
 void draw_alarm_management(); // アラーム管理画面を追加
 void draw_alarm_active();
@@ -83,7 +83,7 @@ void draw_menu_items(const char** items, int itemCount, int selectedItem, int st
 
 // 各モードの描画関数プロトタイプ
 void draw_main_display();
-void draw_ntp_sync();
+void draw_time_sync();
 void draw_input_mode();
 
 void draw_alarm_active();

@@ -84,7 +84,7 @@ framework = arduino
 lib_deps =
     m5stack/M5Stack @ ^0.4.3
     WiFiProv
-    arduino-libraries/NTPClient @ ^3.2.1
+    # arduino-libraries/NTPClient @ ^3.2.1  # 旧: 非採用
 monitor_speed = 115200
 build_flags = 
     -DCORE_DEBUG_LEVEL=0

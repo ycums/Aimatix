@@ -103,7 +103,7 @@ Aimatixは、M5Stack Fireを使用した集中タイマーシステムです。�
 ### 3.8 起動時の時刻無効時の挙動
 - 無効時刻の判定: `TimeValidationLogic` により、基準日 `2025-01-01 00:00` 未満の時刻は「無効」と判定する。
 - 既定ポリシー: 無効と判定された場合、起動直後に時刻同期を自動開始（提案ダイアログは表示しない）。
-- 同期手段: SoftAP + QR によるローカル時刻反映のみを使用する（NTP 自動同期は本ポリシーの対象外）。
+- 同期手段: SoftAP + QR によるローカル時刻反映のみを使用する。
 - 画面遷移: `BOOT` → `TIME_SYNC` → 成功時 `MAIN_DISPLAY` ／ キャンセル・タイムアウト時 `SETTINGS_MENU`。
 - 表示文言: `TIME SYNC`（既存の `TIME SYNC (QR)` 仕様に準拠）。
 - 将来の設定化: 可能。現時点では設定項目は提供しない（将来追加時は `doc/design/ui_state_management.md` の `TIME SYNC (QR)` セクション方針に準拠）。
@@ -117,7 +117,7 @@ Aimatixは、M5Stack Fireを使用した集中タイマーシステムです。�
 
 ### 4.1 時刻データフロー
 ```
-NTP Server → WiFi → TimeSync → TimeLogic → UI Display
+Smartphone → SoftAP (local) → TimeSync → TimeLogic → UI Display
 ```
 
 ### 4.2 アラームデータフロー
@@ -141,8 +141,8 @@ Hardware Button → ButtonManager → StateTransition → UI Update
 
 ### 5.2 ライブラリ依存
 - **M5Stack**: ハードウェア制御
-- **WiFiProv**: Wi-Fi設定
-- **NTPClient**: 時刻同期
+- **WiFiProv**: Wi‑Fi設定
+- （時刻同期ライブラリは使用しない）
 - **Preferences**: 設定永続化
 
 ### 5.3 設計パターン
