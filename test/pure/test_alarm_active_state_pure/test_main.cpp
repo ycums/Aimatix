@@ -68,10 +68,47 @@ void test_on_exit_overlay_cleared(void) {
   TEST_ASSERT_FALSE(view.last);
 }
 
+void test_reenter_increases_draw_calls(void) {
+  StateManager mgr;
+  DummyState main;
+  MockView view;
+  MockTimeService ts;
+  AlarmActiveState s(&mgr, &view, &main, &ts);
+
+  ts.ms = 0;
+  s.onEnter();
+  ts.ms = 5000;     // 1回目は終了相当まで進める
+  s.onDraw();
+
+  int before = view.calls;
+  s.onEnter();      // 再入
+  s.onDraw();       // 初期ONエッジで描画が増えるはず
+  TEST_ASSERT_TRUE(view.calls > before);
+}
+
+void test_reenter_last_state_is_on(void) {
+  StateManager mgr;
+  DummyState main;
+  MockView view;
+  MockTimeService ts;
+  AlarmActiveState s(&mgr, &view, &main, &ts);
+
+  ts.ms = 0;
+  s.onEnter();
+  ts.ms = 5000;
+  s.onDraw();
+
+  s.onEnter();      // 再入
+  s.onDraw();
+  TEST_ASSERT_TRUE(view.last);
+}
+
 int main(int, char**) {
   UNITY_BEGIN();
   RUN_TEST(test_overlay_called_only_on_toggle_edges);
   RUN_TEST(test_on_exit_overlay_cleared);
+  RUN_TEST(test_reenter_increases_draw_calls);
+  RUN_TEST(test_reenter_last_state_is_on);
   return UNITY_END();
 }
 

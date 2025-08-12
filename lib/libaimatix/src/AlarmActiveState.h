@@ -13,6 +13,8 @@ public:
 
     void onEnter() override {
         elapsedMs_ = 0;
+        // 再入時に前回の開始時刻を引きずらないよう明示的にリセット
+        startedMs_ = 0;
         scheduler_.begin(0);
         // 次回onDrawで必ず一度だけ描画されるようエッジを強制
         lastOn_ = false;
@@ -22,6 +24,8 @@ public:
         // オーバーレイが残らないように必ずOFF描画
         if (view_) { view_->drawFlashOverlay(false); }
         baseDrawn_ = false;
+        // 念のため開始時刻もクリア
+        startedMs_ = 0;
     }
     void onDraw() override {
         // 経過時間を更新（単調msを使用）。フレームごとに差分加算にしても良いが、
