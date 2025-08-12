@@ -33,7 +33,7 @@ public:
         if (w <= 0 || h <= 0) {
             return;
         }
-        constexpr int kSwitchArea = 120 * 120; // 面積しきい値（要調整）
+        constexpr int kSwitchArea = 0; // 実測上、HW直塗りが常に優位（Core2）
         const int area = w * h;
         if (area >= kSwitchArea) {
             // 単色の大面積はハードウェア直塗りが最速
@@ -69,6 +69,17 @@ public:
         }
     }
 
+public:
+#ifdef ENABLE_FILL_BENCH
+    void runFillBench() {
+        const int W = SCREEN_WIDTH;
+        const int heights[] = {40, 80, 120, 160, 200};
+        for (int h : heights) {
+            benchFill(W, h);
+        }
+    }
+#endif
+
 private:
     void ensureOverlaySprite(int w, int h) {
         if (!overlaySprite_) {
@@ -91,6 +102,44 @@ private:
     int overlayH_ = 0;
     int updateDepth_ = 0;
     std::recursive_mutex updateMutex_;
+    
+#ifdef ENABLE_FILL_BENCH
+    void benchFill(int w, int h) {
+        const int N = 10;
+        uint32_t t0 = micros();
+        for (int i = 0; i < N; ++i) {
+            beginUpdate();
+            M5.Display.writeFillRect(0, 0, w, h, TFT_BLACK);
+            endUpdate();
+            M5.Display.waitDisplay();
+        }
+        uint32_t hw_us = (micros() - t0) / N;
+        t0 = micros();
+        for (int i = 0; i < N; ++i) {
+            M5Canvas c(&M5.Display);
+            c.createSprite(w, h);
+            c.fillSprite(TFT_BLACK);
+            beginUpdate();
+            c.pushSprite(0, 0);
+            endUpdate();
+            M5.Display.waitDisplay();
+            c.deleteSprite();
+        }
+        uint32_t spr_new_us = (micros() - t0) / N;
+        ensureOverlaySprite(w, h);
+        t0 = micros();
+        for (int i = 0; i < N; ++i) {
+            overlaySprite_->fillSprite(TFT_BLACK);
+            beginUpdate();
+            overlaySprite_->pushSprite(0, 0);
+            endUpdate();
+            M5.Display.waitDisplay();
+        }
+        uint32_t spr_reuse_us = (micros() - t0) / N;
+        Serial.printf("bench %dx%d: HW=%luus, SPR(new)=%luus, SPR(reuse)=%luus\n",
+                      w, h, (unsigned long)hw_us, (unsigned long)spr_new_us, (unsigned long)spr_reuse_us);
+    }
+#endif
 
     void drawRect(int x, int y, int w, int h, uint16_t color) override {
         M5.Display.drawRect(x, y, w, h, color);
