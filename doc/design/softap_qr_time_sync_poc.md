@@ -69,8 +69,9 @@
   - 改善（任意）: `/generate_204`（204応答）や `hotspot-detect` 互換パスを用意し、接続性チェックを満たして警告を抑止。
 
 ## 実装メモ（PoC）
-- 環境: `env:m5stack-core2-aim36-spike`（`upload_port=COM5`）。
-- エントリ: `src/spikes/aim36/main.cpp`
+- 環境: `env:m5stack-core2-aim36-spike`（歴史的参照。現行は本番環境で `src/SoftApTimeSyncController.cpp` を使用）
+- エントリ: `src/spikes/aim36/main.cpp`（歴史的参照）
+- 現行実装: `src/SoftApTimeSyncController.cpp`
 - 画面: Amber CRTトーン、Wi‑Fi QR → URL QR 切替は APクライアント接続イベントで自動。
 - `/time/set` 成功後は `Local` と `TZ` の情報を Serial ログに出力し AP 停止（本実装では画面固定表示は行わず即時復帰）。
 
