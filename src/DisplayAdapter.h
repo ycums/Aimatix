@@ -4,6 +4,7 @@
 #include <M5Unified.h>
 #include <M5GFX.h>
 #include <memory>
+#include <mutex>
 // 色定数を追加
 #include "ui_constants.h"
 
@@ -53,13 +54,15 @@ public:
     }
 
     void beginUpdate() override {
-        // 再入可能な begin/end 管理
+        // 再入可能 + マルチタスク排他
+        std::lock_guard<std::recursive_mutex> lock(updateMutex_);
         if (updateDepth_++ == 0) {
             M5.Display.startWrite();
         }
     }
 
     void endUpdate() override {
+        std::lock_guard<std::recursive_mutex> lock(updateMutex_);
         if (updateDepth_ == 0) return;
         if (--updateDepth_ == 0) {
             M5.Display.endWrite();
@@ -87,6 +90,7 @@ private:
     int overlayW_ = 0;
     int overlayH_ = 0;
     int updateDepth_ = 0;
+    std::recursive_mutex updateMutex_;
 
     void drawRect(int x, int y, int w, int h, uint16_t color) override {
         M5.Display.drawRect(x, y, w, h, color);
