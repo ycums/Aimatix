@@ -7,7 +7,7 @@
 #include <cstring>
 #include <vector>
 #include <ctime>
-#include "../mock/MockTimeProvider.h"
+#include "ITimeService.h"
 #include "../mock/MockInputDisplayView.h"
 #include <memory>
 #include "DisplayCommon.h" // DisplayCommon関数のインクルードを追加
@@ -18,7 +18,15 @@ extern std::vector<time_t> alarm_times;
 
 // テスト用の固定時刻
 const time_t kFixedTestTime = 1700000000; // 任意の固定値
-std::shared_ptr<MockTimeProvider> testTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+struct MockTimeService : public ITimeService {
+    time_t n; uint32_t ms{0};
+    explicit MockTimeService(time_t now): n(now) {}
+    time_t now() const override { return n; }
+    struct tm* localtime(time_t* t) const override { return ::localtime(t); }
+    bool setSystemTime(time_t t) override { n = t; return true; }
+    uint32_t monotonicMillis() const override { return ms; }
+};
+std::shared_ptr<MockTimeService> testTimeProvider = std::make_shared<MockTimeService>(kFixedTestTime);
 
 void setUp(void) {}
 void tearDown(void) {}
@@ -118,7 +126,7 @@ void test_input_logic_complete_input_value() {
 // 1. onDraw()関数のテスト（1観点ずつ）
 void test_input_display_state_ondraw_basic_display() {
     // 基本表示処理が呼ばれることを確認（1観点）
-    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockTimeProvider = std::make_shared<MockTimeService>(kFixedTestTime);
     auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
     std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
     InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
@@ -135,7 +143,7 @@ void test_input_display_state_ondraw_basic_display() {
 
 void test_input_display_state_onbutton_a() {
     // 数字入力処理のテスト（1観点）
-    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockTimeProvider = std::make_shared<MockTimeService>(kFixedTestTime);
     auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
     std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
     InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
@@ -151,7 +159,7 @@ void test_input_display_state_onbutton_a() {
 
 void test_input_display_state_onbutton_b() {
     // 桁送り処理のテスト（1観点）
-    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockTimeProvider = std::make_shared<MockTimeService>(kFixedTestTime);
     auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
     std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
     InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
@@ -169,7 +177,7 @@ void test_input_display_state_onbutton_b() {
 
 void test_input_display_state_onbutton_c_relative_mode() {
     // 相対値モード確定処理のテスト（1観点）
-    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockTimeProvider = std::make_shared<MockTimeService>(kFixedTestTime);
     auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
     std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
     InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
@@ -194,7 +202,7 @@ void test_input_display_state_onbutton_c_relative_mode() {
 
 void test_input_display_state_onbutton_c_absolute_mode() {
     // 絶対値モード確定処理のテスト（1観点）
-    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockTimeProvider = std::make_shared<MockTimeService>(kFixedTestTime);
     auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
     std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
     InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
@@ -219,7 +227,7 @@ void test_input_display_state_onbutton_c_absolute_mode() {
 
 void test_input_display_state_update_digit_display() {
     // 数字表示更新処理のテスト（1観点）
-    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockTimeProvider = std::make_shared<MockTimeService>(kFixedTestTime);
     auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
     std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
     InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
@@ -234,7 +242,7 @@ void test_input_display_state_update_digit_display() {
 
 void test_input_display_state_update_preview_display() {
     // プレビュー表示更新処理のテスト（1観点）
-    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockTimeProvider = std::make_shared<MockTimeService>(kFixedTestTime);
     auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
     std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
     InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
@@ -251,7 +259,7 @@ void test_input_display_state_update_preview_display() {
 
 void test_input_display_state_generate_absolute_preview() {
     // 絶対値プレビュー生成処理のテスト（1観点）
-    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockTimeProvider = std::make_shared<MockTimeService>(kFixedTestTime);
     auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
     std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
     InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
@@ -276,7 +284,7 @@ void test_input_display_state_generate_absolute_preview() {
 
 void test_input_display_state_generate_relative_preview() {
     // 相対値プレビュー生成処理のテスト（1観点）
-    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockTimeProvider = std::make_shared<MockTimeService>(kFixedTestTime);
     auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
     std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
     InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
@@ -301,7 +309,7 @@ void test_input_display_state_generate_relative_preview() {
 
 void test_input_display_state_relative_mode_setting() {
     // 相対値モード設定処理のテスト（1観点）
-    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockTimeProvider = std::make_shared<MockTimeService>(kFixedTestTime);
     auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
     std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
     InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
@@ -320,7 +328,7 @@ void test_input_display_state_relative_mode_setting() {
 
 void test_input_display_state_setter_methods() {
     // setterメソッドのテスト（1観点）
-    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockTimeProvider = std::make_shared<MockTimeService>(kFixedTestTime);
     auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
     std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
     InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
@@ -330,14 +338,14 @@ void test_input_display_state_setter_methods() {
     state.setManager(nullptr);
     state.setMainDisplayState(nullptr);
     state.setInputLogicForTest(inputLogic.get());
-    state.setTimeProvider(mockTimeProvider.get());
+    state.setTimeService(mockTimeProvider.get());
     
     TEST_ASSERT_TRUE(true); // エラーが発生しなければ成功
 }
 
 void test_input_display_state_get_current_time() {
     // 現在時刻取得処理のテスト（1観点）
-    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockTimeProvider = std::make_shared<MockTimeService>(kFixedTestTime);
     auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
     std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
     InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
@@ -349,7 +357,7 @@ void test_input_display_state_get_current_time() {
 
 void test_input_display_state_validation_methods() {
     // バリデーション処理のテスト（1観点）
-    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockTimeProvider = std::make_shared<MockTimeService>(kFixedTestTime);
     auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
     std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
     InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
@@ -360,7 +368,7 @@ void test_input_display_state_validation_methods() {
 
 void test_input_display_state_error_handling() {
     // エラー処理のテスト（1観点）
-    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockTimeProvider = std::make_shared<MockTimeService>(kFixedTestTime);
     auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
     std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
     InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
@@ -372,7 +380,7 @@ void test_input_display_state_error_handling() {
 
 void test_input_display_state_onbutton_a_long_press() {
     // ボタンA長押し処理のテスト（1観点）
-    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockTimeProvider = std::make_shared<MockTimeService>(kFixedTestTime);
     auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
     std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
     InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
@@ -385,7 +393,7 @@ void test_input_display_state_onbutton_a_long_press() {
 
 void test_input_display_state_onbutton_b_long_press() {
     // ボタンB長押し処理のテスト（1観点）
-    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockTimeProvider = std::make_shared<MockTimeService>(kFixedTestTime);
     auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
     std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
     InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
@@ -400,7 +408,7 @@ void test_input_display_state_onbutton_b_long_press() {
 
 void test_input_display_state_ondraw_comprehensive() {
     // 包括的な表示処理のテスト（1観点）
-    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockTimeProvider = std::make_shared<MockTimeService>(kFixedTestTime);
     auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
     std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
     InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
@@ -417,7 +425,7 @@ void test_input_display_state_ondraw_comprehensive() {
 
 void test_input_display_state_ondraw_error_state() {
     // エラー状態での表示処理のテスト（1観点）
-    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockTimeProvider = std::make_shared<MockTimeService>(kFixedTestTime);
     auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
     std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
     InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
@@ -434,7 +442,7 @@ void test_input_display_state_ondraw_error_state() {
 
 void test_input_display_state_ondraw_preview_state() {
     // プレビュー状態での表示処理のテスト（1観点）
-    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockTimeProvider = std::make_shared<MockTimeService>(kFixedTestTime);
     auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
     std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
     InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
@@ -456,7 +464,7 @@ void test_input_display_state_ondraw_preview_state() {
 
 void test_input_display_state_onbutton_a_comprehensive() {
     // ボタンA処理の包括的テスト（1観点）
-    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockTimeProvider = std::make_shared<MockTimeService>(kFixedTestTime);
     auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
     std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
     InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
@@ -472,7 +480,7 @@ void test_input_display_state_onbutton_a_comprehensive() {
 
 void test_input_display_state_onbutton_b_comprehensive() {
     // ボタンB処理の包括的テスト（1観点）
-    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockTimeProvider = std::make_shared<MockTimeService>(kFixedTestTime);
     auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
     std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
     InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
@@ -488,7 +496,7 @@ void test_input_display_state_onbutton_b_comprehensive() {
 
 void test_input_display_state_onbutton_c_comprehensive() {
     // ボタンC処理の包括的テスト（1観点）
-    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockTimeProvider = std::make_shared<MockTimeService>(kFixedTestTime);
     auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
     std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
     InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
@@ -509,7 +517,7 @@ void test_input_display_state_onbutton_c_comprehensive() {
 
 void test_input_display_state_handle_relative_mode_submit() {
     // 相対値モード確定処理のテスト（1観点）
-    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockTimeProvider = std::make_shared<MockTimeService>(kFixedTestTime);
     auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
     std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
     InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
@@ -530,7 +538,7 @@ void test_input_display_state_handle_relative_mode_submit() {
 
 void test_input_display_state_handle_absolute_mode_submit() {
     // 絶対値モード確定処理のテスト（1観点）
-    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockTimeProvider = std::make_shared<MockTimeService>(kFixedTestTime);
     auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
     std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
     InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
@@ -551,7 +559,7 @@ void test_input_display_state_handle_absolute_mode_submit() {
 
 void test_input_display_state_add_alarm_at_time() {
     // アラーム追加処理のテスト（1観点）
-    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockTimeProvider = std::make_shared<MockTimeService>(kFixedTestTime);
     auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
     std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
     InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
@@ -567,7 +575,7 @@ void test_input_display_state_add_alarm_at_time() {
 
 void test_input_display_state_transition_to_main_display() {
     // メイン画面への遷移処理のテスト（1観点）
-    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockTimeProvider = std::make_shared<MockTimeService>(kFixedTestTime);
     auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
     std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
     InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
@@ -583,7 +591,7 @@ void test_input_display_state_transition_to_main_display() {
 
 void test_input_display_state_is_error_expired() {
     // エラー期限切れチェックのテスト（1観点）
-    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockTimeProvider = std::make_shared<MockTimeService>(kFixedTestTime);
     auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
     std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
     InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
@@ -599,7 +607,7 @@ void test_input_display_state_is_error_expired() {
 
 void test_input_display_state_on_exit() {
     // 終了処理のテスト（1観点）
-    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockTimeProvider = std::make_shared<MockTimeService>(kFixedTestTime);
     auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
     std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
     InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
@@ -618,7 +626,7 @@ void test_input_display_state_on_exit() {
 
 void test_input_display_state_onbutton_a_detailed() {
     // ボタンAの詳細テスト（1観点）
-    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockTimeProvider = std::make_shared<MockTimeService>(kFixedTestTime);
     auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
     std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
     InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
@@ -634,7 +642,7 @@ void test_input_display_state_onbutton_a_detailed() {
 
 void test_input_display_state_onbutton_b_detailed() {
     // ボタンBの詳細テスト（1観点）
-    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockTimeProvider = std::make_shared<MockTimeService>(kFixedTestTime);
     auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
     std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
     InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
@@ -650,7 +658,7 @@ void test_input_display_state_onbutton_b_detailed() {
 
 void test_input_display_state_onbutton_c_detailed() {
     // ボタンCの詳細テスト（1観点）
-    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockTimeProvider = std::make_shared<MockTimeService>(kFixedTestTime);
     auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
     std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
     InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
@@ -666,7 +674,7 @@ void test_input_display_state_onbutton_c_detailed() {
 
 void test_input_display_state_onbutton_a_long_press_detailed() {
     // ボタンA長押しの詳細テスト（1観点）
-    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockTimeProvider = std::make_shared<MockTimeService>(kFixedTestTime);
     auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
     std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
     InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
@@ -682,7 +690,7 @@ void test_input_display_state_onbutton_a_long_press_detailed() {
 
 void test_input_display_state_onbutton_b_long_press_detailed() {
     // ボタンB長押しの詳細テスト（1観点）
-    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockTimeProvider = std::make_shared<MockTimeService>(kFixedTestTime);
     auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
     std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
     InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
@@ -698,7 +706,7 @@ void test_input_display_state_onbutton_b_long_press_detailed() {
 
 void test_input_display_state_onbutton_c_long_press_detailed() {
     // ボタンC長押しの詳細テスト（1観点）
-    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockTimeProvider = std::make_shared<MockTimeService>(kFixedTestTime);
     auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
     std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
     InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
@@ -714,7 +722,7 @@ void test_input_display_state_onbutton_c_long_press_detailed() {
 
 void test_input_display_state_handle_relative_mode_submit_detailed() {
     // 相対モードサブミットの詳細テスト（1観点）
-    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockTimeProvider = std::make_shared<MockTimeService>(kFixedTestTime);
     auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
     std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
     InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
@@ -730,7 +738,7 @@ void test_input_display_state_handle_relative_mode_submit_detailed() {
 
 void test_input_display_state_handle_absolute_mode_submit_detailed() {
     // 絶対モードサブミットの詳細テスト（1観点）
-    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockTimeProvider = std::make_shared<MockTimeService>(kFixedTestTime);
     auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
     std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
     InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
@@ -746,7 +754,7 @@ void test_input_display_state_handle_absolute_mode_submit_detailed() {
 
 void test_input_display_state_add_alarm_at_time_detailed() {
     // アラーム時刻追加の詳細テスト（1観点）
-    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockTimeProvider = std::make_shared<MockTimeService>(kFixedTestTime);
     auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
     std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
     InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
@@ -762,7 +770,7 @@ void test_input_display_state_add_alarm_at_time_detailed() {
 
 void test_input_display_state_get_current_time_detailed() {
     // 現在時刻取得の詳細テスト（1観点）
-    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockTimeProvider = std::make_shared<MockTimeService>(kFixedTestTime);
     auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
     std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
     InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
@@ -778,7 +786,7 @@ void test_input_display_state_get_current_time_detailed() {
 
 void test_input_display_state_is_error_expired_detailed() {
     // エラー期限切れチェックの詳細テスト（1観点）
-    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockTimeProvider = std::make_shared<MockTimeService>(kFixedTestTime);
     auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
     std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
     InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
@@ -794,7 +802,7 @@ void test_input_display_state_is_error_expired_detailed() {
 
 void test_input_display_state_transition_to_main_display_detailed() {
     // メイン画面遷移の詳細テスト（1観点）
-    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockTimeProvider = std::make_shared<MockTimeService>(kFixedTestTime);
     auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
     std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
     InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
@@ -810,7 +818,7 @@ void test_input_display_state_transition_to_main_display_detailed() {
 
 void test_input_display_state_error_handling_detailed() {
     // エラーハンドリングの詳細テスト（1観点）
-    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockTimeProvider = std::make_shared<MockTimeService>(kFixedTestTime);
     auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
     std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
     InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
@@ -826,7 +834,7 @@ void test_input_display_state_error_handling_detailed() {
 
 void test_input_display_state_validation_methods_detailed() {
     // バリデーション処理の詳細テスト（1観点）
-    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockTimeProvider = std::make_shared<MockTimeService>(kFixedTestTime);
     auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
     std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
     InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
@@ -1006,7 +1014,7 @@ void test_display_common_grid_lines_branches() {
 
 // === AIM-11: 追加テスト本体 ===
 void test_abs_init_digit3_entered_true() {
-    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockTimeProvider = std::make_shared<MockTimeService>(kFixedTestTime);
     auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
     std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
     InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
@@ -1019,7 +1027,7 @@ void test_abs_init_digit3_entered_true() {
 }
 
 void test_abs_b_short_from___0_to__00() {
-    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockTimeProvider = std::make_shared<MockTimeService>(kFixedTestTime);
     auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
     std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
     InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
@@ -1034,7 +1042,7 @@ void test_abs_b_short_from___0_to__00() {
 }
 
 void test_abs_b_short_from__00_to_0_00() {
-    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockTimeProvider = std::make_shared<MockTimeService>(kFixedTestTime);
     auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
     std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
     InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
@@ -1050,7 +1058,7 @@ void test_abs_b_short_from__00_to_0_00() {
 }
 
 void test_abs_b_short_from_0_00_to_00_00() {
-    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockTimeProvider = std::make_shared<MockTimeService>(kFixedTestTime);
     auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
     std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
     InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
@@ -1067,7 +1075,7 @@ void test_abs_b_short_from_0_00_to_00_00() {
 }
 
 void test_abs_b_short_reject_on_00_00() {
-    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockTimeProvider = std::make_shared<MockTimeService>(kFixedTestTime);
     auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
     std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
     InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
@@ -1086,7 +1094,7 @@ void test_abs_b_short_reject_on_00_00() {
 }
 
 void test_rel_init_all_clear_entered_false() {
-    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockTimeProvider = std::make_shared<MockTimeService>(kFixedTestTime);
     auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
     std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
     InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
@@ -1099,7 +1107,7 @@ void test_rel_init_all_clear_entered_false() {
 }
 
 void test_rel_init_title_is_REL_plus() {
-    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockTimeProvider = std::make_shared<MockTimeService>(kFixedTestTime);
     auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
     std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
     InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());
@@ -1112,7 +1120,7 @@ void test_rel_init_title_is_REL_plus() {
 }
 
 void test_abs_reset_long_b_digit3_entered_true() {
-    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    auto mockTimeProvider = std::make_shared<MockTimeService>(kFixedTestTime);
     auto mockView = std::unique_ptr<MockInputDisplayView>(new MockInputDisplayView());
     std::unique_ptr<InputLogic> inputLogic(new InputLogic(mockTimeProvider));
     InputDisplayState state(inputLogic.get(), mockView.get(), mockTimeProvider.get());

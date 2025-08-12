@@ -2,43 +2,32 @@
 #include "AlarmDisplayState.h"
 #include "IAlarmDisplayView.h"
 #include "AlarmLogic.h"
-#include "ITimeProvider.h"
-#include "ITimeManager.h"
+#include "ITimeService.h"
 #include <vector>
 #include <ctime>
 #include <memory>
 
-// モックTimeProviderクラス
-class MockTimeProvider : public ITimeProvider {
+// モックTimeServiceクラス
+class MockTimeService : public ITimeService {
 public:
     time_t mockTime = 1000;
-    unsigned long mockMillis = 0;
+    uint32_t mockMillis = 0;
     bool lastSetSystemTimeResult = true;
     
     time_t now() const override { return mockTime; }
     struct tm* localtime(time_t* t) const override { return ::localtime(t); }
+    uint32_t monotonicMillis() const override { return mockMillis; }
     bool setSystemTime(time_t time) override { 
         mockTime = time; 
         return lastSetSystemTimeResult; 
     }
     
     void setTime(time_t time) { mockTime = time; }
-    void setMillis(unsigned long millis) { mockMillis = millis; }
+    void setMillis(uint32_t millis) { mockMillis = millis; }
     void setSetSystemTimeResult(bool result) { lastSetSystemTimeResult = result; }
 };
 
-// モックTimeManagerクラス
-class MockTimeManager : public ITimeManager {
-public:
-    unsigned long mockMillis = 0;
-    time_t mockTime = 1000;
-    
-    unsigned long getCurrentMillis() const override { return mockMillis; }
-    time_t getCurrentTime() const override { return mockTime; }
-    
-    void setMillis(unsigned long millis) { mockMillis = millis; }
-    void setTime(time_t time) { mockTime = time; }
-};
+// ITimeService一本化のため、TimeManagerモックは不要
 
 // モックAlarmDisplayViewクラス
 class MockAlarmDisplayView : public IAlarmDisplayView {
@@ -121,9 +110,8 @@ void tearDown(void) {
 void test_AlarmDisplayState_Initialization() {
     MockAlarmDisplayView mockView;
     MockStateManager mockManager;
-    auto timeProvider = std::make_shared<MockTimeProvider>();
-    auto timeManager = std::make_shared<MockTimeManager>();
-    AlarmDisplayState state(&mockManager, &mockView, timeProvider, timeManager);
+    auto timeService = std::make_shared<MockTimeService>();
+    AlarmDisplayState state(&mockManager, &mockView, timeService);
     
     TEST_ASSERT_EQUAL(0, state.getSelectedIndex());
 }
@@ -132,9 +120,8 @@ void test_AlarmDisplayState_Initialization() {
 void test_AlarmDisplayState_SelectionManagement() {
     MockAlarmDisplayView mockView;
     MockStateManager mockManager;
-    auto timeProvider = std::make_shared<MockTimeProvider>();
-    auto timeManager = std::make_shared<MockTimeManager>();
-    AlarmDisplayState state(&mockManager, &mockView, timeProvider, timeManager);
+    auto timeService = std::make_shared<MockTimeService>();
+    AlarmDisplayState state(&mockManager, &mockView, timeService);
     
     state.setSelectedIndex(2);
     TEST_ASSERT_EQUAL(2, state.getSelectedIndex());
@@ -144,9 +131,8 @@ void test_AlarmDisplayState_SelectionManagement() {
 void test_AlarmDisplayState_MoveUp() {
     MockAlarmDisplayView mockView;
     MockStateManager mockManager;
-    auto timeProvider = std::make_shared<MockTimeProvider>();
-    auto timeManager = std::make_shared<MockTimeManager>();
-    AlarmDisplayState state(&mockManager, &mockView, timeProvider, timeManager);
+    auto timeService = std::make_shared<MockTimeService>();
+    AlarmDisplayState state(&mockManager, &mockView, timeService);
     
     // アラームを追加
     alarm_times.push_back(time(nullptr) + 3600);
@@ -162,9 +148,8 @@ void test_AlarmDisplayState_MoveUp() {
 void test_AlarmDisplayState_MoveDown() {
     MockAlarmDisplayView mockView;
     MockStateManager mockManager;
-    auto timeProvider = std::make_shared<MockTimeProvider>();
-    auto timeManager = std::make_shared<MockTimeManager>();
-    AlarmDisplayState state(&mockManager, &mockView, timeProvider, timeManager);
+    auto timeService = std::make_shared<MockTimeService>();
+    AlarmDisplayState state(&mockManager, &mockView, timeService);
     
     // アラームを追加
     alarm_times.push_back(time(nullptr) + 3600);
@@ -180,9 +165,8 @@ void test_AlarmDisplayState_MoveDown() {
 void test_AlarmDisplayState_MoveToTop() {
     MockAlarmDisplayView mockView;
     MockStateManager mockManager;
-    auto timeProvider = std::make_shared<MockTimeProvider>();
-    auto timeManager = std::make_shared<MockTimeManager>();
-    AlarmDisplayState state(&mockManager, &mockView, timeProvider, timeManager);
+    auto timeService = std::make_shared<MockTimeService>();
+    AlarmDisplayState state(&mockManager, &mockView, timeService);
     
     // アラームを追加
     alarm_times.push_back(time(nullptr) + 3600);
@@ -198,9 +182,8 @@ void test_AlarmDisplayState_MoveToTop() {
 void test_AlarmDisplayState_MoveToBottom() {
     MockAlarmDisplayView mockView;
     MockStateManager mockManager;
-    auto timeProvider = std::make_shared<MockTimeProvider>();
-    auto timeManager = std::make_shared<MockTimeManager>();
-    AlarmDisplayState state(&mockManager, &mockView, timeProvider, timeManager);
+    auto timeService = std::make_shared<MockTimeService>();
+    AlarmDisplayState state(&mockManager, &mockView, timeService);
     
     // アラームを追加
     alarm_times.push_back(time(nullptr) + 3600);
@@ -218,9 +201,8 @@ void test_AlarmDisplayState_MoveToBottom() {
 void test_AlarmDisplayState_DeleteAlarm_Normal() {
     MockAlarmDisplayView mockView;
     MockStateManager mockManager;
-    auto timeProvider = std::make_shared<MockTimeProvider>();
-    auto timeManager = std::make_shared<MockTimeManager>();
-    AlarmDisplayState state(&mockManager, &mockView, timeProvider, timeManager);
+    auto timeService = std::make_shared<MockTimeService>();
+    AlarmDisplayState state(&mockManager, &mockView, timeService);
     
     // アラームを追加
     time_t alarmTime = time(nullptr) + 3600;
@@ -238,9 +220,8 @@ void test_AlarmDisplayState_DeleteAlarm_Normal() {
 void test_AlarmDisplayState_DeleteAlarm_AlreadyRemoved() {
     MockAlarmDisplayView mockView;
     MockStateManager mockManager;
-    auto timeProvider = std::make_shared<MockTimeProvider>();
-    auto timeManager = std::make_shared<MockTimeManager>();
-    AlarmDisplayState state(&mockManager, &mockView, timeProvider, timeManager);
+    auto timeService = std::make_shared<MockTimeService>();
+    AlarmDisplayState state(&mockManager, &mockView, timeService);
     
     alarm_times.clear(); // 明示的にリセット
     // アラームを追加して削除
@@ -262,12 +243,11 @@ void test_AlarmDisplayState_DeleteAlarm_AlreadyRemoved() {
 void test_AlarmDisplayState_HybridApproach_RealTimeUpdate() {
     MockAlarmDisplayView mockView;
     MockStateManager mockManager;
-    auto timeProvider = std::make_shared<MockTimeProvider>();
-    auto timeManager = std::make_shared<MockTimeManager>();
-    AlarmDisplayState state(&mockManager, &mockView, timeProvider, timeManager);
+    auto timeService = std::make_shared<MockTimeService>();
+    AlarmDisplayState state(&mockManager, &mockView, timeService);
     
     // ユーザー操作から十分な時間が経過
-    timeManager->setMillis(5000); // 5秒経過
+    timeService->setMillis(5000); // 5秒経過
     
     // アラームを追加して描画を有効にする
     alarm_times.push_back(time(nullptr) + 3600);
@@ -282,12 +262,11 @@ void test_AlarmDisplayState_HybridApproach_RealTimeUpdate() {
 void test_AlarmDisplayState_HybridApproach_UpdateSuppression() {
     MockAlarmDisplayView mockView;
     MockStateManager mockManager;
-    auto timeProvider = std::make_shared<MockTimeProvider>();
-    auto timeManager = std::make_shared<MockTimeManager>();
-    AlarmDisplayState state(&mockManager, &mockView, timeProvider, timeManager);
+    auto timeService = std::make_shared<MockTimeService>();
+    AlarmDisplayState state(&mockManager, &mockView, timeService);
     
     // ユーザー操作直後
-    timeManager->setMillis(100); // 0.1秒経過
+    timeService->setMillis(100); // 0.1秒経過
     
     mockView.reset();
     state.onDraw(); // 更新抑制される
@@ -300,9 +279,8 @@ void test_AlarmDisplayState_HybridApproach_UpdateSuppression() {
 void test_AlarmDisplayState_EmptyList() {
     MockAlarmDisplayView mockView;
     MockStateManager mockManager;
-    auto timeProvider = std::make_shared<MockTimeProvider>();
-    auto timeManager = std::make_shared<MockTimeManager>();
-    AlarmDisplayState state(&mockManager, &mockView, timeProvider, timeManager);
+    auto timeService = std::make_shared<MockTimeService>();
+    AlarmDisplayState state(&mockManager, &mockView, timeService);
     
     // アラームリストを空にする
     alarm_times.clear();
@@ -317,9 +295,8 @@ void test_AlarmDisplayState_EmptyList() {
 void test_AlarmDisplayState_BoundaryConditions() {
     MockAlarmDisplayView mockView;
     MockStateManager mockManager;
-    auto timeProvider = std::make_shared<MockTimeProvider>();
-    auto timeManager = std::make_shared<MockTimeManager>();
-    AlarmDisplayState state(&mockManager, &mockView, timeProvider, timeManager);
+    auto timeService = std::make_shared<MockTimeService>();
+    AlarmDisplayState state(&mockManager, &mockView, timeService);
     
     // アラームを追加
     alarm_times.push_back(time(nullptr) + 3600);
@@ -341,9 +318,8 @@ void test_AlarmDisplayState_BoundaryConditions() {
 void test_AlarmDisplayState_ValueBasedDeletion() {
     MockAlarmDisplayView mockView;
     MockStateManager mockManager;
-    auto timeProvider = std::make_shared<MockTimeProvider>();
-    auto timeManager = std::make_shared<MockTimeManager>();
-    AlarmDisplayState state(&mockManager, &mockView, timeProvider, timeManager);
+    auto timeService = std::make_shared<MockTimeService>();
+    AlarmDisplayState state(&mockManager, &mockView, timeService);
     
     // 同じ時刻のアラームを複数追加
     time_t alarmTime = time(nullptr) + 3600;
@@ -363,17 +339,16 @@ void test_AlarmDisplayState_ValueBasedDeletion() {
 void test_AlarmDisplayState_TimeBasedDeletion_DisplayClear() {
     MockAlarmDisplayView mockView;
     MockStateManager mockManager;
-    auto timeProvider = std::make_shared<MockTimeProvider>();
-    auto timeManager = std::make_shared<MockTimeManager>();
-    AlarmDisplayState state(&mockManager, &mockView, timeProvider, timeManager);
+    auto timeService = std::make_shared<MockTimeService>();
+    AlarmDisplayState state(&mockManager, &mockView, timeService);
     
     alarm_times.clear(); // 明示的にリセット
     // 過去のアラームを追加
     time_t pastAlarm = time(nullptr) - 3600; // 1時間前
     alarm_times.push_back(pastAlarm);
     
-    // MockTimeProviderの時刻を未来に設定
-    timeProvider->setTime(time(nullptr) + 3600); // 1時間後
+    // MockTimeServiceの時刻を未来に設定
+    timeService->setTime(time(nullptr) + 3600); // 1時間後
     
     // 初期化時に過去のアラームが削除されることを確認
     state.onEnter();
@@ -386,9 +361,8 @@ void test_AlarmDisplayState_TimeBasedDeletion_DisplayClear() {
 void test_AlarmDisplayState_NoAlarmsDisplay_NoFlicker() {
     MockAlarmDisplayView mockView;
     MockStateManager mockManager;
-    auto timeProvider = std::make_shared<MockTimeProvider>();
-    auto timeManager = std::make_shared<MockTimeManager>();
-    AlarmDisplayState state(&mockManager, &mockView, timeProvider, timeManager);
+    auto timeService = std::make_shared<MockTimeService>();
+    AlarmDisplayState state(&mockManager, &mockView, timeService);
     
     // アラームリストを空にする
     alarm_times.clear();
@@ -408,9 +382,8 @@ void test_AlarmDisplayState_NoAlarmsDisplay_NoFlicker() {
 void test_AlarmDisplayState_PartialAreaClear() {
     MockAlarmDisplayView mockView;
     MockStateManager mockManager;
-    auto timeProvider = std::make_shared<MockTimeProvider>();
-    auto timeManager = std::make_shared<MockTimeManager>();
-    AlarmDisplayState state(&mockManager, &mockView, timeProvider, timeManager);
+    auto timeService = std::make_shared<MockTimeService>();
+    AlarmDisplayState state(&mockManager, &mockView, timeService);
     
     alarm_times.clear(); // 明示的にリセット
     // 複数のアラームを追加
@@ -425,7 +398,7 @@ void test_AlarmDisplayState_PartialAreaClear() {
     alarm_times.pop_back();
     
     // 十分な時間経過を設定してshouldUpdateRealTime()がtrueを返すようにする
-    timeManager->setMillis(5000);
+    timeService->setMillis(5000);
     
     mockView.lastShownAlarms.clear(); // ここでリセット
     
@@ -440,9 +413,8 @@ void test_AlarmDisplayState_OnButtonCLongPress() {
     MockStateManager mockManager;
     MockStateManager mainState;
     mainState.lastSetState = nullptr; // 明示的に初期化
-    auto timeProvider = std::make_shared<MockTimeProvider>();
-    auto timeManager = std::make_shared<MockTimeManager>();
-    AlarmDisplayState state(&mockManager, &mockView, timeProvider, timeManager);
+    auto timeService = std::make_shared<MockTimeService>();
+    AlarmDisplayState state(&mockManager, &mockView, timeService);
     
     state.setMainDisplayState(&mainState);
     state.onButtonCLongPress();
@@ -455,9 +427,8 @@ void test_AlarmDisplayState_OnButtonCLongPress() {
 void test_AlarmDisplayState_MultipleEntryDisplayBug() {
     MockAlarmDisplayView mockView;
     MockStateManager mockManager;
-    auto timeProvider = std::make_shared<MockTimeProvider>();
-    auto timeManager = std::make_shared<MockTimeManager>();
-    AlarmDisplayState state(&mockManager, &mockView, timeProvider, timeManager);
+    auto timeService = std::make_shared<MockTimeService>();
+    AlarmDisplayState state(&mockManager, &mockView, timeService);
     
     // アラームを追加
     alarm_times.clear();
@@ -486,9 +457,8 @@ void test_AlarmDisplayState_MultipleEntryDisplayBug() {
 void test_AlarmDisplayState_OnExit() {
     MockAlarmDisplayView mockView;
     MockStateManager mockManager;
-    auto timeProvider = std::make_shared<MockTimeProvider>();
-    auto timeManager = std::make_shared<MockTimeManager>();
-    AlarmDisplayState state(&mockManager, &mockView, timeProvider, timeManager);
+    auto timeService = std::make_shared<MockTimeService>();
+    AlarmDisplayState state(&mockManager, &mockView, timeService);
     
     // 終了処理を実行（現在は何もしない）
     state.onExit();
@@ -500,11 +470,10 @@ void test_AlarmDisplayState_OnExit() {
 // 未カバー分岐テスト: view == nullptrの場合のonDraw
 void test_AlarmDisplayState_OnDraw_WithNullView() {
     MockStateManager mockManager;
-    auto timeProvider = std::make_shared<MockTimeProvider>();
-    auto timeManager = std::make_shared<MockTimeManager>();
+    auto timeService = std::make_shared<MockTimeService>();
     
     // viewをnullptrに設定
-    AlarmDisplayState state(&mockManager, nullptr, timeProvider, timeManager);
+    AlarmDisplayState state(&mockManager, nullptr, timeService);
     
     // onDrawを呼び出し（エラーが発生しないことを確認）
     state.onDraw();
@@ -515,11 +484,10 @@ void test_AlarmDisplayState_OnDraw_WithNullView() {
 // 未カバー分岐テスト: view == nullptrの場合のforceDraw
 void test_AlarmDisplayState_ForceDraw_WithNullView() {
     MockStateManager mockManager;
-    auto timeProvider = std::make_shared<MockTimeProvider>();
-    auto timeManager = std::make_shared<MockTimeManager>();
+    auto timeService = std::make_shared<MockTimeService>();
     
     // viewをnullptrに設定
-    AlarmDisplayState state(&mockManager, nullptr, timeProvider, timeManager);
+    AlarmDisplayState state(&mockManager, nullptr, timeService);
     
     // forceDrawを呼び出し（エラーが発生しないことを確認）
     // 注意: forceDrawはprivateなので、onEnterを通じてテスト

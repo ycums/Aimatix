@@ -1,12 +1,20 @@
 #include <unity.h>
 #include "TimePreviewLogic.h"
 #include "InputLogic.h"
-#include "../mock/MockTimeProvider.h"
+#include "ITimeService.h"
 #include <memory>
 #include <string>
 
 const time_t kFixedTestTime = 1700000000;
-std::shared_ptr<MockTimeProvider> testTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+struct MockTimeService : public ITimeService {
+    time_t n; uint32_t ms{0};
+    explicit MockTimeService(time_t now): n(now) {}
+    time_t now() const override { return n; }
+    struct tm* localtime(time_t* t) const override { return ::localtime(t); }
+    bool setSystemTime(time_t t) override { n = t; return true; }
+    uint32_t monotonicMillis() const override { return ms; }
+};
+std::shared_ptr<MockTimeService> testTimeProvider = std::make_shared<MockTimeService>(kFixedTestTime);
 
 void setUp(void) {}
 void tearDown(void) {}
@@ -124,7 +132,7 @@ void test_preview_abs_00_00_from_23_59_is_plus1d_00_00() {
     base_tm.tm_year = 124; base_tm.tm_mon = 0; base_tm.tm_mday = 1; 
     base_tm.tm_hour = 23; base_tm.tm_min = 59; base_tm.tm_sec = 0;
     time_t now = mktime(&base_tm);
-    auto provider = std::make_shared<MockTimeProvider>(now);
+    auto provider = std::make_shared<MockTimeService>(now);
 
     int digits[4] = {0,0,0,0};
     bool entered[4] = {true,true,true,true}; // 00:00 完全入力
@@ -140,7 +148,7 @@ void test_preview_abs_00_00_from_00_00_is_plus1d_00_00() {
     base_tm.tm_year = 124; base_tm.tm_mon = 0; base_tm.tm_mday = 1; 
     base_tm.tm_hour = 0; base_tm.tm_min = 0; base_tm.tm_sec = 0;
     time_t now = mktime(&base_tm);
-    auto provider = std::make_shared<MockTimeProvider>(now);
+    auto provider = std::make_shared<MockTimeService>(now);
 
     int digits[4] = {0,0,0,0};
     bool entered[4] = {true,true,true,true};
@@ -156,7 +164,7 @@ void test_preview_abs___0_from_14_35_is_15_00() {
     base_tm.tm_year = 124; base_tm.tm_mon = 0; base_tm.tm_mday = 1; 
     base_tm.tm_hour = 14; base_tm.tm_min = 35; base_tm.tm_sec = 0;
     time_t now = mktime(&base_tm);
-    auto provider = std::make_shared<MockTimeProvider>(now);
+    auto provider = std::make_shared<MockTimeService>(now);
 
     int digits[4] = {0,0,0,0};
     bool entered[4] = {false,false,false,true};
@@ -172,7 +180,7 @@ void test_preview_rel_plus_5_min_from_14_35_is_14_40() {
     base_tm.tm_year = 124; base_tm.tm_mon = 0; base_tm.tm_mday = 1; 
     base_tm.tm_hour = 14; base_tm.tm_min = 35; base_tm.tm_sec = 0;
     time_t now = mktime(&base_tm);
-    auto provider = std::make_shared<MockTimeProvider>(now);
+    auto provider = std::make_shared<MockTimeService>(now);
 
     InputLogic logic(provider);
     logic.reset();
@@ -189,7 +197,7 @@ void test_preview_rel_plus_0_min_from_14_35_is_14_35() {
     base_tm.tm_year = 124; base_tm.tm_mon = 0; base_tm.tm_mday = 1; 
     base_tm.tm_hour = 14; base_tm.tm_min = 35; base_tm.tm_sec = 0;
     time_t now = mktime(&base_tm);
-    auto provider = std::make_shared<MockTimeProvider>(now);
+    auto provider = std::make_shared<MockTimeService>(now);
 
     InputLogic logic(provider);
     logic.reset();
@@ -238,7 +246,7 @@ void test_time_preview_logic_absolute_input_4_45_to_5_00() {
     time_t now = mktime(&base_tm);
     
     // MockTimeProviderで時刻を固定
-    auto timeProvider = std::make_shared<MockTimeProvider>(now);
+    auto timeProvider = std::make_shared<MockTimeService>(now);
     
     // _5:00 を入力
     int digits[4] = {0, 5, 0, 0};
@@ -259,7 +267,7 @@ void test_time_preview_logic_absolute_input_3_45_to_4_00() {
     base_tm.tm_hour = 3; base_tm.tm_min = 45; base_tm.tm_sec = 0;
     time_t now = mktime(&base_tm);
     
-    auto timeProvider = std::make_shared<MockTimeProvider>(now);
+    auto timeProvider = std::make_shared<MockTimeService>(now);
     
     // _4:00 を入力
     int digits[4] = {0, 4, 0, 0};
@@ -280,7 +288,7 @@ void test_time_preview_logic_absolute_input_23_45_to_0_00() {
     base_tm.tm_hour = 23; base_tm.tm_min = 45; base_tm.tm_sec = 0;
     time_t now = mktime(&base_tm);
     
-    auto timeProvider = std::make_shared<MockTimeProvider>(now);
+    auto timeProvider = std::make_shared<MockTimeService>(now);
     
     // _0:00 を入力
     int digits[4] = {0, 0, 0, 0};
@@ -301,7 +309,7 @@ void test_time_preview_logic_absolute_input_23_45_to_23_50() {
     base_tm.tm_hour = 23; base_tm.tm_min = 45; base_tm.tm_sec = 0;
     time_t now = mktime(&base_tm);
     
-    auto timeProvider = std::make_shared<MockTimeProvider>(now);
+    auto timeProvider = std::make_shared<MockTimeService>(now);
     
     // _23:50 を入力（23は2桁なので、時十=2, 時一=3、両方入力済み）
     int digits[4] = {2, 3, 5, 0};
@@ -322,7 +330,7 @@ void test_time_preview_logic_issue_8_reproduction() {
     base_tm.tm_hour = 4; base_tm.tm_min = 45; base_tm.tm_sec = 0;
     time_t now = mktime(&base_tm);
     
-    auto timeProvider = std::make_shared<MockTimeProvider>(now);
+    auto timeProvider = std::make_shared<MockTimeService>(now);
     
     // _5:00 を入力
     int digits[4] = {0, 5, 0, 0};
@@ -345,7 +353,7 @@ void test_time_preview_logic_issue_8_edge_case() {
     base_tm.tm_hour = 4; base_tm.tm_min = 59; base_tm.tm_sec = 0;
     time_t now = mktime(&base_tm);
     
-    auto timeProvider = std::make_shared<MockTimeProvider>(now);
+    auto timeProvider = std::make_shared<MockTimeService>(now);
     
     // _5:00 を入力
     int digits[4] = {0, 5, 0, 0};
@@ -368,7 +376,7 @@ void test_time_preview_logic_issue_8_4_59_to_5_00() {
     base_tm.tm_hour = 4; base_tm.tm_min = 59; base_tm.tm_sec = 0;
     time_t now = mktime(&base_tm);
     
-    auto timeProvider = std::make_shared<MockTimeProvider>(now);
+    auto timeProvider = std::make_shared<MockTimeService>(now);
     
     // 5:00 を入力（完全入力）
     int digits[4] = {0, 5, 0, 0};
@@ -391,7 +399,7 @@ void test_time_preview_logic_issue_8_4_55_to_5_00() {
     base_tm.tm_hour = 4; base_tm.tm_min = 55; base_tm.tm_sec = 0;
     time_t now = mktime(&base_tm);
     
-    auto timeProvider = std::make_shared<MockTimeProvider>(now);
+    auto timeProvider = std::make_shared<MockTimeService>(now);
     
     // _5:00 を入力（部分入力）
     int digits[4] = {0, 5, 0, 0};
@@ -414,7 +422,7 @@ void test_time_preview_logic_issue_8_actual_problem() {
     base_tm.tm_hour = 4; base_tm.tm_min = 55; base_tm.tm_sec = 0;
     time_t now = mktime(&base_tm);
     
-    auto timeProvider = std::make_shared<MockTimeProvider>(now);
+    auto timeProvider = std::make_shared<MockTimeService>(now);
     
     // _5:00 を入力（部分入力）
     int digits[4] = {0, 5, 0, 0};

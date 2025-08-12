@@ -24,8 +24,8 @@ auto TimeSyncLogic::makeToken(uint64_t r) -> std::string {
     return toHexN(r, 16);
 }
 
-void TimeSyncLogic::begin(IRandomProvider* rnd, ITimeManager* timeManager, uint32_t windowMs) {
-    if (rnd == nullptr || timeManager == nullptr) {
+void TimeSyncLogic::begin(IRandomProvider* rnd, ITimeService* timeService, uint32_t windowMs) {
+    if (rnd == nullptr || timeService == nullptr) {
         status_ = Status::Error;
         lastError_ = "bad_ports";
         return;
@@ -33,7 +33,7 @@ void TimeSyncLogic::begin(IRandomProvider* rnd, ITimeManager* timeManager, uint3
     creds_.ssid = makeSsid(rnd->getRandom64());
     creds_.psk = makePsk(rnd->getRandom64());
     creds_.token = makeToken(rnd->getRandom64());
-    startMs_ = static_cast<uint32_t>(timeManager->getCurrentMillis());
+    startMs_ = static_cast<uint32_t>(timeService->monotonicMillis());
     windowMs_ = windowMs;
     rateConsumed_ = false;
     status_ = Status::Step1;
@@ -62,13 +62,13 @@ auto TimeSyncLogic::buildUrlPayload(const std::string& ip) const -> std::string 
 }
 
 bool TimeSyncLogic::handleTimeSetRequest(int64_t epochMs, int tzOffsetMin, const std::string& token,
-                                         ITimeManager* timeManager, ITimeProvider* timeProvider) {
-    if (timeManager == nullptr || timeProvider == nullptr) {
+                                         ITimeService* timeService) {
+    if (timeService == nullptr) {
         status_ = Status::Error;
         lastError_ = "bad_ports";
         return false;
     }
-    const auto nowMs = static_cast<uint32_t>(timeManager->getCurrentMillis());
+    const auto nowMs = static_cast<uint32_t>(timeService->monotonicMillis());
     if (!TimeSyncCore::isWithinWindow(startMs_, nowMs, windowMs_)) {
         status_ = Status::Error;
         lastError_ = "window_expired";
@@ -101,7 +101,7 @@ bool TimeSyncLogic::handleTimeSetRequest(int64_t epochMs, int tzOffsetMin, const
     }
 
     const time_t sec = static_cast<time_t>(epochMs / 1000);
-    if (!timeProvider->setSystemTime(sec)) {
+    if (!timeService->setSystemTime(sec)) {
         status_ = Status::Error;
         lastError_ = "apply_failed";
         return false;

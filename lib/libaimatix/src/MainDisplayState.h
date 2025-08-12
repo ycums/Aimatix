@@ -7,6 +7,7 @@
 #include <vector>
 #include <string>
 #include <ctime>
+#include "AlarmRolloverDetector.h"
 
 class MainDisplayState : public IState {
 public:
@@ -15,6 +16,7 @@ public:
     
     void setAlarmDisplayState(IState* alarmState) { alarmDisplayState = alarmState; }
     void setSettingsDisplayState(IState* settingsState) { settingsDisplayState = settingsState; }
+    void setAlarmActiveState(IState* ringingState) { alarmActiveState = ringingState; }
     void onEnter() override {
         if (view) {
             view->clear();
@@ -34,6 +36,13 @@ public:
         // --- アラームリストの消化 ---
         extern std::vector<time_t> alarm_times;
         AlarmLogic::removePastAlarms(alarm_times, now);
+        // 先頭アラーム消化の検出（remove後のfront差し替わりで判定）
+        if (manager && alarmActiveState) {
+            if (rolloverDetector.onFrame(alarm_times, now)) {
+                manager->setState(alarmActiveState);
+                return; // 次フレームで描画は鳴動状態に委譲
+            }
+        }
         // --- 残り時間・進捗計算 ---
         int remainSec = AlarmLogic::getRemainSec(alarm_times, now);
         static time_t lastAlarmStart = 0;
@@ -96,7 +105,9 @@ private:
     InputDisplayState* inputDisplayState;
     IState* alarmDisplayState;
     IState* settingsDisplayState;
+        IState* alarmActiveState = nullptr;
     IMainDisplayView* view;
     TimeLogic* timeLogic;
     AlarmLogic* alarmLogic;
+        AlarmRolloverDetector rolloverDetector;
 }; 

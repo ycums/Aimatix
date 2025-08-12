@@ -7,13 +7,20 @@
 #include <cstring>
 #include <vector>
 #include <ctime>
-#include "../mock/MockTimeProvider.h"
+#include "ITimeService.h"
 #include <memory>
 
 extern std::vector<time_t> alarm_times;
 
 const time_t kFixedTestTime = 1700000000;
-std::shared_ptr<MockTimeProvider> testTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+struct MockTimeService : public ITimeService {
+    time_t n; uint32_t ms{0};
+    explicit MockTimeService(time_t now): n(now) {}
+    time_t now() const override { return n; }
+    struct tm* localtime(time_t* t) const override { return ::localtime(t); }
+    bool setSystemTime(time_t t) override { n = t; return true; }
+    uint32_t monotonicMillis() const override { return ms; }
+};
 
 void setUp(void) {}
 void tearDown(void) {}
@@ -25,7 +32,8 @@ void test_basic_state_manager() {
 }
 
 void test_basic_input_logic() {
-    InputLogic logic(testTimeProvider);
+    auto timeService = std::make_shared<MockTimeService>(kFixedTestTime);
+    InputLogic logic(timeService);
     logic.reset();
     
     // 初期状態確認

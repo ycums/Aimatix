@@ -3,7 +3,7 @@
 #include "InputLogic.h"
 #include "IInputDisplayView.h"
 #include "PartialInputLogic.h"
-#include "ITimeProvider.h"
+#include "ITimeService.h"
 #include "TimePreviewLogic.h"
 #include <stdio.h>
 #include <vector>
@@ -15,8 +15,8 @@
 class InputDisplayState : public IState {
 public:
     // InputDisplayStateのコンストラクタ
-    InputDisplayState(InputLogic* logic = nullptr, IInputDisplayView* view = nullptr, ITimeProvider* timeProvider = nullptr)
-        : inputLogic(logic), view(view), timeProvider_(timeProvider), manager(nullptr), mainDisplayState(nullptr), isRelativeMode(false), 
+    InputDisplayState(InputLogic* logic = nullptr, IInputDisplayView* view = nullptr, ITimeService* timeService = nullptr)
+        : inputLogic(logic), view(view), timeService_(timeService), manager(nullptr), mainDisplayState(nullptr), isRelativeMode(false),
           errorMessage(""), showError(false), errorStartTime(0) {
         for (int i = 0; i < 4; ++i) { lastDigits[i] = -1; lastEntered[i] = false; }
     }
@@ -46,7 +46,7 @@ public:
         
         time_t relativeTime = inputLogic->getAbsoluteValue();
         if (relativeTime != -1) {
-            auto result = TimePreviewLogic::generateRelativePreview(relativeTime, timeProvider_);
+            auto result = TimePreviewLogic::generateRelativePreview(relativeTime, timeService_);
             if (result.isValid) {
                 strncpy(preview, result.preview.c_str(), previewSize - 1);
                 preview[previewSize - 1] = '\0';
@@ -66,7 +66,7 @@ public:
             return;
         }
         
-        auto result = TimePreviewLogic::generatePreview(digits, entered, timeProvider_, false);
+        auto result = TimePreviewLogic::generatePreview(digits, entered, timeService_, false);
         if (result.isValid) {
             strncpy(preview, result.preview.c_str(), previewSize - 1);
             preview[previewSize - 1] = '\0';
@@ -92,8 +92,8 @@ public:
     // テスト用: inputLogicを直接セット
     void setInputLogicForTest(InputLogic* logic) { inputLogic = logic; }
     
-    // ITimeProviderのsetter
-    void setTimeProvider(ITimeProvider* timeProvider) { timeProvider_ = timeProvider; }
+    // ITimeServiceのsetter
+    void setTimeService(ITimeService* timeService) { timeService_ = timeService; }
 
 private:
     // エラーメッセージ定数
@@ -104,7 +104,7 @@ private:
     
     InputLogic* inputLogic;
     IInputDisplayView* view;
-    ITimeProvider* timeProvider_;
+    ITimeService* timeService_;
     int lastDigits[4] = {-1,-1,-1,-1};
     bool lastEntered[4] = {false,false,false,false};
     StateManager* manager;
@@ -121,12 +121,12 @@ private:
 
     // 現在時刻を安全に取得
     time_t getCurrentTime() const {
-        return timeProvider_ ? timeProvider_->now() : 0;
+        return timeService_ ? timeService_->now() : 0;
     }
     
     // 時刻取得が有効かチェック
     bool isTimeProviderValid() const {
-        return timeProvider_ != nullptr;
+        return timeService_ != nullptr;
     }
 
     // 数字表示の更新

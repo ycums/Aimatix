@@ -4,8 +4,7 @@
 #include <cstdint>
 #include <ctime>
 #include "IRandomProvider.h"
-#include "ITimeManager.h"
-#include "ITimeProvider.h"
+#include "ITimeService.h"
 #include "TimeSyncCore.h"
 
 // Pure logic: manages a single time sync session lifecycle
@@ -15,7 +14,7 @@ public:
 
     struct Credentials { std::string ssid; std::string psk; std::string token; };
 
-    void begin(IRandomProvider* rnd, ITimeManager* timeManager, uint32_t windowMs = 60000);
+    void begin(IRandomProvider* rnd, ITimeService* timeService, uint32_t windowMs = 60000);
     void reissue(IRandomProvider* rnd);
     void onStationConnected();
     // Override the internally generated token for the session (e.g., when token is issued by adapter)
@@ -27,7 +26,7 @@ public:
     // Handle POST /time/set
     // Returns true if applied and status becomes AppliedOk
     bool handleTimeSetRequest(int64_t epochMs, int tzOffsetMin, const std::string& token,
-                              ITimeManager* timeManager, ITimeProvider* timeProvider);
+                              ITimeService* timeService);
 
     // Window helpers for controllers/adapters
     bool isWindowExpired(uint32_t nowMs) const {

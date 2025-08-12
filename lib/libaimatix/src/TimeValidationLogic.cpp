@@ -1,24 +1,24 @@
 #include "TimeValidationLogic.h"
 #include <cstring>
 
-bool TimeValidationLogic::isSystemTimeBeforeMinimum(ITimeProvider* timeProvider) {
-    if (timeProvider == nullptr) {
+bool TimeValidationLogic::isSystemTimeBeforeMinimum(ITimeService* timeService) {
+    if (timeService == nullptr) {
         return true; // timeProviderがnullの場合は補正が必要とみなす
     }
     
-    const time_t currentTime = timeProvider->now();
+    const time_t currentTime = timeService->now();
     const time_t minimumTime = getMinimumSystemTime();
     
     return currentTime < minimumTime;
 }
 
-bool TimeValidationLogic::correctSystemTimeToMinimum(ITimeProvider* timeProvider) {
-    if (timeProvider == nullptr) {
+bool TimeValidationLogic::correctSystemTimeToMinimum(ITimeService* timeService) {
+    if (timeService == nullptr) {
         return false; // timeProviderがnullの場合は補正不可
     }
     
     const time_t minimumTime = getMinimumSystemTime();
-    return timeProvider->setSystemTime(minimumTime);
+    return timeService->setSystemTime(minimumTime);
 }
 
 time_t TimeValidationLogic::getMinimumSystemTime() {
@@ -34,14 +34,14 @@ time_t TimeValidationLogic::getMinimumSystemTime() {
     return mktime(&minTime);
 }
 
-bool TimeValidationLogic::validateAndCorrectSystemTime(ITimeProvider* timeProvider) {
-    if (timeProvider == nullptr) {
+bool TimeValidationLogic::validateAndCorrectSystemTime(ITimeService* timeService) {
+    if (timeService == nullptr) {
         return false; // timeProviderがnullの場合は何もしない
     }
     
-    if (isSystemTimeBeforeMinimum(timeProvider)) {
+    if (isSystemTimeBeforeMinimum(timeService)) {
         // 最小時刻以前の場合は補正を実行
-        return correctSystemTimeToMinimum(timeProvider);
+        return correctSystemTimeToMinimum(timeService);
     }
     
     // 補正不要
