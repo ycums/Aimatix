@@ -11,6 +11,9 @@ public:
     virtual void fillRectBuffered(int x, int y, int w, int h, uint16_t color) {
         fillRect(x, y, w, h, color);
     }
+    // Optional transactional drawing (default: no-op).
+    virtual void beginUpdate() {}
+    virtual void endUpdate() {}
     virtual void drawRect(int x, int y, int w, int h, uint16_t color) = 0;
     virtual void setTextDatum(uint8_t datum) = 0;
     virtual void setTextFont(int font) = 0;

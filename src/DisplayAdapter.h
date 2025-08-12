@@ -3,6 +3,7 @@
 #include <Arduino.h>
 #include <M5Unified.h>
 #include <M5GFX.h>
+#include <memory>
 // 色定数を追加
 #include "ui_constants.h"
 
@@ -28,12 +29,64 @@ public:
     }
 
     void fillRectBuffered(int x, int y, int w, int h, uint16_t color) override {
-        M5Canvas canvas(&M5.Display);
-        canvas.createSprite(w, h);
-        canvas.fillSprite(color);
-        canvas.pushSprite(x, y);
-        canvas.deleteSprite();
+        if (w <= 0 || h <= 0) {
+            return;
+        }
+        // Always use hardware fill for rectangles (Core2: HW fill is always faster)
+        beginUpdate();
+        M5.Display.writeFillRect(x, y, w, h, color);
+        endUpdate();
+        // Wait for transfer to complete to avoid drawing conflicts
+        M5.Display.waitDisplay();
     }
+
+    void beginUpdate() override {
+        // 再入可能な begin/end 管理
+        if (updateDepth_++ == 0) {
+            M5.Display.startWrite();
+        }
+    }
+
+    void endUpdate() override {
+        if (updateDepth_ == 0) return;
+        if (--updateDepth_ == 0) {
+            M5.Display.endWrite();
+        }
+    }
+
+public:
+#ifdef ENABLE_FILL_BENCH
+    void runFillBench() {
+        const int W = SCREEN_WIDTH;
+        const int heights[] = {40, 80, 120, 160, 200};
+        for (int h : heights) {
+            benchFill(W, h);
+        }
+    }
+#endif
+
+private:
+    void ensureOverlaySprite(int w, int h) {
+        if (!overlaySprite_) {
+            overlaySprite_ = std::unique_ptr<M5Canvas>(new M5Canvas(&M5.Display));
+            overlayW_ = 0;
+            overlayH_ = 0;
+        }
+        if (w != overlayW_ || h != overlayH_) {
+            if (overlayW_ > 0 && overlayH_ > 0) {
+                overlaySprite_->deleteSprite();
+            }
+            overlaySprite_->createSprite(w, h);
+            overlayW_ = w;
+            overlayH_ = h;
+        }
+    }
+
+    std::unique_ptr<M5Canvas> overlaySprite_;
+    int overlayW_ = 0;
+    int overlayH_ = 0;
+    int updateDepth_ = 0;
+    std::recursive_mutex updateMutex_;
 
     void drawRect(int x, int y, int w, int h, uint16_t color) override {
         M5.Display.drawRect(x, y, w, h, color);
