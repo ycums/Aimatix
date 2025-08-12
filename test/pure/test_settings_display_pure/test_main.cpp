@@ -1,12 +1,10 @@
 #include <unity.h>
 #include "SettingsDisplayState.h"
-#include "../mock/MockTimeProvider.h"
 #include <memory>
 
 extern std::vector<time_t> alarm_times;
 
 const time_t kFixedTestTime = 1700000000;
-std::shared_ptr<MockTimeProvider> testTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
 
 void setUp(void) {}
 void tearDown(void) {}

@@ -1,5 +1,5 @@
 #pragma once
-#include "ITimeProvider.h"
+#include "ITimeService.h"
 #include <ctime>
 
 /**
@@ -21,14 +21,14 @@ public:
      * @param timeProvider 時刻プロバイダ
      * @return true: 最小時刻以前, false: 最小時刻以降
      */
-    static bool isSystemTimeBeforeMinimum(ITimeProvider* timeProvider);
+    static bool isSystemTimeBeforeMinimum(ITimeService* timeService);
     
     /**
      * システム時刻を最小時刻に補正
      * @param timeProvider 時刻プロバイダ
      * @return true: 補正成功, false: 補正失敗
      */
-    static bool correctSystemTimeToMinimum(ITimeProvider* timeProvider);
+    static bool correctSystemTimeToMinimum(ITimeService* timeService);
     
     /**
      * 最小時刻のtime_t値を取得
@@ -41,5 +41,5 @@ public:
      * @param timeProvider 時刻プロバイダ
      * @return true: 補正が実行された, false: 補正不要または補正失敗
      */
-    static bool validateAndCorrectSystemTime(ITimeProvider* timeProvider);
+    static bool validateAndCorrectSystemTime(ITimeService* timeService);
 };

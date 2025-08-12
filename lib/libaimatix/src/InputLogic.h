@@ -1,15 +1,15 @@
 #pragma once
 #include <cassert>
 #include <memory>
-#include "ITimeProvider.h"
+#include "ITimeService.h"
 
 class InputLogic {
 public:
     static constexpr int EMPTY_VALUE = -1;
     static constexpr int LAST_VALUE_INIT = -2;
-    InputLogic(std::shared_ptr<ITimeProvider> timeProvider)
-        : timeProvider_(timeProvider) {
-        assert(timeProvider_ && "ITimeProvider must not be nullptr");
+    InputLogic(std::shared_ptr<ITimeService> timeService)
+        : timeService_(timeService) {
+        assert(timeService_ && "ITimeService must not be nullptr");
         reset();
     }
     // 現在の入力値を取得（全桁入力済みの場合のみ有効な値を返す）
@@ -39,8 +39,8 @@ public:
         if (!hasInput) return -1; // 未入力
         int inputHour = inputValue / 100;
         int inputMinute = inputValue % 100;
-        time_t now = timeProvider_->now();
-        struct tm* tm_now = timeProvider_->localtime(&now);
+        time_t now = timeService_->now();
+        struct tm* tm_now = timeService_->localtime(&now);
         struct tm alarm_tm = *tm_now;
         alarm_tm.tm_sec = tm_now->tm_sec; // 現在時刻の秒を保持
         alarm_tm.tm_isdst = -1;
@@ -115,5 +115,5 @@ protected:
     int digits[4]; // 各桁の値
     bool entered[4]; // 各桁の入力済みフラグ
 private:
-    std::shared_ptr<ITimeProvider> timeProvider_;
+    std::shared_ptr<ITimeService> timeService_;
 }; 

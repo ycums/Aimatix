@@ -10,6 +10,8 @@
 #include "InputDisplayViewImpl.h"
 #include "MainDisplayViewImpl.h"
 #include "AlarmDisplayViewImpl.h"
+#include "AlarmActiveViewImpl.h"
+#include "AlarmActiveState.h"
 #include "SettingsDisplayViewImpl.h"
 #include "DateTimeInputViewImpl.h"
 #include "TimeLogic.h"
@@ -21,12 +23,13 @@
 #include "TimeSyncDisplayState.h"
 #include "TimeSyncViewImpl.h"
 #include "SoftApTimeSyncController.h"
+#include "M5TimeService.h"
 
 // 共通include（全環境で使用）
 #include <Arduino.h>
 #include <vector>
 #include <ctime>
-#include "DateTimeAdapter.h"
+// #include "DateTimeAdapter.h" // deprecated after unifying to ITimeService
 
 // 統一されたM5Unified include
 #include <M5Unified.h>
@@ -75,14 +78,7 @@ auto m5_fill_rect_impl(int pos_x, int pos_y, int width, int height, int color) -
     M5.Display.fillRect(pos_x, pos_y, width, height, color);
 }
 
-#ifdef ARDUINO
-// M5Stack用TimeManager実装（全デバイス共通）
-class M5StackTimeManager : public ITimeManager {
-public:
-    auto getCurrentMillis() const -> unsigned long override { return millis(); }
-    auto getCurrentTime() const -> time_t override { return time(nullptr); }
-};
-#endif
+// ITimeService へ一本化したため、ITimeManager/DateTimeAdapter は削除
 
 // --- アラームリスト ---
 std::vector<time_t> alarm_times;
@@ -102,28 +98,30 @@ ButtonManager button_manager;
 
 #ifdef ARDUINO
 // M5Stack関連のクラス（全デバイス共通）
-const std::shared_ptr<DateTimeAdapter> m5_time_provider = std::make_shared<DateTimeAdapter>();
-const std::shared_ptr<M5StackTimeManager> m5_time_manager = std::make_shared<M5StackTimeManager>();
-// Export globals for components in src/ that need time adapters (e.g., SoftApTimeSyncController)
-ITimeProvider* g_time_provider = m5_time_provider.get();
-ITimeManager* g_time_manager = m5_time_manager.get();
-InputLogic input_logic(m5_time_provider);
-InputDisplayState input_display_state(&input_logic, &input_display_view_impl, m5_time_provider.get());
+static M5TimeService g_time_service_impl;
+ITimeService* g_time_service = &g_time_service_impl;
+const std::shared_ptr<ITimeService> m5_time_service{ &g_time_service_impl, [](ITimeService*){} };
+InputLogic input_logic(m5_time_service);
+InputDisplayState input_display_state(&input_logic, &input_display_view_impl, g_time_service);
 MainDisplayState main_display_state(&state_manager, &input_display_state, &main_display_view_impl, &time_logic, &alarm_logic);
-AlarmDisplayState alarm_display_state(&state_manager, &alarm_display_view_impl, m5_time_provider, m5_time_manager);
+ AlarmDisplayState alarm_display_state(&state_manager, &alarm_display_view_impl, m5_time_service);
+ AlarmActiveViewImpl alarm_active_view_impl(&display_adapter);
+ AlarmActiveState alarm_active_state(&state_manager, &alarm_active_view_impl, &main_display_state, &g_time_service_impl);
 SettingsDisplayState settings_display_state(&settings_logic, &settings_display_view_impl);
  TimeSyncViewImpl time_sync_view_impl(&display_adapter);
  SoftApTimeSyncController time_sync_controller;
  TimeSyncDisplayState time_sync_display_state(&time_sync_view_impl, &time_sync_controller);
  // 起動時自動開始の抑止管理（同一ブート内）
  BootAutoSyncPolicy g_boot_auto_policy;
-DateTimeInputState datetime_input_state(m5_time_provider.get(), &datetime_input_view_impl);
+DateTimeInputState datetime_input_state(g_time_service, &datetime_input_view_impl);
 #else
 // Native環境用のモック（テスト用）
 InputLogic input_logic(nullptr);
 InputDisplayState input_display_state(&input_logic, &input_display_view_impl);
 MainDisplayState main_display_state(&state_manager, &input_display_state, &main_display_view_impl, &time_logic, &alarm_logic);
-AlarmDisplayState alarm_display_state(&state_manager, &alarm_display_view_impl, nullptr, nullptr);
+ AlarmDisplayState alarm_display_state(&state_manager, &alarm_display_view_impl, nullptr);
+ AlarmActiveViewImpl alarm_active_view_impl(&display_adapter);
+ AlarmActiveState alarm_active_state(&state_manager, &alarm_active_view_impl, &main_display_state);
 SettingsDisplayState settings_display_state(&settings_logic, &settings_display_view_impl);
 DateTimeInputState datetime_input_state(nullptr, &datetime_input_view_impl);
 #endif
@@ -143,8 +141,7 @@ void setup() {
     M5.begin(cfg);
     M5.Display.setTextColor(AMBER_COLOR, TFT_BLACK);
     
-    // DateTimeAdapterの初期化
-    m5_time_provider->initializeTime();
+    // ITimeService一本化後も、必要なら here で初期化ロジックを追加可能
     
     // アラームリスト初期化
     alarm_times.clear();
@@ -154,10 +151,10 @@ void setup() {
     // Boot Auto: 無効時刻ならTime Sync自動開始（EXITで同一ブート抑止）
     // 注意: 自動開始の判定は「補正前の生時刻」で行う
     g_boot_auto_policy.resetForBoot();
-    const bool isInvalidAtBoot = TimeValidationLogic::isSystemTimeBeforeMinimum(m5_time_provider.get());
+    const bool isInvalidAtBoot = TimeValidationLogic::isSystemTimeBeforeMinimum(g_time_service);
 
     // システム時刻の検証と補正（起動時処理）
-    (void)TimeValidationLogic::validateAndCorrectSystemTime(m5_time_provider.get());
+    (void)TimeValidationLogic::validateAndCorrectSystemTime(g_time_service);
 
     if (g_boot_auto_policy.shouldStartAutoSync(isInvalidAtBoot)) {
         // 直ちにTIME_SYNC状態へ遷移（UI/QRはTimeSyncDisplayStateに委譲）
@@ -172,6 +169,7 @@ void setup() {
     input_display_state.setManager(&state_manager);
     input_display_state.setMainDisplayState(&main_display_state);
     main_display_state.setAlarmDisplayState(&alarm_display_state);
+    main_display_state.setAlarmActiveState(&alarm_active_state);
     alarm_display_state.setMainDisplayState(&main_display_state);
     settings_display_state.setManager(&state_manager);
     settings_display_state.setMainDisplayState(&main_display_state);

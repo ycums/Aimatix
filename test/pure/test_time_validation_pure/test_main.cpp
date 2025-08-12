@@ -1,11 +1,11 @@
 #include <unity.h>
 #include "../../../lib/libaimatix/src/TimeValidationLogic.h"
-#include "../../../lib/libaimatix/src/ITimeProvider.h"
+#include "../../../lib/libaimatix/src/ITimeService.h"
 #include "../../../lib/libaimatix/src/BootAutoSyncPolicy.h"
 #include <ctime>
 
-// モックTimeProviderクラス
-class MockTimeProvider : public ITimeProvider {
+// モックTimeServiceクラス
+class MockTimeService : public ITimeService {
 public:
     time_t mockTime = 1000; // デフォルトは1970年代（最小時刻より前）
     bool setSystemTimeResult = true;
@@ -13,6 +13,7 @@ public:
     
     time_t now() const override { return mockTime; }
     struct tm* localtime(time_t* t) const override { return ::localtime(t); }
+    uint32_t monotonicMillis() const override { return 0; }
     
     bool setSystemTime(time_t time) override {
         if (setSystemTimeResult) {
@@ -57,7 +58,7 @@ void test_getMinimumSystemTime() {
 
 // テスト: 最小時刻以前の時刻チェック（true）
 void test_isSystemTimeBeforeMinimum_true() {
-    MockTimeProvider mockProvider;
+    MockTimeService mockProvider;
     // 1970年代の時刻を設定（最小時刻より前）
     mockProvider.setTime(1000);
     
@@ -68,7 +69,7 @@ void test_isSystemTimeBeforeMinimum_true() {
 
 // テスト: 最小時刻以降の時刻チェック（false）
 void test_isSystemTimeBeforeMinimum_false() {
-    MockTimeProvider mockProvider;
+    MockTimeService mockProvider;
     // 2026年の時刻を設定（最小時刻より後）
     struct tm futureTm = {};
     futureTm.tm_year = 2026 - 1900;
@@ -95,7 +96,7 @@ void test_isSystemTimeBeforeMinimum_null_provider() {
 
 // テスト: 時刻補正の成功
 void test_correctSystemTimeToMinimum_success() {
-    MockTimeProvider mockProvider;
+    MockTimeService mockProvider;
     mockProvider.setTime(1000); // 古い時刻
     mockProvider.setSetSystemTimeResult(true);
     
@@ -111,7 +112,7 @@ void test_correctSystemTimeToMinimum_success() {
 
 // テスト: 時刻補正の失敗
 void test_correctSystemTimeToMinimum_failure() {
-    MockTimeProvider mockProvider;
+    MockTimeService mockProvider;
     mockProvider.setSetSystemTimeResult(false); // 設定失敗をシミュレート
     
     bool result = TimeValidationLogic::correctSystemTimeToMinimum(&mockProvider);
@@ -128,7 +129,7 @@ void test_correctSystemTimeToMinimum_null_provider() {
 
 // テスト: 検証と補正の統合テスト（補正が必要）
 void test_validateAndCorrectSystemTime_correction_needed() {
-    MockTimeProvider mockProvider;
+    MockTimeService mockProvider;
     mockProvider.setTime(1000); // 古い時刻
     mockProvider.setSetSystemTimeResult(true);
     
@@ -143,7 +144,7 @@ void test_validateAndCorrectSystemTime_correction_needed() {
 
 // テスト: 検証と補正の統合テスト（補正が不要）
 void test_validateAndCorrectSystemTime_no_correction_needed() {
-    MockTimeProvider mockProvider;
+    MockTimeService mockProvider;
     // 2026年の時刻を設定（最小時刻より後）
     struct tm futureTm = {};
     futureTm.tm_year = 2026 - 1900;

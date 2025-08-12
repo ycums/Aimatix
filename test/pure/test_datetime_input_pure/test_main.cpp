@@ -1,12 +1,21 @@
 #include <unity.h>
 #include "DateTimeInputState.h"
-#include "../mock/MockTimeProvider.h"
+#include "ITimeService.h"
 #include <memory>
 
 extern std::vector<time_t> alarm_times;
 
 const time_t kFixedTestTime = 1700000000;
-std::shared_ptr<MockTimeProvider> testTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+struct MockTimeService : public ITimeService {
+    time_t n = 0; uint32_t ms = 0; struct tm* ltOverride = nullptr;
+    explicit MockTimeService(time_t now) : n(now) {}
+    time_t now() const override { return n; }
+    struct tm* localtime(time_t* t) const override { return ltOverride ? ltOverride : ::localtime(t); }
+    bool setSystemTime(time_t t) override { n = t; return true; }
+    uint32_t monotonicMillis() const override { return ms; }
+    void setLocaltimeResult(struct tm* p) { ltOverride = p; }
+};
+std::shared_ptr<MockTimeService> testTimeProvider = std::make_shared<MockTimeService>(kFixedTestTime);
 
 // モックDateTimeInputViewクラス
 class MockDateTimeInputView : public IDateTimeInputView {
@@ -254,8 +263,8 @@ void test_datetime_input_uncovered_functions() {
 // テストケース: 終了処理
 void test_DateTimeInputState_OnExit() {
     MockDateTimeInputView mockView;
-    auto timeProvider = std::make_shared<MockTimeProvider>();
-    DateTimeInputState state(timeProvider.get(), &mockView);
+    auto timeService = std::make_shared<MockTimeService>(kFixedTestTime);
+    DateTimeInputState state(timeService.get(), &mockView);
     
     // 終了処理を実行（現在は何もしない）
     state.onExit();
@@ -267,12 +276,12 @@ void test_DateTimeInputState_OnExit() {
 // 未カバー分岐テスト: timeInfoがnullの場合のresetDateTime
 void test_DateTimeInputState_ResetDateTime_WithNullTimeInfo() {
     MockDateTimeInputView mockView;
-    auto timeProvider = std::make_shared<MockTimeProvider>();
+    auto timeService = std::make_shared<MockTimeService>(kFixedTestTime);
     
-    // timeProviderのlocaltimeをnullptrを返すように設定
-    timeProvider->setLocaltimeResult(nullptr);
+    // localtimeをnullptrを返すように設定
+    timeService->setLocaltimeResult(nullptr);
     
-    DateTimeInputState state(timeProvider.get(), &mockView);
+    DateTimeInputState state(timeService.get(), &mockView);
     
     // resetDateTimeを呼び出し（エラーが発生しないことを確認）
     state.onEnter(); // resetDateTimeが呼ばれる

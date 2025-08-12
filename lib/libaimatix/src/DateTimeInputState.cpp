@@ -94,10 +94,10 @@ void DateTimeInputState::onButtonCLongPress() {
 }
 
 void DateTimeInputState::resetDateTime() {
-    if (timeProvider != nullptr) {
+    if (timeService != nullptr) {
         // システム時刻から初期値を設定
-        time_t currentTime = timeProvider->now();
-        struct tm* timeInfo = timeProvider->localtime(&currentTime);
+        time_t currentTime = timeService->now();
+        struct tm* timeInfo = timeService->localtime(&currentTime);
         
         if (timeInfo != nullptr) {
             const int year = timeInfo->tm_year + YEAR_1900;  // tm_yearは1900からのオフセット
@@ -126,7 +126,7 @@ void DateTimeInputState::resetDateTime() {
             dateTimeDigits = {2, 0, 2, 4, 0, 1, 0, 1, 0, 0, 0, 0}; // 2024年1月1日00:00
         }
     } else {
-        // timeProviderがnullの場合はデフォルト値を使用
+        // timeServiceがnullの場合はデフォルト値を使用
         dateTimeDigits = {2, 0, 2, 4, 0, 1, 0, 1, 0, 0, 0, 0}; // 2024年1月1日00:00
     }
 }
@@ -298,7 +298,7 @@ bool DateTimeInputState::validateMinute() const {
 }
 
 void DateTimeInputState::commitDateTime() {
-    if (timeProvider == nullptr || !validateDateTime()) {
+    if (timeService == nullptr || !validateDateTime()) {
         return;
     }
     
@@ -318,7 +318,7 @@ void DateTimeInputState::commitDateTime() {
     time_t newTime = mktime(&timeInfo);
     
     // システム時刻を更新
-    bool success = timeProvider->setSystemTime(newTime);
+    bool success = timeService->setSystemTime(newTime);
     
     // 更新結果をログ出力（デバッグ用）
     if (success) {

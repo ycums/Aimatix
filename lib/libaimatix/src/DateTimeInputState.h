@@ -1,6 +1,6 @@
 #pragma once
 #include "StateManager.h"
-#include "ITimeProvider.h"
+#include "ITimeService.h"
 #include "IDateTimeInputView.h"
 #include <array>
 #include <string>
@@ -9,8 +9,8 @@
 // 日時入力画面の状態クラス
 class DateTimeInputState : public IState {
 public:
-    DateTimeInputState(ITimeProvider* timeProvider = nullptr, IDateTimeInputView* view = nullptr)
-        : timeProvider(timeProvider), view(view), manager(nullptr), settingsDisplayState(nullptr),
+    DateTimeInputState(ITimeService* timeService = nullptr, IDateTimeInputView* view = nullptr)
+        : timeService(timeService), view(view), manager(nullptr), settingsDisplayState(nullptr),
           cursorPosition(0), isEditMode(false) {
         resetDateTime();
     }
@@ -27,7 +27,7 @@ public:
     
     void setManager(StateManager* m) { manager = m; }
     void setSettingsDisplayState(IState* settingsState) { settingsDisplayState = settingsState; }
-    void setTimeProvider(ITimeProvider* provider) { timeProvider = provider; }
+    void setTimeService(ITimeService* service) { timeService = service; }
     void setView(IDateTimeInputView* v) { view = v; }
     
     // 公開バリデーションメソッド
@@ -35,7 +35,7 @@ public:
     std::string formatDateTimeString() const;
     
 private:
-    ITimeProvider* timeProvider;
+    ITimeService* timeService;
     IDateTimeInputView* view;
     StateManager* manager;
     IState* settingsDisplayState;

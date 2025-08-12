@@ -1,7 +1,7 @@
 #include <unity.h>
 #include "MainDisplayState.h"
 #include "IMainDisplayView.h"
-#include "ITimeProvider.h"
+// No time provider needed for MainDisplayState tests
 #include <memory>
 #include <string>
 #include <vector>
@@ -90,17 +90,7 @@ public:
     }
 };
 
-// モックTimeProviderクラス
-class MockTimeProvider : public ITimeProvider {
-public:
-    time_t fixedTime;
-    
-    MockTimeProvider(time_t t) : fixedTime(t) {}
-    
-    time_t now() const override { return fixedTime; }
-    struct tm* localtime(time_t* t) const override { return ::localtime(t); }
-    bool setSystemTime(time_t time) override { return true; }
-};
+// 旧モックは未使用のため削除
 
 void setUp(void) {}
 void tearDown(void) {}
@@ -109,7 +99,7 @@ void tearDown(void) {}
 
 void test_main_display_state_onenter() {
     // 初期化処理のテスト（1観点）
-    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    // time dependency is not used in this test
     auto mockView = std::unique_ptr<MockMainDisplayView>(new MockMainDisplayView());
     MainDisplayState state(nullptr, nullptr, mockView.get(), nullptr, nullptr);
     
@@ -122,7 +112,7 @@ void test_main_display_state_onenter() {
 
 void test_main_display_state_ondraw() {
     // 描画処理のテスト（1観点）
-    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    // time dependency is not used in this test
     auto mockView = std::unique_ptr<MockMainDisplayView>(new MockMainDisplayView());
     MainDisplayState state(nullptr, nullptr, mockView.get(), nullptr, nullptr);
     
@@ -135,7 +125,7 @@ void test_main_display_state_ondraw() {
 
 void test_main_display_state_onbutton_a() {
     // ボタンA処理のテスト（1観点）
-    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    // time dependency is not used in this test
     auto mockView = std::unique_ptr<MockMainDisplayView>(new MockMainDisplayView());
     MainDisplayState state(nullptr, nullptr, mockView.get(), nullptr, nullptr);
     
@@ -148,7 +138,7 @@ void test_main_display_state_onbutton_a() {
 
 void test_main_display_state_onbutton_b() {
     // ボタンB処理のテスト（1観点）
-    auto mockTimeProvider = std::make_shared<MockTimeProvider>(kFixedTestTime);
+    // time provider not needed
     auto mockView = std::unique_ptr<MockMainDisplayView>(new MockMainDisplayView());
     MainDisplayState state(nullptr, nullptr, mockView.get(), nullptr, nullptr);
     
@@ -161,7 +151,7 @@ void test_main_display_state_onbutton_b() {
 
 void test_main_display_state_onbutton_c() {
     auto mockView = std::unique_ptr<MockMainDisplayView>(new MockMainDisplayView());
-    auto mockTimeProvider = std::unique_ptr<MockTimeProvider>(new MockTimeProvider(kFixedTestTime));
+    // time dependency is not used in this test
     MainDisplayState state(nullptr, nullptr, mockView.get(), nullptr, nullptr);
     
     state.onButtonC();
@@ -174,7 +164,7 @@ void test_main_display_state_onbutton_c() {
 void test_main_display_state_ondraw_comprehensive() {
     // 包括的な表示処理のテスト（1観点）
     auto mockView = std::unique_ptr<MockMainDisplayView>(new MockMainDisplayView());
-    auto mockTimeProvider = std::unique_ptr<MockTimeProvider>(new MockTimeProvider(kFixedTestTime));
+    // time dependency is not used in this test
     MainDisplayState state(nullptr, nullptr, mockView.get(), nullptr, nullptr);
     
     // 複数の表示処理をテスト
@@ -186,7 +176,7 @@ void test_main_display_state_ondraw_comprehensive() {
 void test_main_display_state_onbutton_a_comprehensive() {
     // ボタンAの包括的テスト（1観点）
     auto mockView = std::unique_ptr<MockMainDisplayView>(new MockMainDisplayView());
-    auto mockTimeProvider = std::unique_ptr<MockTimeProvider>(new MockTimeProvider(kFixedTestTime));
+    // time dependency is not used in this test
     MainDisplayState state(nullptr, nullptr, mockView.get(), nullptr, nullptr);
     
     // ボタンAの処理をテスト
@@ -198,7 +188,7 @@ void test_main_display_state_onbutton_a_comprehensive() {
 void test_main_display_state_onbutton_b_comprehensive() {
     // ボタンBの包括的テスト（1観点）
     auto mockView = std::unique_ptr<MockMainDisplayView>(new MockMainDisplayView());
-    auto mockTimeProvider = std::unique_ptr<MockTimeProvider>(new MockTimeProvider(kFixedTestTime));
+    // time dependency is not used in this test
     MainDisplayState state(nullptr, nullptr, mockView.get(), nullptr, nullptr);
     
     // ボタンBの処理をテスト
@@ -210,7 +200,7 @@ void test_main_display_state_onbutton_b_comprehensive() {
 void test_main_display_state_onbutton_c_comprehensive() {
     // ボタンCの包括的テスト（1観点）
     auto mockView = std::unique_ptr<MockMainDisplayView>(new MockMainDisplayView());
-    auto mockTimeProvider = std::unique_ptr<MockTimeProvider>(new MockTimeProvider(kFixedTestTime));
+    // time dependency is not used in this test
     MainDisplayState state(nullptr, nullptr, mockView.get(), nullptr, nullptr);
     
     // ボタンCの処理をテスト
@@ -222,7 +212,7 @@ void test_main_display_state_onbutton_c_comprehensive() {
 void test_main_display_state_onenter_comprehensive() {
     // 状態進入の包括的テスト（1観点）
     auto mockView = std::unique_ptr<MockMainDisplayView>(new MockMainDisplayView());
-    auto mockTimeProvider = std::unique_ptr<MockTimeProvider>(new MockTimeProvider(kFixedTestTime));
+    // time dependency is not used in this test
     MainDisplayState state(nullptr, nullptr, mockView.get(), nullptr, nullptr);
     
     // 状態進入処理をテスト
@@ -234,7 +224,7 @@ void test_main_display_state_onenter_comprehensive() {
 void test_main_display_state_onexit_comprehensive() {
     // 状態退出の包括的テスト（1観点）
     auto mockView = std::unique_ptr<MockMainDisplayView>(new MockMainDisplayView());
-    auto mockTimeProvider = std::unique_ptr<MockTimeProvider>(new MockTimeProvider(kFixedTestTime));
+    // time provider not needed
     MainDisplayState state(nullptr, nullptr, mockView.get(), nullptr, nullptr);
     
     // 状態退出処理をテスト
@@ -246,7 +236,7 @@ void test_main_display_state_onexit_comprehensive() {
 void test_main_display_state_error_handling() {
     // エラーハンドリングのテスト（1観点）
     auto mockView = std::unique_ptr<MockMainDisplayView>(new MockMainDisplayView());
-    auto mockTimeProvider = std::unique_ptr<MockTimeProvider>(new MockTimeProvider(kFixedTestTime));
+    // time provider not needed
     MainDisplayState state(nullptr, nullptr, mockView.get(), nullptr, nullptr);
     
     // エラー状態での処理をテスト
@@ -258,7 +248,7 @@ void test_main_display_state_error_handling() {
 void test_main_display_state_time_display_logic() {
     // 時刻表示ロジックのテスト（1観点）
     auto mockView = std::unique_ptr<MockMainDisplayView>(new MockMainDisplayView());
-    auto mockTimeProvider = std::unique_ptr<MockTimeProvider>(new MockTimeProvider(kFixedTestTime));
+    // time provider not needed
     MainDisplayState state(nullptr, nullptr, mockView.get(), nullptr, nullptr);
     
     // 時刻表示処理をテスト
@@ -270,7 +260,7 @@ void test_main_display_state_time_display_logic() {
 void test_main_display_state_battery_display_logic() {
     // バッテリー表示ロジックのテスト（1観点）
     auto mockView = std::unique_ptr<MockMainDisplayView>(new MockMainDisplayView());
-    auto mockTimeProvider = std::unique_ptr<MockTimeProvider>(new MockTimeProvider(kFixedTestTime));
+    // time provider not needed
     MainDisplayState state(nullptr, nullptr, mockView.get(), nullptr, nullptr);
     
     // バッテリー表示処理をテスト
@@ -282,7 +272,7 @@ void test_main_display_state_battery_display_logic() {
 void test_main_display_state_alarm_list_display() {
     // アラームリスト表示のテスト（1観点）
     auto mockView = std::unique_ptr<MockMainDisplayView>(new MockMainDisplayView());
-    auto mockTimeProvider = std::unique_ptr<MockTimeProvider>(new MockTimeProvider(kFixedTestTime));
+    // time provider not needed
     MainDisplayState state(nullptr, nullptr, mockView.get(), nullptr, nullptr);
     
     // アラームリスト表示処理をテスト
@@ -294,7 +284,7 @@ void test_main_display_state_alarm_list_display() {
 void test_main_display_state_progress_display() {
     // プログレス表示のテスト（1観点）
     auto mockView = std::unique_ptr<MockMainDisplayView>(new MockMainDisplayView());
-    auto mockTimeProvider = std::unique_ptr<MockTimeProvider>(new MockTimeProvider(kFixedTestTime));
+    // time provider not needed
     MainDisplayState state(nullptr, nullptr, mockView.get(), nullptr, nullptr);
     
     // プログレス表示処理をテスト
@@ -306,7 +296,7 @@ void test_main_display_state_progress_display() {
 void test_main_display_state_remain_display() {
     // 残り時間表示のテスト（1観点）
     auto mockView = std::unique_ptr<MockMainDisplayView>(new MockMainDisplayView());
-    auto mockTimeProvider = std::unique_ptr<MockTimeProvider>(new MockTimeProvider(kFixedTestTime));
+    // time provider not needed
     MainDisplayState state(nullptr, nullptr, mockView.get(), nullptr, nullptr);
     
     // 残り時間表示処理をテスト
@@ -318,7 +308,7 @@ void test_main_display_state_remain_display() {
 // 分岐カバレッジ向上のためのテスト
 void test_main_display_state_nullptr_branches() {
     // nullptr viewでのテスト
-    auto mockTimeProvider = std::unique_ptr<MockTimeProvider>(new MockTimeProvider(kFixedTestTime));
+    // time provider not needed
     MainDisplayState state(nullptr, nullptr, nullptr, nullptr, nullptr);
     
     // nullptrでもクラッシュしないことを確認
@@ -347,7 +337,7 @@ void test_main_display_state_nullptr_logic_branches() {
 
 void test_main_display_state_nullptr_manager_branches() {
     auto mockView = std::unique_ptr<MockMainDisplayView>(new MockMainDisplayView());
-    auto mockTimeProvider = std::unique_ptr<MockTimeProvider>(new MockTimeProvider(kFixedTestTime));
+    // time provider not needed
     MainDisplayState state(nullptr, nullptr, mockView.get(), nullptr, nullptr);
     
     // nullptr managerでのテスト
@@ -361,7 +351,7 @@ void test_main_display_state_nullptr_manager_branches() {
 
 void test_main_display_state_nullptr_input_state_branches() {
     auto mockView = std::unique_ptr<MockMainDisplayView>(new MockMainDisplayView());
-    auto mockTimeProvider = std::unique_ptr<MockTimeProvider>(new MockTimeProvider(kFixedTestTime));
+    // time provider not needed
     MainDisplayState state(nullptr, nullptr, mockView.get(), nullptr, nullptr);
     
     // nullptr inputDisplayStateでのテスト
@@ -373,7 +363,7 @@ void test_main_display_state_nullptr_input_state_branches() {
 
 void test_main_display_state_nullptr_alarm_state_branches() {
     auto mockView = std::unique_ptr<MockMainDisplayView>(new MockMainDisplayView());
-    auto mockTimeProvider = std::unique_ptr<MockTimeProvider>(new MockTimeProvider(kFixedTestTime));
+    // time provider not needed
     MainDisplayState state(nullptr, nullptr, mockView.get(), nullptr, nullptr);
     
     // nullptr alarmDisplayStateでのテスト
@@ -384,7 +374,7 @@ void test_main_display_state_nullptr_alarm_state_branches() {
 
 void test_main_display_state_nullptr_settings_state_branches() {
     auto mockView = std::unique_ptr<MockMainDisplayView>(new MockMainDisplayView());
-    auto mockTimeProvider = std::unique_ptr<MockTimeProvider>(new MockTimeProvider(kFixedTestTime));
+    // time provider not needed
     MainDisplayState state(nullptr, nullptr, mockView.get(), nullptr, nullptr);
     
     // nullptr settingsDisplayStateでのテスト
@@ -395,7 +385,7 @@ void test_main_display_state_nullptr_settings_state_branches() {
 
 void test_main_display_state_empty_alarm_list_branches() {
     auto mockView = std::unique_ptr<MockMainDisplayView>(new MockMainDisplayView());
-    auto mockTimeProvider = std::unique_ptr<MockTimeProvider>(new MockTimeProvider(kFixedTestTime));
+    // time provider not needed
     MainDisplayState state(nullptr, nullptr, mockView.get(), nullptr, nullptr);
     
     // 空のアラームリストでのテスト
@@ -409,7 +399,7 @@ void test_main_display_state_empty_alarm_list_branches() {
 
 void test_main_display_state_alarm_list_with_items_branches() {
     auto mockView = std::unique_ptr<MockMainDisplayView>(new MockMainDisplayView());
-    auto mockTimeProvider = std::unique_ptr<MockTimeProvider>(new MockTimeProvider(kFixedTestTime));
+    // time provider not needed
     MainDisplayState state(nullptr, nullptr, mockView.get(), nullptr, nullptr);
     
     // アラームリストにアイテムがある場合のテスト

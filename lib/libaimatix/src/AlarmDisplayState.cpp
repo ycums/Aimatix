@@ -43,8 +43,8 @@ void AlarmDisplayState::forceDraw() {
     
     // リアルタイム削除: 過去のアラームを削除
     time_t now = 0;
-    if (timeProvider != nullptr) {
-        now = timeProvider->now();
+    if (timeService != nullptr) {
+        now = timeService->now();
         AlarmLogic::removePastAlarms(alarm_times, now);
     }
     
@@ -197,19 +197,17 @@ auto AlarmDisplayState::moveToBottom() -> void {
 
 auto AlarmDisplayState::shouldUpdateRealTime() const -> bool {
     // ユーザー操作から一定時間経過していればリアルタイム更新
-    return (getCurrentMillis(timeManager) - lastUserAction) > UPDATE_PAUSE_DURATION;
+    return (getCurrentMillis(timeService) - lastUserAction) > UPDATE_PAUSE_DURATION;
 }
 
 auto AlarmDisplayState::updateLastUserAction() -> void {
-    lastUserAction = getCurrentMillis(timeManager);
+    lastUserAction = getCurrentMillis(timeService);
 }
 
 // 静的メソッドとして定義
-unsigned long AlarmDisplayState::getCurrentMillis(const std::shared_ptr<ITimeManager>& timeManager) {
-    // ITimeManager経由で時刻を取得
-    if (timeManager) {
-        return timeManager->getCurrentMillis();
+unsigned long AlarmDisplayState::getCurrentMillis(const std::shared_ptr<ITimeService>& timeService) {
+    if (timeService) {
+        return timeService->monotonicMillis();
     }
-    // フォールバック: 簡易実装として0を返す
     return 0;
 } 

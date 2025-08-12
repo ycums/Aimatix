@@ -2,8 +2,7 @@
 #include "StateManager.h"
 #include "AlarmLogic.h"
 #include "IAlarmDisplayView.h"
-#include "ITimeProvider.h"
-#include "ITimeManager.h"
+#include "ITimeService.h"
 #include <vector>
 #include <string>
 #include <ctime>
@@ -12,10 +11,8 @@
 class AlarmDisplayState : public IState {
 public:
     AlarmDisplayState(StateManager* mgr, IAlarmDisplayView* view = nullptr, 
-                     std::shared_ptr<ITimeProvider> timeProvider = nullptr,
-                     std::shared_ptr<ITimeManager> timeManager = nullptr)
-        : manager(mgr), view(view), timeProvider(timeProvider), 
-          timeManager(timeManager), selectedIndex(0), mainDisplayState(nullptr), 
+                     std::shared_ptr<ITimeService> timeService = nullptr)
+        : manager(mgr), view(view), timeService(timeService), selectedIndex(0), mainDisplayState(nullptr), 
           lastUserAction(0), lastSelectedIndex(0) {}
     
     void setMainDisplayState(IState* mainState) { mainDisplayState = mainState; }
@@ -31,8 +28,7 @@ public:
     void onButtonCLongPress() override;
     
     void setView(IAlarmDisplayView* v) { view = v; }
-    void setTimeProvider(std::shared_ptr<ITimeProvider> tp) { timeProvider = tp; }
-    void setTimeManager(std::shared_ptr<ITimeManager> tm) { timeManager = tm; }
+    void setTimeService(std::shared_ptr<ITimeService> s) { timeService = s; }
     
     // テスト用のアクセサ
     size_t getSelectedIndex() const { return selectedIndex; }
@@ -41,8 +37,7 @@ public:
 private:
     StateManager* manager;
     IAlarmDisplayView* view;
-    std::shared_ptr<ITimeProvider> timeProvider;
-    std::shared_ptr<ITimeManager> timeManager;
+    std::shared_ptr<ITimeService> timeService;
     IState* mainDisplayState;
     size_t selectedIndex;
     unsigned long lastUserAction;
@@ -74,7 +69,7 @@ private:
     void updateLastUserAction();
     
     // 静的メソッド
-    static unsigned long getCurrentMillis(const std::shared_ptr<ITimeManager>& timeManager);
+    static unsigned long getCurrentMillis(const std::shared_ptr<ITimeService>& timeService);
     
     // 強制描画（初期表示とリアルタイム更新用）
     void forceDraw();

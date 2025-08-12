@@ -1,5 +1,5 @@
 #pragma once
-#include "ITimeProvider.h"
+#include "ITimeService.h"
 #include "PartialInputLogic.h"
 #include <string>
 #include <ctime>
@@ -22,7 +22,7 @@ public:
     static PreviewResult generatePreview(
         const int* digits, 
         const bool* entered, 
-        ITimeProvider* timeProvider,
+        ITimeService* timeService,
         bool isRelativeMode
     );
     
@@ -34,7 +34,7 @@ public:
      */
     static PreviewResult generateRelativePreview(
         time_t relativeTime,
-        ITimeProvider* timeProvider
+        ITimeService* timeService
     );
     
 private:
@@ -48,7 +48,7 @@ private:
     static time_t calculateAbsoluteTime(
         const int* digits, 
         const bool* entered, 
-        ITimeProvider* timeProvider
+        ITimeService* timeService
     );
     
     /**
@@ -60,7 +60,7 @@ private:
      */
     static std::string formatPreview(
         time_t time, 
-        ITimeProvider* timeProvider,
+        ITimeService* timeService,
         bool isRelativeMode
     );
     
@@ -74,6 +74,6 @@ private:
     static int calculateDayDifference(
         time_t targetTime,
         time_t currentTime,
-        ITimeProvider* timeProvider
+        ITimeService* timeService
     );
 }; 

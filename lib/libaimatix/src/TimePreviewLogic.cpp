@@ -5,14 +5,14 @@
 TimePreviewLogic::PreviewResult TimePreviewLogic::generatePreview(
     const int* digits, 
     const bool* entered, 
-    ITimeProvider* timeProvider,
+    ITimeService* timeService,
     bool isRelativeMode
 ) {
     PreviewResult result{};
     result.isValid = false;
     result.preview = "";
     
-    if (timeProvider == nullptr || digits == nullptr || entered == nullptr) {
+    if (timeService == nullptr || digits == nullptr || entered == nullptr) {
         return result;
     }
     
@@ -23,29 +23,29 @@ TimePreviewLogic::PreviewResult TimePreviewLogic::generatePreview(
     }
     
     // 絶対値モードの場合
-    const time_t absoluteTime = calculateAbsoluteTime(digits, entered, timeProvider);
+    const time_t absoluteTime = calculateAbsoluteTime(digits, entered, timeService);
     if (absoluteTime == -1) {
         return result;
     }
     
-    result.preview = formatPreview(absoluteTime, timeProvider, false);
+    result.preview = formatPreview(absoluteTime, timeService, false);
     result.isValid = true;
     return result;
 }
 
 TimePreviewLogic::PreviewResult TimePreviewLogic::generateRelativePreview(
     time_t relativeTime,
-    ITimeProvider* timeProvider
+    ITimeService* timeService
 ) {
     PreviewResult result{};
     result.isValid = false;
     result.preview = "";
     
-    if (timeProvider == nullptr || relativeTime == -1) {
+    if (timeService == nullptr || relativeTime == -1) {
         return result;
     }
     
-    result.preview = formatPreview(relativeTime, timeProvider, true);
+    result.preview = formatPreview(relativeTime, timeService, true);
     result.isValid = true;
     return result;
 }
@@ -53,9 +53,9 @@ TimePreviewLogic::PreviewResult TimePreviewLogic::generateRelativePreview(
 time_t TimePreviewLogic::calculateAbsoluteTime(
     const int* digits, 
     const bool* entered, 
-    ITimeProvider* timeProvider
+    ITimeService* timeService
 ) {
-    if (timeProvider == nullptr || digits == nullptr || entered == nullptr) {
+    if (timeService == nullptr || digits == nullptr || entered == nullptr) {
         return -1;
     }
     
@@ -65,8 +65,8 @@ time_t TimePreviewLogic::calculateAbsoluteTime(
     }
     
     // 現在時刻を取得
-    time_t now = timeProvider->now();
-    struct tm* now_tm = timeProvider->localtime(&now);
+    time_t now = timeService->now();
+    struct tm* now_tm = timeService->localtime(&now);
     if (now_tm == nullptr) {
         return -1;
     }
@@ -118,19 +118,19 @@ time_t TimePreviewLogic::calculateAbsoluteTime(
 
 std::string TimePreviewLogic::formatPreview(
     time_t time, 
-    ITimeProvider* timeProvider,
+    ITimeService* timeService,
     bool isRelativeMode
 ) {
-    if (timeProvider == nullptr) {
+    if (timeService == nullptr) {
         return "";
     }
     
-    const time_t now = timeProvider->now();
-    const int dayDiff = calculateDayDifference(time, now, timeProvider);
+    const time_t now = timeService->now();
+    const int dayDiff = calculateDayDifference(time, now, timeService);
     
     // 静的バッファ問題を回避するため、値をコピー
     time_t time_copy = time;
-    struct tm* time_tm = timeProvider->localtime(&time_copy);
+    struct tm* time_tm = timeService->localtime(&time_copy);
     if (time_tm == nullptr) {
         return "";
     }
@@ -165,9 +165,9 @@ std::string TimePreviewLogic::formatPreview(
 int TimePreviewLogic::calculateDayDifference(
     time_t targetTime,
     time_t currentTime,
-    ITimeProvider* timeProvider
+    ITimeService* timeService
 ) {
-    if (timeProvider == nullptr) {
+    if (timeService == nullptr) {
         return 0;
     }
     
@@ -175,7 +175,7 @@ int TimePreviewLogic::calculateDayDifference(
     time_t target_copy1 = targetTime;
     time_t current_copy1 = currentTime;
     
-    struct tm* target_tm = timeProvider->localtime(&target_copy1);
+    struct tm* target_tm = timeService->localtime(&target_copy1);
     if (target_tm == nullptr) {
         return 0;
     }
@@ -185,7 +185,7 @@ int TimePreviewLogic::calculateDayDifference(
     
     // 別の変数でcurrent_tmを取得
     time_t current_copy2 = currentTime;
-    struct tm* current_tm = timeProvider->localtime(&current_copy2);
+    struct tm* current_tm = timeService->localtime(&current_copy2);
     if (current_tm == nullptr) {
         return 0;
     }
@@ -203,7 +203,7 @@ int TimePreviewLogic::calculateDayDifference(
         temp_tm.tm_mday = 1;
         temp_tm.tm_mon++;
         time_t nextMonth = mktime(&temp_tm);
-        struct tm* nextMonth_tm = timeProvider->localtime(&nextMonth);
+        struct tm* nextMonth_tm = timeService->localtime(&nextMonth);
         if (nextMonth_tm != nullptr) {
             const int daysInMonth = nextMonth_tm->tm_mday - 1;
             dayDiff += daysInMonth;

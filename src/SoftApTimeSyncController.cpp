@@ -1,8 +1,8 @@
 #include "SoftApTimeSyncController.h"
 
 #include "TimeSyncLogic.h"
-#include "ITimeManager.h"
-#include "ITimeProvider.h"
+#include "ITimeService.h"
+#include "M5TimeService.h"
 #include "ArduinoRandomProvider.h"
 #include "TimeSyncCore.h"
 #include "TimeZoneUtil.h"
@@ -13,8 +13,7 @@
 #include <WebServer.h>
 #include <esp_timer.h>
 static WebServer server(80);
-extern ITimeManager* g_time_manager;   // provided in main.cpp or platform layer
-extern ITimeProvider* g_time_provider; // provided in main.cpp or platform layer
+extern ITimeService* g_time_service;   // provided in main.cpp
 #endif
 
 #include <cstdint>
@@ -31,7 +30,7 @@ void SoftApTimeSyncController::begin() {
     delay(100);
     // Start pure session logic (generates credentials)
     ArduinoRandomProvider rnd;
-    logic_.begin(&rnd, g_time_manager, 60000);
+    logic_.begin(&rnd, g_time_service, 60000);
     ssid_  = logic_.getCredentials().ssid;
     psk_   = logic_.getCredentials().psk;
     token_ = logic_.getCredentials().token;
@@ -71,13 +70,13 @@ void SoftApTimeSyncController::begin() {
         std::string token = tokenStd;
 
         bool ok = false;
-        if (g_time_manager && g_time_provider) {
+        if (g_time_service) {
             // Validate token against our one-time token_
             logic_.setExpectedToken(token_.c_str());
 
             
             if (token == token_.c_str()) {
-                if (logic_.handleTimeSetRequest(epochMs, tzOffsetMin, token, g_time_manager, g_time_provider)) {
+                if (logic_.handleTimeSetRequest(epochMs, tzOffsetMin, token, g_time_service)) {
                     // Apply TZ immediately so localtime reflects smartphone's locale
                     #ifdef ARDUINO
                     const std::string tz = TimeZoneUtil::buildPosixTzFromOffsetMinutes(tzOffsetMin);
