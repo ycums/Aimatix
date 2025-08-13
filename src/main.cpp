@@ -199,6 +199,30 @@ void setup() {
 	}
 	#endif
 
+<<<<<<< HEAD
+    // --- 状態遷移の依存注入（@/design/ui_state_management.md準拠） ---
+    input_display_state.setManager(&state_manager);
+    input_display_state.setMainDisplayState(&main_display_state);
+    main_display_state.setAlarmDisplayState(&alarm_display_state);
+    main_display_state.setAlarmActiveState(&alarm_active_state);
+    alarm_display_state.setMainDisplayState(&main_display_state);
+    settings_display_state.setManager(&state_manager);
+    settings_display_state.setMainDisplayState(&main_display_state);
+    settings_display_state.setSettingsLogic(&settings_logic);
+    // DateTimeInputへの導線はMVP1では停止し、TimeSyncへ差し替え
+    settings_display_state.setTimeSyncDisplayState(&time_sync_display_state);
+    main_display_state.setSettingsDisplayState(&settings_display_state);
+    time_sync_display_state.setManager(&state_manager);
+    time_sync_display_state.setSettingsDisplayState(&settings_display_state);
+    time_sync_display_state.setMainDisplayState(&main_display_state);
+    // 状態遷移の初期状態をMainDisplayに（既に他状態へ遷移済みなら変更しない）
+    if (state_manager.getCurrentState() == nullptr) {
+        state_manager.setState(&main_display_state);
+    }
+
+    // フレームクロック初期化（位相維持の基準）
+    g_last_wake = xTaskGetTickCount();
+=======
 	// --- 状態遷移の依存注入（@/design/ui_state_management.md準拠） ---
 	input_display_state.setManager(&state_manager);
 	input_display_state.setMainDisplayState(&main_display_state);
@@ -221,6 +245,7 @@ void setup() {
 
 	// フレームクロック初期化（位相維持の基準）
 	g_last_wake = xTaskGetTickCount();
+>>>>>>> origin/main
 }
 #endif
 
@@ -272,9 +297,15 @@ void loop() {
 	}
 	g_vibe_seq.update(millis(), &g_vibe_out);
 #endif
+<<<<<<< HEAD
+    // 位相維持フレームクロック（16fps）
+    const TickType_t step = pdMS_TO_TICKS(g_frame_clock_planner.nextDelayMs());
+    vTaskDelayUntil(&g_last_wake, step);
+=======
 	// 位相維持フレームクロック（16fps）
 	const TickType_t step = pdMS_TO_TICKS(g_frame_clock_planner.nextDelayMs());
 	vTaskDelayUntil(&g_last_wake, step);
+>>>>>>> origin/main
 }
 #endif
 

@@ -44,10 +44,43 @@ void test_basic_input_logic() {
     TEST_ASSERT_EQUAL(5, logic.getDigit(3));
 }
 
+// ---- FrameClockPlanner tests (co-located) ----
+#include "FrameClockPlanner.h"
+
+static void test_fcp_next_delay_ms_basic_range() {
+    FrameClockPlanner p(62500, 1000);
+    const uint32_t d1 = p.nextDelayMs();
+    TEST_ASSERT_TRUE(d1 >= 62 && d1 <= 63);
+    const uint32_t d2 = p.nextDelayMs();
+    TEST_ASSERT_TRUE(d2 >= 62 && d2 <= 63);
+    const uint32_t d3 = p.nextDelayMs();
+    TEST_ASSERT_TRUE(d3 >= 62 && d3 <= 63);
+}
+
+static void test_fcp_cumulative_ms_close_to_expected() {
+    FrameClockPlanner p(62500, 1000);
+    uint64_t sum = 0;
+    const int frames = 1000;
+    for (int i = 0; i < frames; ++i) { sum += p.nextDelayMs(); }
+    TEST_ASSERT_TRUE(sum >= 62490 && sum <= 62510);
+}
+
+static void test_fcp_reset_restores_initial_behavior() {
+    FrameClockPlanner p(62500, 1000);
+    (void)p.nextDelayMs();
+    (void)p.nextDelayMs();
+    p.reset();
+    const uint32_t d = p.nextDelayMs();
+    TEST_ASSERT_TRUE(d >= 62 && d <= 63);
+}
+
 int main(int argc, char **argv) {
     UNITY_BEGIN();
     RUN_TEST(test_basic_state_manager);
     RUN_TEST(test_basic_input_logic);
+    RUN_TEST(test_fcp_next_delay_ms_basic_range);
+    RUN_TEST(test_fcp_cumulative_ms_close_to_expected);
+    RUN_TEST(test_fcp_reset_restores_initial_behavior);
     UNITY_END();
     return 0;
-} 
+}
