@@ -193,3 +193,4 @@ Aimatixプロジェクトのドキュメント集です。各ドキュメント�
 **作成日**: 2025年1月  
 **バージョン**: 1.0.0  
 **更新日**: 2025年1月 
+<!-- docs-only smoke change for automerge check -->
