@@ -42,7 +42,7 @@
 #include <M5GFX.h>
 
 // 定数定義
-constexpr int LOOP_DELAY_MS = 50;
+// LOOP_DELAY_MS はフレームクロック導入により廃止
 
 // 統一された描画関数（全デバイス共通）
 auto m5_rect_impl(int pos_x, int pos_y, int width, int height) -> void {
@@ -103,6 +103,9 @@ SettingsLogic settings_logic;
 ButtonManager button_manager;
 
 #ifdef ARDUINO
+#include "FrameClockPlanner.h"
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
 // Core2 vibration: single file-scope instances used by setup()/loop()
 #ifdef M5STACK_CORE2
 static VibrationSequencer g_vibe_seq;
@@ -125,6 +128,9 @@ SettingsDisplayState settings_display_state(&settings_logic, &settings_display_v
  // 起動時自動開始の抑止管理（同一ブート内）
  BootAutoSyncPolicy g_boot_auto_policy;
 DateTimeInputState datetime_input_state(g_time_service, &datetime_input_view_impl);
+// フレームクロック（16fps固定, tick=1ms）
+static TickType_t g_last_wake = 0;
+static FrameClockPlanner g_frame_clock_planner(62500, 1000);
 #else
 // Native環境用のモック（テスト用）
 InputLogic input_logic(nullptr);
@@ -212,6 +218,9 @@ void setup() {
     if (state_manager.getCurrentState() == nullptr) {
         state_manager.setState(&main_display_state);
     }
+
+    // フレームクロック初期化（位相維持の基準）
+    g_last_wake = xTaskGetTickCount();
 }
 #endif
 
@@ -263,7 +272,9 @@ void loop() {
     }
     g_vibe_seq.update(millis(), &g_vibe_out);
 #endif
-    delay(LOOP_DELAY_MS);
+    // 位相維持フレームクロック（16fps）
+    const TickType_t step = pdMS_TO_TICKS(g_frame_clock_planner.nextDelayMs());
+    vTaskDelayUntil(&g_last_wake, step);
 }
 #endif
 
