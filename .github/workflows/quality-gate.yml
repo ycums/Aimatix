@@ -14,7 +14,7 @@ permissions:
 
 # 同一PRの重複実行を抑止
 concurrency:
-  group: quality-gate-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: quality-gate-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -177,12 +177,7 @@ jobs:
     name: Auto-merge when CI passed and hw-ok or approved
     needs: quality-gate
     runs-on: ubuntu-latest
-    if: >
-      ${{
-        (github.event_name == 'pull_request' || github.event_name == 'pull_request_review') &&
-        !github.event.pull_request.draft &&
-        needs.quality-gate.result == 'success'
-      }}
+    if: ${{ (github.event_name == 'pull_request' || github.event_name == 'pull_request_review') && !github.event.pull_request.draft && needs.quality-gate.result == 'success' }}
     steps:
       - name: Merge (and delete branch on success)
         uses: actions/github-script@v7
