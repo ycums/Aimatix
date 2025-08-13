@@ -182,3 +182,4 @@ bash scripts/gh_pr_safe.sh
 - [GitHub Flow](https://guides.github.com/introduction/flow/)
 - [GitHub CLI](https://cli.github.com/)
 - [Conventional Commits](./conventional_commits.md)
+- [Conventional Commits](./conventional_commits.md)

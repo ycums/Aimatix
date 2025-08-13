@@ -1,0 +1,36 @@
+# Default: normalize text files to LF on checkout and commit
+* text=auto eol=lf
+
+# Explicit text types
+*.c      text eol=lf
+*.cpp    text eol=lf
+*.h      text eol=lf
+*.hpp    text eol=lf
+*.ino    text eol=lf
+*.md     text eol=lf
+*.yml    text eol=lf
+*.yaml   text eol=lf
+*.json   text eol=lf
+*.txt    text eol=lf
+*.sh     text eol=lf
+*.py     text eol=lf
+*.ini    text eol=lf
+*.mdc    text eol=lf
+
+# Binary files (do not alter line endings)
+*.png    binary
+*.jpg    binary
+*.jpeg   binary
+*.gif    binary
+*.bmp    binary
+*.ico    binary
+*.zip    binary
+*.gz     binary
+*.7z     binary
+*.pdf    binary
+*.ttf    binary
+*.otf    binary
+*.exe    binary
+*.dll    binary
+*.bin    binary
+
