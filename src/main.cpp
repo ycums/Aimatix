@@ -223,13 +223,24 @@ void loop() {
     button_manager.update(ButtonManager::BtnA, M5.BtnA.isPressed(), millis());
     button_manager.update(ButtonManager::BtnB, M5.BtnB.isPressed(), millis());
     button_manager.update(ButtonManager::BtnC, M5.BtnC.isPressed(), millis());
-    // 論理イベントでStateManagerに伝搬
-    if (button_manager.isShortPress(ButtonManager::BtnA)) { state_manager.handleButtonA(); }
-    if (button_manager.isShortPress(ButtonManager::BtnB)) { state_manager.handleButtonB(); }
-    if (button_manager.isShortPress(ButtonManager::BtnC)) { state_manager.handleButtonC(); }
-    if (button_manager.isLongPress(ButtonManager::BtnA)) { state_manager.handleButtonALongPress(); }
-    if (button_manager.isLongPress(ButtonManager::BtnB)) { state_manager.handleButtonBLongPress(); }
-    if (button_manager.isLongPress(ButtonManager::BtnC)) { state_manager.handleButtonCLongPress(); }
+    // 論理イベントを一度だけ取得し、以降で共有利用（消費の二重化を防止）
+    const bool pdA = button_manager.isPressDown(ButtonManager::BtnA);
+    const bool pdB = button_manager.isPressDown(ButtonManager::BtnB);
+    const bool pdC = button_manager.isPressDown(ButtonManager::BtnC);
+    const bool spA = button_manager.isShortPress(ButtonManager::BtnA);
+    const bool spB = button_manager.isShortPress(ButtonManager::BtnB);
+    const bool spC = button_manager.isShortPress(ButtonManager::BtnC);
+    const bool lpA = button_manager.isLongPress(ButtonManager::BtnA);
+    const bool lpB = button_manager.isLongPress(ButtonManager::BtnB);
+    const bool lpC = button_manager.isLongPress(ButtonManager::BtnC);
+
+    // 論理イベントでStateManagerに伝搬（ローカル値を使用）
+    if (spA) { state_manager.handleButtonA(); }
+    if (spB) { state_manager.handleButtonB(); }
+    if (spC) { state_manager.handleButtonC(); }
+    if (lpA) { state_manager.handleButtonALongPress(); }
+    if (lpB) { state_manager.handleButtonBLongPress(); }
+    if (lpC) { state_manager.handleButtonCLongPress(); }
     // 現在の状態の描画
     IState* current = state_manager.getCurrentState();
     if (current != nullptr) {
@@ -237,19 +248,16 @@ void loop() {
     }
 
     // --- Core2: Haptics feedback on press/longPress ---
+    // --- Core2: Haptics feedback on press/longPress ---
 #ifdef M5STACK_CORE2
     // 設定: press/longPressで個別のパターン（初期: 100ms/100%）
     static const std::vector<VibrationSequencer::Segment> kPressDownPattern = { {100, 100} };
     static const std::vector<VibrationSequencer::Segment> kLongPressPattern = { {100, 100} };
-    if (button_manager.isPressDown(ButtonManager::BtnA) ||
-        button_manager.isPressDown(ButtonManager::BtnB) ||
-        button_manager.isPressDown(ButtonManager::BtnC)) {
+    if (pdA || pdB || pdC) {
         g_vibe_seq.loadPattern(kPressDownPattern, false);
         g_vibe_seq.start(millis());
     }
-    if (button_manager.isLongPress(ButtonManager::BtnA) ||
-        button_manager.isLongPress(ButtonManager::BtnB) ||
-        button_manager.isLongPress(ButtonManager::BtnC)) {
+    if (lpA || lpB || lpC) {
         g_vibe_seq.loadPattern(kLongPressPattern, false);
         g_vibe_seq.start(millis());
     }
