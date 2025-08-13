@@ -31,5 +31,3 @@ private:
 	uint64_t accumulatedUs_;
 	uint64_t emittedMsTotal_;
 };
-
-
