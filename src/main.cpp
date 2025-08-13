@@ -150,6 +150,7 @@ void setup() {
     
     // Boot Auto: 無効時刻ならTime Sync自動開始（EXITで同一ブート抑止）
     // 注意: 自動開始の判定は「補正前の生時刻」で行う
+    #ifndef SKIP_BOOT_AUTO_SYNC
     g_boot_auto_policy.resetForBoot();
     const bool isInvalidAtBoot = TimeValidationLogic::isSystemTimeBeforeMinimum(g_time_service);
 
@@ -164,6 +165,7 @@ void setup() {
         time_sync_display_state.setBootAutoSyncPolicy(&g_boot_auto_policy);
         state_manager.setState(&time_sync_display_state);
     }
+    #endif
 
     // --- 状態遷移の依存注入（@/design/ui_state_management.md準拠） ---
     input_display_state.setManager(&state_manager);

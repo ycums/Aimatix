@@ -111,6 +111,26 @@ build_unflags = -std=gnu++11
 ```
 
 - **build_src_filter**等は未使用。LDF（Library Dependency Finder）でlib/配下の自作ロジックを自動認識。
+
+## 3.1 実機テスト用ラボ環境（Core2）
+
+Core2 ラボ環境では、起動時の自動Time Sync開始を抑止するためのビルドフラグを用意しています。
+
+```ini
+[env:m5stack-core2-lab]
+extends = env:m5stack-core2
+build_flags =
+    ${env:m5stack-core2.build_flags}
+    -DSKIP_BOOT_AUTO_SYNC
+```
+
+- `SKIP_BOOT_AUTO_SYNC` が定義されている場合、`src/main.cpp` の起動時自動Time Sync処理（`resetForBoot()` 呼び出しから自動遷移の if ブロックまで）が無効化されます。
+- 使い方（例）:
+
+```bash
+platformio run -e m5stack-core2-lab
+```
+
 - **test/pure/**配下の各ディレクトリにtest_main.cppが1つずつ。
 - **mockのインクルード**は "mock/xxx.h" または "mock_button_manager.h" などで相対パス指定。
 
