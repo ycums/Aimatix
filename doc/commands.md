@@ -22,3 +22,5 @@ python scripts/test_coverage.py --full # 完全カバレッジ測定
 # 例: TITLE="ci: update docs" BASE_BRANCH=main bash scripts/gh_pr_safe.sh ./pr_body.md
 TITLE="ci: update" bash scripts/gh_pr_safe.sh # デフォルトテンプレで本文作成
 ```
+
+> CI matrix test: docs-only, no-hw only (case B)
