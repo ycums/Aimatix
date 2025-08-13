@@ -18,6 +18,7 @@ void ButtonManager::update(ButtonType btn, bool pressed, uint32_t now_ms) {
         if (pressed) {
             // 押下開始
             btn_state.pressStart = now_ms;
+            btn_state.pressDownEdge = true; // 立ち上がりエッジ
             btn_state.shortFired = false;
             btn_state.longFired = false;
             btn_state.fired = false;
@@ -36,6 +37,16 @@ void ButtonManager::update(ButtonType btn, bool pressed, uint32_t now_ms) {
         btn_state.longFired = true;
         btn_state.fired = true;
     }
+}
+
+auto ButtonManager::isPressDown(ButtonType btn) const -> bool {
+    auto btn_index = static_cast<size_t>(btn);
+    if (btn < 0 || btn_index >= sizeof(btnStates)/sizeof(btnStates[0])) {
+        return false; // 無効なボタンタイプ
+    }
+    const bool ret = btnStates[btn_index].pressDownEdge;
+    const_cast<BtnState&>(btnStates[btn_index]).pressDownEdge = false;
+    return ret;
 }
 
 auto ButtonManager::isShortPress(ButtonType btn) const -> bool {
@@ -64,4 +75,4 @@ void ButtonManager::reset(ButtonType btn) {
         return; // 無効なボタンタイプ
     }
     btnStates[btn_index] = BtnState();
-} 
+}
