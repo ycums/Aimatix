@@ -23,10 +23,42 @@ jobs:
     if: ${{ !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    outputs:
+      docs_only: ${{ steps.docs_only.outputs.value }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Paths filter
+        id: paths
+        uses: dorny/paths-filter@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          filters: |
+            docs:
+              - 'doc/**'
+              - '**/*.md'
+              - '**/*.mdc'
+            code:
+              - 'lib/libaimatix/**'
+              - 'src/**'
+              - 'test/**'
+              - 'scripts/**'
+              - 'platformio.ini'
+              - '.github/workflows/**'
+
+      - name: Compute docs_only
+        id: docs_only
+        shell: bash
+        run: |
+          DOCS="${{ steps.paths.outputs.docs }}"
+          CODE="${{ steps.paths.outputs.code }}"
+          if [ "$DOCS" = "true" ] && [ "$CODE" != "true" ]; then
+            echo "value=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -148,20 +180,25 @@ jobs:
     if: >
       ${{
         (github.event_name == 'pull_request' || github.event_name == 'pull_request_review') &&
-        !github.event.pull_request.draft
+        !github.event.pull_request.draft &&
+        needs.quality-gate.result == 'success'
       }}
     steps:
       - name: Merge (and delete branch on success)
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          env:
+            DOCS_ONLY: ${{ needs.quality-gate.outputs.docs_only }}
           script: |
             const { owner, repo } = context.repo;
             const pr = context.payload.pull_request;
             if (!pr || pr.state !== 'open') { return; }
 
-            // 条件: hw-ok ラベル or 承認
+            // ラベル検出
             const hasHwOk = Array.isArray(pr.labels) && pr.labels.some(l => l && l.name === 'hw-ok');
+            const hasNoHw = Array.isArray(pr.labels) && pr.labels.some(l => l && l.name === 'no-hw');
+            const hasAutomerge = Array.isArray(pr.labels) && pr.labels.some(l => l && l.name === 'automerge');
             let isApproved = false;
             try {
               const reviews = await github.rest.pulls.listReviews({ owner, repo, pull_number: pr.number });
@@ -169,10 +206,23 @@ jobs:
             } catch (e) {
               core.warning(`listReviews failed: ${e.message}`);
             }
-            if (!hasHwOk && !isApproved) {
-              core.info('Skip: need hw-ok label or at least one approval');
-              return;
+
+            const docsOnly = String(process.env.DOCS_ONLY).trim() === 'true';
+            let canMerge = false;
+            if (docsOnly) {
+              // docsのみ変更: no-hw + automerge が付与されている場合に自動マージ
+              canMerge = hasNoHw && hasAutomerge;
+              if (!canMerge) {
+                core.info('Skip: docs-only PR requires both no-hw and automerge labels');
+              }
+            } else {
+              // 従来条件: hw-ok ラベル or 承認
+              canMerge = hasHwOk || isApproved;
+              if (!canMerge) {
+                core.info('Skip: need hw-ok label or at least one approval');
+              }
             }
+            if (!canMerge) { return; }
 
             // マージ実行
             let merged = false;
