@@ -127,6 +127,17 @@ BRANCH_NAME="feature/issue-$ISSUE_NUMBER-$ISSUE_TITLE"
 git checkout -b "$BRANCH_NAME"
 ```
 
+## ラベル運用
+
+- **no-hw**: 実機不要変更（docs/CI/純粋ロジックのみ 等）
+- **automerge**: 品質ゲート通過後の自動マージを希望
+- **hw-ok**: `src/**` を含む変更でも自動マージを許可
+
+### 自動マージ条件
+- **許可**: `hw-ok` ラベル もしくは 1件以上のレビュー承認
+- **許可**: `no-hw` と `automerge` の両ラベル 且つ `src/**` に変更なし
+- **不許可**: `src/**` に変更がある場合は `no-hw` 経路が無効（`hw-ok` または承認が必要）
+
 ## 品質ゲート
 
 ### Pull Request作成前のチェック
@@ -170,4 +181,5 @@ bash scripts/gh_pr_safe.sh
 
 - [GitHub Flow](https://guides.github.com/introduction/flow/)
 - [GitHub CLI](https://cli.github.com/)
-- [Conventional Commits](./conventional_commits.md) 
+- [Conventional Commits](./conventional_commits.md)
+- [Conventional Commits](./conventional_commits.md)
