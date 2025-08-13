@@ -111,6 +111,11 @@ ButtonManager button_manager;
 static VibrationSequencer g_vibe_seq;
 static Core2VibrationAdapter g_vibe_out;
 #endif
+// Backlight sequencer (frame-synced brightness)
+#include "BacklightSequencer.h"
+#include "M5BacklightAdapter.h"
+static BacklightSequencer g_backlight_seq;
+static M5BacklightAdapter g_backlight_out;
 // M5Stack関連のクラス（全デバイス共通）
 static M5TimeService g_time_service_impl;
 ITimeService* g_time_service = &g_time_service_impl;
@@ -159,6 +164,18 @@ void setup() {
 	Serial.begin(cfg.serial_baudrate);
 	Serial.println("[BOOT] M5.begin done");
 	M5.Display.setTextColor(AMBER_COLOR, TFT_BLACK);
+#ifdef ENABLE_BACKLIGHT_BOOT_DEMO
+	// Simple non-repeating boot demo: fade in (8f), hold (8f), off (8f)
+	g_backlight_seq.clear();
+	g_backlight_seq.enqueueStep(0, 4);
+	g_backlight_seq.enqueueStep(64, 4);
+	g_backlight_seq.enqueueStep(128, 4);
+	g_backlight_seq.enqueueStep(200, 4);
+	g_backlight_seq.enqueueStep(255, 8);
+	g_backlight_seq.enqueueStep(0, 8);
+	g_backlight_seq.setRepeat(false);
+	g_backlight_seq.start();
+#endif
 #if defined(M5STACK_CORE2) && defined(ENABLE_CORE2_BOOT_VIBE_DEMO)
 	g_vibe_seq.loadPattern({
 		{100, 100},   // 100ms ON（100%）
@@ -296,6 +313,10 @@ void loop() {
 		g_vibe_seq.start(millis());
 	}
 	g_vibe_seq.update(millis(), &g_vibe_out);
+#endif
+#ifdef ENABLE_BACKLIGHT_BOOT_DEMO
+	// Drive backlight on 16fps frame boundary only
+	g_backlight_seq.tick(&g_backlight_out);
 #endif
 <<<<<<< HEAD
     // 位相維持フレームクロック（16fps）
