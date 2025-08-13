@@ -24,6 +24,12 @@
 #include "TimeSyncViewImpl.h"
 #include "SoftApTimeSyncController.h"
 #include "M5TimeService.h"
+#ifdef ARDUINO
+#ifdef M5STACK_CORE2
+#include "VibrationSequencer.h"
+#include "Core2VibrationAdapter.h"
+#endif
+#endif
 
 // 共通include（全環境で使用）
 #include <Arduino.h>
@@ -97,6 +103,11 @@ SettingsLogic settings_logic;
 ButtonManager button_manager;
 
 #ifdef ARDUINO
+// Core2 vibration: single file-scope instances used by setup()/loop()
+#ifdef M5STACK_CORE2
+static VibrationSequencer g_vibe_seq;
+static Core2VibrationAdapter g_vibe_out;
+#endif
 // M5Stack関連のクラス（全デバイス共通）
 static M5TimeService g_time_service_impl;
 ITimeService* g_time_service = &g_time_service_impl;
@@ -139,7 +150,23 @@ void setup() {
     cfg.clear_display = true;
     cfg.output_power = true;
     M5.begin(cfg);
+    Serial.begin(cfg.serial_baudrate);
+    Serial.println("[BOOT] M5.begin done");
     M5.Display.setTextColor(AMBER_COLOR, TFT_BLACK);
+    // --- Core2: バイブレーションパターンを設定し開始する（例: 100ms ON→100ms OFF→100ms ON→...） ---
+#ifdef M5STACK_CORE2
+    g_vibe_seq.loadPattern({
+        {100, 100},   // 100ms ON（100%）
+        {100, 0},     // 100ms OFF
+        {100, 100},   // 100ms ON（100%）
+        {500, 0},     // 500ms OFF
+        {1000, 80},   // 1000ms ON（80%）
+        {500, 0},     // 500ms OFF
+        {1000, 80}    // 1000ms ON（80%）
+    }, false);        // 繰り返しなし
+    g_vibe_seq.start(millis()); // パターン再生開始
+    Serial.println("[VIBE] pattern loaded and started");
+#endif
     
     // ITimeService一本化後も、必要なら here で初期化ロジックを追加可能
     
@@ -209,6 +236,11 @@ void loop() {
     if (current != nullptr) {
         current->onDraw();
     }
+
+    // --- Core2: Vibration update ---
+#ifdef M5STACK_CORE2
+    g_vibe_seq.update(millis(), &g_vibe_out);
+#endif
     delay(LOOP_DELAY_MS);
 }
 #endif
