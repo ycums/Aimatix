@@ -59,6 +59,23 @@ void test_debounce_edge_and_reset() {
     TEST_ASSERT_FALSE(bm2.isLongPress(ButtonManager::BtnC));
 }
 
+void test_press_down_edge_single_shot_and_debounce() {
+    ButtonManager bm;
+    uint32_t t = 5000;
+    // 立ち上がりで1回だけtrue、その後押しっぱなしではfalse
+    bm.update(ButtonManager::BtnA, true, t);      // 押下（エッジ）
+    TEST_ASSERT_TRUE(bm.isPressDown(ButtonManager::BtnA));
+    TEST_ASSERT_FALSE(bm.isPressDown(ButtonManager::BtnA));
+    // デバウンス未満の反転は無視
+    bm.update(ButtonManager::BtnA, false, t+10);  // 10msで離す（無視）
+    bm.update(ButtonManager::BtnA, true, t+15);   // さらに押下（無視）
+    TEST_ASSERT_FALSE(bm.isPressDown(ButtonManager::BtnA));
+    // デバウンスを超えた後の再押下で再度true
+    bm.update(ButtonManager::BtnA, false, t+200); // 安定した離し
+    bm.update(ButtonManager::BtnA, true, t+260);  // 再押下（エッジ）
+    TEST_ASSERT_TRUE(bm.isPressDown(ButtonManager::BtnA));
+}
+
 void setUp(void) {}
 void tearDown(void) {}
 
@@ -68,6 +85,7 @@ int main(int argc, char **argv) {
     RUN_TEST(test_long_press);
     RUN_TEST(test_debounce);
     RUN_TEST(test_debounce_edge_and_reset);
+    RUN_TEST(test_press_down_edge_single_shot_and_debounce);
     UNITY_END();
     return 0;
-} 
+}

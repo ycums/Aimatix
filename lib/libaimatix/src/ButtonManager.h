@@ -8,6 +8,8 @@ public:
 
     // ボタン状態を更新（押下/離上/時刻）
     void update(ButtonType btn, bool pressed, uint32_t now_ms);
+    // 立ち上がりエッジ（press瞬間）検出
+    bool isPressDown(ButtonType btn) const;
     // 短押し判定
     bool isShortPress(ButtonType btn) const;
     // 長押し判定
@@ -19,10 +21,11 @@ private:
         bool pressed = false;
         uint32_t pressStart = 0;
         uint32_t lastChange = 0;
+        bool pressDownEdge = false;
         bool shortFired = false;
         bool longFired = false;
         bool fired = false;
     } btnStates[3];
     static constexpr uint32_t BM_LONG_PRESS_MS = 500;
     static constexpr uint32_t BM_DEBOUNCE_MS = 50;
-}; 
+};

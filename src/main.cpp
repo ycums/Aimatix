@@ -153,8 +153,7 @@ void setup() {
     Serial.begin(cfg.serial_baudrate);
     Serial.println("[BOOT] M5.begin done");
     M5.Display.setTextColor(AMBER_COLOR, TFT_BLACK);
-    // --- Core2: バイブレーションパターンを設定し開始する（例: 100ms ON→100ms OFF→100ms ON→...） ---
-#ifdef M5STACK_CORE2
+#if defined(M5STACK_CORE2) && defined(ENABLE_CORE2_BOOT_VIBE_DEMO)
     g_vibe_seq.loadPattern({
         {100, 100},   // 100ms ON（100%）
         {100, 0},     // 100ms OFF
@@ -237,8 +236,23 @@ void loop() {
         current->onDraw();
     }
 
-    // --- Core2: Vibration update ---
+    // --- Core2: Haptics feedback on press/longPress ---
 #ifdef M5STACK_CORE2
+    // 設定: press/longPressで個別のパターン（初期: 100ms/100%）
+    static const std::vector<VibrationSequencer::Segment> kPressDownPattern = { {100, 100} };
+    static const std::vector<VibrationSequencer::Segment> kLongPressPattern = { {100, 100} };
+    if (button_manager.isPressDown(ButtonManager::BtnA) ||
+        button_manager.isPressDown(ButtonManager::BtnB) ||
+        button_manager.isPressDown(ButtonManager::BtnC)) {
+        g_vibe_seq.loadPattern(kPressDownPattern, false);
+        g_vibe_seq.start(millis());
+    }
+    if (button_manager.isLongPress(ButtonManager::BtnA) ||
+        button_manager.isLongPress(ButtonManager::BtnB) ||
+        button_manager.isLongPress(ButtonManager::BtnC)) {
+        g_vibe_seq.loadPattern(kLongPressPattern, false);
+        g_vibe_seq.start(millis());
+    }
     g_vibe_seq.update(millis(), &g_vibe_out);
 #endif
     delay(LOOP_DELAY_MS);
