@@ -24,3 +24,4 @@ TITLE="ci: update" bash scripts/gh_pr_safe.sh # デフォルトテンプレで�
 ```
 
 > CI matrix test: docs-only, automerge only (case D)
+> CI matrix test: docs-only, no-hw + automerge (case C)
