@@ -10,7 +10,6 @@
 #include "InputDisplayViewImpl.h"
 #include "MainDisplayViewImpl.h"
 #include "AlarmDisplayViewImpl.h"
-#include "AlarmActiveViewImpl.h"
 #include "AlarmActiveState.h"
 #include "SettingsDisplayViewImpl.h"
 #include "DateTimeInputViewImpl.h"
@@ -124,8 +123,7 @@ InputLogic input_logic(m5_time_service);
 InputDisplayState input_display_state(&input_logic, &input_display_view_impl, g_time_service);
 MainDisplayState main_display_state(&state_manager, &input_display_state, &main_display_view_impl, &time_logic, &alarm_logic);
  AlarmDisplayState alarm_display_state(&state_manager, &alarm_display_view_impl, m5_time_service);
- AlarmActiveViewImpl alarm_active_view_impl(&display_adapter);
- AlarmActiveState alarm_active_state(&state_manager, &alarm_active_view_impl, &main_display_state, &g_time_service_impl);
+ AlarmActiveState alarm_active_state(&state_manager, &main_display_state, &g_backlight_seq, &g_backlight_out);
 SettingsDisplayState settings_display_state(&settings_logic, &settings_display_view_impl);
  TimeSyncViewImpl time_sync_view_impl(&display_adapter);
  SoftApTimeSyncController time_sync_controller;
@@ -142,8 +140,7 @@ InputLogic input_logic(nullptr);
 InputDisplayState input_display_state(&input_logic, &input_display_view_impl);
 MainDisplayState main_display_state(&state_manager, &input_display_state, &main_display_view_impl, &time_logic, &alarm_logic);
  AlarmDisplayState alarm_display_state(&state_manager, &alarm_display_view_impl, nullptr);
- AlarmActiveViewImpl alarm_active_view_impl(&display_adapter);
- AlarmActiveState alarm_active_state(&state_manager, &alarm_active_view_impl, &main_display_state);
+ AlarmActiveState alarm_active_state(&state_manager, &main_display_state, &g_backlight_seq, &g_backlight_out);
 SettingsDisplayState settings_display_state(&settings_logic, &settings_display_view_impl);
 DateTimeInputState datetime_input_state(nullptr, &datetime_input_view_impl);
 #endif
@@ -288,10 +285,8 @@ void loop() {
 	}
 	g_vibe_seq.update(millis(), &g_vibe_out);
 #endif
-#ifdef ENABLE_BACKLIGHT_BOOT_DEMO
-	// Drive backlight on 16fps frame boundary only
-	g_backlight_seq.tick(&g_backlight_out);
-#endif
+    // Drive backlight on 16fps frame boundary only (always enabled)
+    g_backlight_seq.tick(&g_backlight_out);
 	// 位相維持フレームクロック（16fps）
 	const TickType_t step = pdMS_TO_TICKS(g_frame_clock_planner.nextDelayMs());
 	vTaskDelayUntil(&g_last_wake, step);
