@@ -1,56 +1,82 @@
 #pragma once
 
 #include "StateManager.h"
-#include "IAlarmActiveView.h"
-#include "AlarmFlashScheduler.h"
 #include <cstdint>
-#include "ITimeService.h"
+#include <vector>
+#include "BacklightSequencer.h"
+#include "IBacklight.h"
+#include "ISettingsLogic.h"
+#include "ui_constants.h"
 
+// AlarmActiveState delegates visual alert to BacklightSequencer.
+// It enqueues a fixed non-repeating pattern on enter, restores the
+// pre-alarm brightness on finish or immediate stop, and returns to main state.
 class AlarmActiveState : public IState {
 public:
-    AlarmActiveState(StateManager* manager, IAlarmActiveView* view, IState* mainState, ITimeService* timeService = nullptr)
-        : manager_(manager), view_(view), mainState_(mainState), timeService_(timeService), startedMs_(0), elapsedMs_(0) {}
+    AlarmActiveState(StateManager* manager,
+                     IState* mainState,
+                     BacklightSequencer* backlightSeq,
+                     IBacklight* backlightOut,
+                     ISettingsLogic* settings = nullptr)
+        : manager_(manager),
+          mainState_(mainState),
+          backlightSeq_(backlightSeq),
+          backlightOut_(backlightOut),
+          settings_(settings),
+          baselineBrightness_(DEFAULT_LCD_BRIGHTNESS),
+          started_(false) {}
 
     void onEnter() override {
-        elapsedMs_ = 0;
-        // 再入時に前回の開始時刻を引きずらないよう明示的にリセット
-        startedMs_ = 0;
-        scheduler_.begin(0);
-        // 次回onDrawで必ず一度だけ描画されるようエッジを強制
-        lastOn_ = false;
-        baseDrawn_ = false;
-    }
-    void onExit() override {
-        // オーバーレイが残らないように必ずOFF描画
-        if (view_) { view_->drawFlashOverlay(false); }
-        baseDrawn_ = false;
-        // 念のため開始時刻もクリア
-        startedMs_ = 0;
-    }
-    void onDraw() override {
-        // 経過時間を更新（単調msを使用）。フレームごとに差分加算にしても良いが、
-        // シンプルさ優先で直値を読んで差分に変換する。
-        updateElapsed_();
-        const bool on = scheduler_.update(elapsedMs_);
-        // ON/OFFの変化（エッジ）のみで描画を行い、ちらつきを防止
-        if (on != lastOn_) {
-            if (on) {
-                // ON遷移: 直前にベースを最新化し、オーバーレイをON
-                if (mainState_) { mainState_->onDraw(); }
-                if (view_) { view_->drawFlashOverlay(true); }
-                baseDrawn_ = true;
-            } else {
-                // OFF遷移: 先にオーバーレイをOFFし、その後にベースを最新化
-                if (view_) { view_->drawFlashOverlay(false); }
-                if (mainState_) { mainState_->onDraw(); }
-                baseDrawn_ = true;
+        // Capture baseline brightness to restore later (settings -> seq -> default)
+        if (settings_) {
+            const int s = settings_->getLcdBrightness();
+            if (s >= 0 && s <= 255) {
+                baselineBrightness_ = static_cast<uint8_t>(s);
             }
-            lastOn_ = on;
+        } else if (backlightSeq_) {
+            baselineBrightness_ = backlightSeq_->getLastBrightness();
+        } else {
+            baselineBrightness_ = DEFAULT_LCD_BRIGHTNESS;
         }
-        if (scheduler_.isFinished() && manager_ && mainState_) {
-            manager_->setState(mainState_);
+
+        // Build 1-second pattern @16fps:
+        // [255x2f, 0x2f] x3 + [0x4f] = 16 frames
+        if (backlightSeq_) {
+            backlightSeq_->clear();
+            for (int i = 0; i < 3; ++i) {
+                backlightSeq_->enqueueStep(255, 2);
+                backlightSeq_->enqueueStep(0, 2);
+            }
+            backlightSeq_->enqueueStep(0, 4);
+            // Repeat 4 times total (4 seconds) by enqueuing the 1s pattern 3 more times
+            for (int r = 0; r < 3; ++r) {
+                for (int i = 0; i < 3; ++i) {
+                    backlightSeq_->enqueueStep(255, 2);
+                    backlightSeq_->enqueueStep(0, 2);
+                }
+                backlightSeq_->enqueueStep(0, 4);
+            }
+            backlightSeq_->setRepeat(false);
+            backlightSeq_->start();
+            started_ = true;
         }
     }
+
+    void onExit() override {
+        // Ensure baseline restoration when leaving the state for any reason
+        restoreBaseline_();
+        started_ = false;
+    }
+
+    void onDraw() override {
+        // Auto-exit when sequence finished (tick is driven by main loop)
+        if (started_ && backlightSeq_ && !backlightSeq_->isActive()) {
+            restoreBaseline_();
+            if (manager_ && mainState_) { manager_->setState(mainState_); }
+            started_ = false;
+        }
+    }
+
     void onButtonA() override { immediateExit_(); }
     void onButtonB() override { immediateExit_(); }
     void onButtonC() override { immediateExit_(); }
@@ -58,31 +84,28 @@ public:
     void onButtonBLongPress() override { immediateExit_(); }
     void onButtonCLongPress() override { immediateExit_(); }
 
-    // 時間サービスのDI（テスト差し替え用）
-    void setTimeService(ITimeService* service) { timeService_ = service; }
-
 private:
-    void updateElapsed_() {
-        if (!timeService_) { return; }
-        const uint32_t nowMs = timeService_->monotonicMillis();
-        if (!startedMs_) {
-            startedMs_ = nowMs;
+    void restoreBaseline_() {
+        if (backlightSeq_) {
+            backlightSeq_->stop(backlightOut_);
         }
-        elapsedMs_ = nowMs - startedMs_;
+        if (backlightOut_) {
+            backlightOut_->setBrightness(baselineBrightness_);
+        }
     }
+
     void immediateExit_() {
+        restoreBaseline_();
         if (manager_ && mainState_) { manager_->setState(mainState_); }
+        started_ = false;
     }
 
     StateManager* manager_;
-    IAlarmActiveView* view_;
     IState* mainState_;
-    ITimeService* timeService_ = nullptr;
-    AlarmFlashScheduler scheduler_;
-    uint32_t startedMs_;
-    uint32_t elapsedMs_;
-    bool baseDrawn_ = false;
-    bool lastOn_ = false;
+    BacklightSequencer* backlightSeq_;
+    IBacklight* backlightOut_;
+    ISettingsLogic* settings_;
+    uint8_t baselineBrightness_;
+    bool started_;
 };
-
 

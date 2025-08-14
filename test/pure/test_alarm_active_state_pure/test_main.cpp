@@ -1,5 +1,6 @@
 #include <unity.h>
 #include "AlarmActiveState.h"
+#include "BacklightSequencer.h"
 
 namespace {
 struct DummyState : public IState {
@@ -15,101 +16,84 @@ struct DummyState : public IState {
   void onButtonCLongPress() override {}
 };
 
-struct MockView : public IAlarmActiveView {
+struct MockBacklight : public IBacklight {
+  uint8_t last = 0;
   int calls = 0;
-  bool last = false;
-  void drawFlashOverlay(bool on) override { ++calls; last = on; }
-};
-
-struct MockTimeService : public ITimeService {
-  uint32_t ms = 0;
-  time_t n = 0;
-  time_t now() const override { return n; }
-  struct tm* localtime(time_t* t) const override { return ::localtime(t); }
-  bool setSystemTime(time_t) override { return true; }
-  uint32_t monotonicMillis() const override { return ms; }
+  void setBrightness(uint8_t b) override { last = b; ++calls; }
 };
 }
 
 void setUp() {}
 void tearDown() {}
 
-void test_overlay_called_only_on_toggle_edges(void) {
+// 1) onEnter でデフォルトパターンが開始され、1秒(16f)の代表点が期待値になる
+void test_alarm_enter_and_frame_progression(void) {
   StateManager mgr;
   DummyState main;
-  MockView view;
-  MockTimeService ts;
-  AlarmActiveState s(&mgr, &view, &main, &ts);
+  BacklightSequencer seq;
+  MockBacklight out;
+  AlarmActiveState s(&mgr, &main, &seq, &out);
 
-  // enter at t=0ms (initial ON)
-  ts.ms = 0;
+  // ベースラインを作る: 事前に任意明度にしておく
+  seq.clear();
+  seq.enqueueStep(123, 1);
+  seq.start();
+  seq.tick(&out);
+
+  // 鳴動開始
   s.onEnter();
-
-  // 0..1000ms (50ms step) におけるトグル境界到達回数に一致する
-  for (int i = 0; i <= 20; ++i) { // 0..1000 inclusive, 50ms step
-    s.onDraw();
-    ts.ms += 50;
+  // 1秒=16f の代表フレームを検証
+  // f0..f15: 255,255,0,0,255,255,0,0,255,255,0,0,0,0,0,0
+  const uint8_t expected[16] = {255,255,0,0,255,255,0,0,255,255,0,0,0,0,0,0};
+  for (int i = 0; i < 16; ++i) {
+    seq.tick(&out);
+    TEST_ASSERT_EQUAL_UINT8(expected[i], out.last);
   }
-  // 期待: サンプリング50ms刻みでのエッジ検出は6回となる（375ms等の境界はサンプリング点に乗らない）
-  TEST_ASSERT_EQUAL_INT(6, view.calls);
 }
 
-void test_on_exit_overlay_cleared(void) {
+// 2) 4秒後に完了し、開始前明度(123)へ復帰
+void test_alarm_completion_restores_baseline(void) {
   StateManager mgr;
   DummyState main;
-  MockView view;
-  MockTimeService ts;
-  AlarmActiveState s(&mgr, &view, &main, &ts);
+  BacklightSequencer seq;
+  MockBacklight out;
+  AlarmActiveState s(&mgr, &main, &seq, &out);
 
-  ts.ms = 0;
+  // ベースライン=123
+  seq.clear(); seq.enqueueStep(123, 1); seq.start(); seq.tick(&out);
+
   s.onEnter();
-  s.onDraw(); // initial draw
-  s.onExit();
-  TEST_ASSERT_FALSE(view.last);
+  // 4秒=64f 進める
+  for (int i = 0; i < 64; ++i) { seq.tick(&out); }
+  // onDrawで終了検出→復帰を行う
+  s.onDraw();
+  TEST_ASSERT_FALSE(seq.isActive());
+  TEST_ASSERT_EQUAL_UINT8(123, out.last);
 }
 
-void test_reenter_increases_draw_calls(void) {
+// 3) 即時停止（ボタン）で開始前明度へ即復帰
+void test_alarm_immediate_stop_restores_baseline(void) {
   StateManager mgr;
   DummyState main;
-  MockView view;
-  MockTimeService ts;
-  AlarmActiveState s(&mgr, &view, &main, &ts);
+  BacklightSequencer seq;
+  MockBacklight out;
+  AlarmActiveState s(&mgr, &main, &seq, &out);
 
-  ts.ms = 0;
+  // ベースライン=77
+  seq.clear(); seq.enqueueStep(77, 1); seq.start(); seq.tick(&out);
+
   s.onEnter();
-  ts.ms = 5000;     // 1回目は終了相当まで進める
-  s.onDraw();
-
-  int before = view.calls;
-  s.onEnter();      // 再入
-  s.onDraw();       // 初期ONエッジで描画が増えるはず
-  TEST_ASSERT_TRUE(view.calls > before);
-}
-
-void test_reenter_last_state_is_on(void) {
-  StateManager mgr;
-  DummyState main;
-  MockView view;
-  MockTimeService ts;
-  AlarmActiveState s(&mgr, &view, &main, &ts);
-
-  ts.ms = 0;
-  s.onEnter();
-  ts.ms = 5000;
-  s.onDraw();
-
-  s.onEnter();      // 再入
-  s.onDraw();
-  TEST_ASSERT_TRUE(view.last);
+  seq.tick(&out); // 何フレームか進める
+  s.onButtonA();  // 即時停止
+  // 即復帰していること
+  TEST_ASSERT_EQUAL_UINT8(77, out.last);
 }
 
 int main(int, char**) {
   UNITY_BEGIN();
-  RUN_TEST(test_overlay_called_only_on_toggle_edges);
-  RUN_TEST(test_on_exit_overlay_cleared);
-  RUN_TEST(test_reenter_increases_draw_calls);
-  RUN_TEST(test_reenter_last_state_is_on);
+  RUN_TEST(test_alarm_enter_and_frame_progression);
+  RUN_TEST(test_alarm_completion_restores_baseline);
+  RUN_TEST(test_alarm_immediate_stop_restores_baseline);
   return UNITY_END();
 }
-
 

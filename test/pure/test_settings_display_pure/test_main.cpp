@@ -1,6 +1,9 @@
 #include <unity.h>
 #include "SettingsDisplayState.h"
+#include "settings/SettingsLogic.h"
 #include <memory>
+#include <vector>
+#include <ctime>
 
 extern std::vector<time_t> alarm_times;
 

@@ -1,6 +1,6 @@
 #include <unity.h>
 #include "SettingsDisplayState.h"
-#include "SettingsLogic.h"
+#include "settings/SettingsLogic.h"
 
 class DummyTimeSyncState : public IState {
 public:
