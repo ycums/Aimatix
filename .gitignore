@@ -17,10 +17,7 @@ coverage_report_*.json
 build/CMakeFiles/cmake.check_cache
 build/.cmake/api/v1/reply/*
 .vscode/
-.cursor/*
-# Allow tracking of Cursor rules
-!.cursor/rules/
-!.cursor/rules/*.mdc
+.cursor/
 .cache/
 build/
 static_analysis_report.json
