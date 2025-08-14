@@ -6,7 +6,7 @@
 #include "SettingsDisplayState.h"
 #include "DateTimeInputState.h"
 #include "InputLogic.h"
-#include "SettingsLogic.h"
+#include "settings/SettingsLogic.h"
 #include "InputDisplayViewImpl.h"
 #include "MainDisplayViewImpl.h"
 #include "AlarmDisplayViewImpl.h"
@@ -122,14 +122,14 @@ const std::shared_ptr<ITimeService> m5_time_service{ &g_time_service_impl, [](IT
 InputLogic input_logic(m5_time_service);
 InputDisplayState input_display_state(&input_logic, &input_display_view_impl, g_time_service);
 MainDisplayState main_display_state(&state_manager, &input_display_state, &main_display_view_impl, &time_logic, &alarm_logic);
- AlarmDisplayState alarm_display_state(&state_manager, &alarm_display_view_impl, m5_time_service);
- AlarmActiveState alarm_active_state(&state_manager, &main_display_state, &g_backlight_seq, &g_backlight_out);
+AlarmDisplayState alarm_display_state(&state_manager, &alarm_display_view_impl, m5_time_service);
+AlarmActiveState alarm_active_state(&state_manager, &main_display_state, &g_backlight_seq, &g_backlight_out, &settings_logic);
 SettingsDisplayState settings_display_state(&settings_logic, &settings_display_view_impl);
- TimeSyncViewImpl time_sync_view_impl(&display_adapter);
- SoftApTimeSyncController time_sync_controller;
- TimeSyncDisplayState time_sync_display_state(&time_sync_view_impl, &time_sync_controller);
- // 起動時自動開始の抑止管理（同一ブート内）
- BootAutoSyncPolicy g_boot_auto_policy;
+TimeSyncViewImpl time_sync_view_impl(&display_adapter);
+SoftApTimeSyncController time_sync_controller;
+TimeSyncDisplayState time_sync_display_state(&time_sync_view_impl, &time_sync_controller);
+// 起動時自動開始の抑止管理（同一ブート内）
+BootAutoSyncPolicy g_boot_auto_policy;
 DateTimeInputState datetime_input_state(g_time_service, &datetime_input_view_impl);
 // フレームクロック（16fps固定, tick=1ms）
 static TickType_t g_last_wake = 0;
@@ -139,8 +139,8 @@ static FrameClockPlanner g_frame_clock_planner(62500, 1000);
 InputLogic input_logic(nullptr);
 InputDisplayState input_display_state(&input_logic, &input_display_view_impl);
 MainDisplayState main_display_state(&state_manager, &input_display_state, &main_display_view_impl, &time_logic, &alarm_logic);
- AlarmDisplayState alarm_display_state(&state_manager, &alarm_display_view_impl, nullptr);
- AlarmActiveState alarm_active_state(&state_manager, &main_display_state, &g_backlight_seq, &g_backlight_out);
+AlarmDisplayState alarm_display_state(&state_manager, &alarm_display_view_impl, nullptr);
+AlarmActiveState alarm_active_state(&state_manager, &main_display_state, &g_backlight_seq, &g_backlight_out, &settings_logic);
 SettingsDisplayState settings_display_state(&settings_logic, &settings_display_view_impl);
 DateTimeInputState datetime_input_state(nullptr, &datetime_input_view_impl);
 #endif

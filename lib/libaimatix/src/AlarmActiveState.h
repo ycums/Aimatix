@@ -5,6 +5,8 @@
 #include <vector>
 #include "BacklightSequencer.h"
 #include "IBacklight.h"
+#include "ISettingsLogic.h"
+#include "ui_constants.h"
 
 // AlarmActiveState delegates visual alert to BacklightSequencer.
 // It enqueues a fixed non-repeating pattern on enter, restores the
@@ -14,20 +16,27 @@ public:
     AlarmActiveState(StateManager* manager,
                      IState* mainState,
                      BacklightSequencer* backlightSeq,
-                     IBacklight* backlightOut)
+                     IBacklight* backlightOut,
+                     ISettingsLogic* settings = nullptr)
         : manager_(manager),
           mainState_(mainState),
           backlightSeq_(backlightSeq),
           backlightOut_(backlightOut),
-          baselineBrightness_(0),
+          settings_(settings),
+          baselineBrightness_(DEFAULT_LCD_BRIGHTNESS),
           started_(false) {}
 
     void onEnter() override {
-        // Capture baseline brightness to restore later
-        if (backlightSeq_) {
+        // Capture baseline brightness to restore later (settings -> seq -> default)
+        if (settings_) {
+            const int s = settings_->getLcdBrightness();
+            if (s >= 0 && s <= 255) {
+                baselineBrightness_ = static_cast<uint8_t>(s);
+            }
+        } else if (backlightSeq_) {
             baselineBrightness_ = backlightSeq_->getLastBrightness();
         } else {
-            baselineBrightness_ = 0;
+            baselineBrightness_ = DEFAULT_LCD_BRIGHTNESS;
         }
 
         // Build 1-second pattern @16fps:
@@ -95,6 +104,7 @@ private:
     IState* mainState_;
     BacklightSequencer* backlightSeq_;
     IBacklight* backlightOut_;
+    ISettingsLogic* settings_;
     uint8_t baselineBrightness_;
     bool started_;
 };

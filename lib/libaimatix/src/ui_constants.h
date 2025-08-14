@@ -5,6 +5,9 @@
 #define AMBER_COLOR 0xFB20
 #define TFT_BLACK 0x0000
 
+// デフォルトLCD輝度（フォールバックや初期値で使用）
+#define DEFAULT_LCD_BRIGHTNESS 127
+
 // 画面サイズ
 #define SCREEN_WIDTH 320
 #define SCREEN_HEIGHT 240

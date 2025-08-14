@@ -1,6 +1,6 @@
 #pragma once
 #include "StateManager.h"
-#include "SettingsLogic.h"
+#include "ISettingsLogic.h"
 #include "ISettingsDisplayView.h"
 #include <vector>
 #include <string>
