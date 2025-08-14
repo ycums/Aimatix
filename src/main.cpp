@@ -216,30 +216,6 @@ void setup() {
 	}
 	#endif
 
-<<<<<<< HEAD
-    // --- 状態遷移の依存注入（@/design/ui_state_management.md準拠） ---
-    input_display_state.setManager(&state_manager);
-    input_display_state.setMainDisplayState(&main_display_state);
-    main_display_state.setAlarmDisplayState(&alarm_display_state);
-    main_display_state.setAlarmActiveState(&alarm_active_state);
-    alarm_display_state.setMainDisplayState(&main_display_state);
-    settings_display_state.setManager(&state_manager);
-    settings_display_state.setMainDisplayState(&main_display_state);
-    settings_display_state.setSettingsLogic(&settings_logic);
-    // DateTimeInputへの導線はMVP1では停止し、TimeSyncへ差し替え
-    settings_display_state.setTimeSyncDisplayState(&time_sync_display_state);
-    main_display_state.setSettingsDisplayState(&settings_display_state);
-    time_sync_display_state.setManager(&state_manager);
-    time_sync_display_state.setSettingsDisplayState(&settings_display_state);
-    time_sync_display_state.setMainDisplayState(&main_display_state);
-    // 状態遷移の初期状態をMainDisplayに（既に他状態へ遷移済みなら変更しない）
-    if (state_manager.getCurrentState() == nullptr) {
-        state_manager.setState(&main_display_state);
-    }
-
-    // フレームクロック初期化（位相維持の基準）
-    g_last_wake = xTaskGetTickCount();
-=======
 	// --- 状態遷移の依存注入（@/design/ui_state_management.md準拠） ---
 	input_display_state.setManager(&state_manager);
 	input_display_state.setMainDisplayState(&main_display_state);
@@ -250,7 +226,7 @@ void setup() {
 	settings_display_state.setMainDisplayState(&main_display_state);
 	settings_display_state.setSettingsLogic(&settings_logic);
 	// DateTimeInputへの導線はMVP1では停止し、TimeSyncへ差し替え
-	suggestions_display_state.setTimeSyncDisplayState(&time_sync_display_state);
+	settings_display_state.setTimeSyncDisplayState(&time_sync_display_state);
 	main_display_state.setSettingsDisplayState(&settings_display_state);
 	time_sync_display_state.setManager(&state_manager);
 	time_sync_display_state.setSettingsDisplayState(&settings_display_state);
@@ -262,8 +238,7 @@ void setup() {
 
 	// フレームクロック初期化（位相維持の基準）
 	g_last_wake = xTaskGetTickCount();
->>>>>>> origin/main
-}
+	}
 #endif
 
 // 統一されたloop関数
@@ -299,7 +274,6 @@ void loop() {
 	}
 
 	// --- Core2: Haptics feedback on press/longPress ---
-	// --- Core2: Haptics feedback on press/longPress ---
 #ifdef M5STACK_CORE2
 	// 設定: press/longPressで個別のパターン（初期: 100ms/100%）
 	static const std::vector<VibrationSequencer::Segment> kPressDownPattern = { {100, 100} };
@@ -318,15 +292,9 @@ void loop() {
 	// Drive backlight on 16fps frame boundary only
 	g_backlight_seq.tick(&g_backlight_out);
 #endif
-<<<<<<< HEAD
-    // 位相維持フレームクロック（16fps）
-    const TickType_t step = pdMS_TO_TICKS(g_frame_clock_planner.nextDelayMs());
-    vTaskDelayUntil(&g_last_wake, step);
-=======
 	// 位相維持フレームクロック（16fps）
 	const TickType_t step = pdMS_TO_TICKS(g_frame_clock_planner.nextDelayMs());
 	vTaskDelayUntil(&g_last_wake, step);
->>>>>>> origin/main
 }
 #endif
 
