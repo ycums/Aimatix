@@ -111,6 +111,11 @@ ButtonManager button_manager;
 static VibrationSequencer g_vibe_seq;
 static Core2VibrationAdapter g_vibe_out;
 #endif
+// Backlight sequencer (frame-synced brightness)
+#include "BacklightSequencer.h"
+#include "M5BacklightAdapter.h"
+static BacklightSequencer g_backlight_seq;
+static M5BacklightAdapter g_backlight_out;
 // M5Stack関連のクラス（全デバイス共通）
 static M5TimeService g_time_service_impl;
 ITimeService* g_time_service = &g_time_service_impl;
@@ -159,6 +164,18 @@ void setup() {
 	Serial.begin(cfg.serial_baudrate);
 	Serial.println("[BOOT] M5.begin done");
 	M5.Display.setTextColor(AMBER_COLOR, TFT_BLACK);
+#ifdef ENABLE_BACKLIGHT_BOOT_DEMO
+	// Simple non-repeating boot demo: fade in (8f), hold (8f), off (8f)
+	g_backlight_seq.clear();
+	g_backlight_seq.enqueueStep(0, 4);
+	g_backlight_seq.enqueueStep(64, 4);
+	g_backlight_seq.enqueueStep(128, 4);
+	g_backlight_seq.enqueueStep(200, 4);
+	g_backlight_seq.enqueueStep(255, 8);
+	g_backlight_seq.enqueueStep(0, 8);
+	g_backlight_seq.setRepeat(false);
+	g_backlight_seq.start();
+#endif
 #if defined(M5STACK_CORE2) && defined(ENABLE_CORE2_BOOT_VIBE_DEMO)
 	g_vibe_seq.loadPattern({
 		{100, 100},   // 100ms ON（100%）
@@ -199,30 +216,6 @@ void setup() {
 	}
 	#endif
 
-<<<<<<< HEAD
-    // --- 状態遷移の依存注入（@/design/ui_state_management.md準拠） ---
-    input_display_state.setManager(&state_manager);
-    input_display_state.setMainDisplayState(&main_display_state);
-    main_display_state.setAlarmDisplayState(&alarm_display_state);
-    main_display_state.setAlarmActiveState(&alarm_active_state);
-    alarm_display_state.setMainDisplayState(&main_display_state);
-    settings_display_state.setManager(&state_manager);
-    settings_display_state.setMainDisplayState(&main_display_state);
-    settings_display_state.setSettingsLogic(&settings_logic);
-    // DateTimeInputへの導線はMVP1では停止し、TimeSyncへ差し替え
-    settings_display_state.setTimeSyncDisplayState(&time_sync_display_state);
-    main_display_state.setSettingsDisplayState(&settings_display_state);
-    time_sync_display_state.setManager(&state_manager);
-    time_sync_display_state.setSettingsDisplayState(&settings_display_state);
-    time_sync_display_state.setMainDisplayState(&main_display_state);
-    // 状態遷移の初期状態をMainDisplayに（既に他状態へ遷移済みなら変更しない）
-    if (state_manager.getCurrentState() == nullptr) {
-        state_manager.setState(&main_display_state);
-    }
-
-    // フレームクロック初期化（位相維持の基準）
-    g_last_wake = xTaskGetTickCount();
-=======
 	// --- 状態遷移の依存注入（@/design/ui_state_management.md準拠） ---
 	input_display_state.setManager(&state_manager);
 	input_display_state.setMainDisplayState(&main_display_state);
@@ -233,7 +226,7 @@ void setup() {
 	settings_display_state.setMainDisplayState(&main_display_state);
 	settings_display_state.setSettingsLogic(&settings_logic);
 	// DateTimeInputへの導線はMVP1では停止し、TimeSyncへ差し替え
-	suggestions_display_state.setTimeSyncDisplayState(&time_sync_display_state);
+	settings_display_state.setTimeSyncDisplayState(&time_sync_display_state);
 	main_display_state.setSettingsDisplayState(&settings_display_state);
 	time_sync_display_state.setManager(&state_manager);
 	time_sync_display_state.setSettingsDisplayState(&settings_display_state);
@@ -245,8 +238,7 @@ void setup() {
 
 	// フレームクロック初期化（位相維持の基準）
 	g_last_wake = xTaskGetTickCount();
->>>>>>> origin/main
-}
+	}
 #endif
 
 // 統一されたloop関数
@@ -282,7 +274,6 @@ void loop() {
 	}
 
 	// --- Core2: Haptics feedback on press/longPress ---
-	// --- Core2: Haptics feedback on press/longPress ---
 #ifdef M5STACK_CORE2
 	// 設定: press/longPressで個別のパターン（初期: 100ms/100%）
 	static const std::vector<VibrationSequencer::Segment> kPressDownPattern = { {100, 100} };
@@ -297,15 +288,13 @@ void loop() {
 	}
 	g_vibe_seq.update(millis(), &g_vibe_out);
 #endif
-<<<<<<< HEAD
-    // 位相維持フレームクロック（16fps）
-    const TickType_t step = pdMS_TO_TICKS(g_frame_clock_planner.nextDelayMs());
-    vTaskDelayUntil(&g_last_wake, step);
-=======
+#ifdef ENABLE_BACKLIGHT_BOOT_DEMO
+	// Drive backlight on 16fps frame boundary only
+	g_backlight_seq.tick(&g_backlight_out);
+#endif
 	// 位相維持フレームクロック（16fps）
 	const TickType_t step = pdMS_TO_TICKS(g_frame_clock_planner.nextDelayMs());
 	vTaskDelayUntil(&g_last_wake, step);
->>>>>>> origin/main
 }
 #endif
 
