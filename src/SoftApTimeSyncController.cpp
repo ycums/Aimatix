@@ -11,8 +11,10 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <WebServer.h>
+#include <DNSServer.h>
 #include <esp_timer.h>
 static WebServer server(80);
+static DNSServer dnsServer; // Captive: wildcard DNS → AP IP
 extern ITimeService* g_time_service;   // provided in main.cpp
 #endif
 
@@ -38,11 +40,18 @@ void SoftApTimeSyncController::begin() {
     // PSKは最低8文字必要
     WiFi.softAP(ssid_.c_str(), psk_.c_str());
 
+    // Captive DNS: 任意ホスト名をAP IPへ解決
+    {
+        const IPAddress apIp = WiFi.softAPIP();
+        dnsServer.setTTL(1);
+        dnsServer.start(53, "*", apIp);
+    }
+
     // Register station-connected event → Step2 昇格
     WiFi.onEvent([this](WiFiEvent_t /*event*/, WiFiEventInfo_t /*info*/) {
         logic_.onStationConnected();
     }, ARDUINO_EVENT_WIFI_AP_STACONNECTED);
-    // Setup minimal routes for Step2 (sync + time/set)
+    // Setup minimal routes for Step2 (sync + time/set) and captive redirects
     server.on("/sync", HTTP_GET, [this]() {
         // Minimal HTML that auto-posts Date.now()/getTimezoneOffset()
         String html;
@@ -54,6 +63,54 @@ void SoftApTimeSyncController::begin() {
         html += F("</script></body></html>");
         server.send(200, "text/html", html);
         
+    });
+
+    // iOS接続性チェック経路（CNAトリガ目的で302→/sync）。Hostは任意（DNSで自IPへ）。
+    server.on("/hotspot-detect.html", HTTP_GET, [this]() {
+        String loc = "/sync?t=";
+        loc += token_.c_str();
+        server.sendHeader("Location", loc, true);
+        server.send(302, "text/plain", "");
+    });
+    // 汎用success系・Windows/NCSI等も302へ（最小セット）
+    server.on("/success.txt", HTTP_GET, [this]() {
+        String loc = "/sync?t=";
+        loc += token_.c_str();
+        server.sendHeader("Location", loc, true);
+        server.send(302, "text/plain", "");
+    });
+    server.on("/success.html", HTTP_GET, [this]() {
+        String loc = "/sync?t=";
+        loc += token_.c_str();
+        server.sendHeader("Location", loc, true);
+        server.send(302, "text/plain", "");
+    });
+    server.on("/ncsi.txt", HTTP_GET, [this]() {
+        String loc = "/sync?t=";
+        loc += token_.c_str();
+        server.sendHeader("Location", loc, true);
+        server.send(302, "text/plain", "");
+    });
+    // Android系の /generate_204 は204で返すとCNAは開かないが、iOS優先のため302で誘導
+    server.on("/generate_204", HTTP_GET, [this]() {
+        String loc = "/sync?t=";
+        loc += token_.c_str();
+        server.sendHeader("Location", loc, true);
+        server.send(302, "text/plain", "");
+    });
+
+    // ルート/未知パスは一律 /sync へリダイレクト
+    server.on("/", HTTP_GET, [this]() {
+        String loc = "/sync?t=";
+        loc += token_.c_str();
+        server.sendHeader("Location", loc, true);
+        server.send(302, "text/plain", "");
+    });
+    server.onNotFound([this]() {
+        String loc = "/sync?t=";
+        loc += token_.c_str();
+        server.sendHeader("Location", loc, true);
+        server.send(302, "text/plain", "");
     });
     server.on("/time/set", HTTP_POST, [this]() {
         if (!server.hasArg("plain")) { server.send(400, "text/plain", "Bad Request"); return; }
@@ -106,7 +163,20 @@ void SoftApTimeSyncController::begin() {
             server.send(500, "text/plain", "No time adapters");
             
         }
-        if (ok) { server.stop(); WiFi.softAPdisconnect(true); WiFi.mode(WIFI_OFF); }
+        if (ok) {
+            if (windowTimer_ != nullptr) {
+                esp_timer_handle_t h = reinterpret_cast<esp_timer_handle_t>(windowTimer_);
+                esp_timer_stop(h);
+                esp_timer_delete(h);
+                windowTimer_ = nullptr;
+            }
+            dnsServer.stop();
+            server.stop();
+            WiFi.softAPdisconnect(true);
+            WiFi.mode(WIFI_OFF);
+            delay(50);
+            running_ = false;
+        }
     });
     server.begin();
 #ifdef ARDUINO
@@ -115,12 +185,14 @@ void SoftApTimeSyncController::begin() {
         const uint32_t nowMs = millis();
         const uint32_t remain = logic_.getWindowRemainingMs(nowMs);
         esp_timer_create_args_t args{};
-        args.callback = [](void* /*arg*/){ server.stop(); WiFi.softAPdisconnect(true); WiFi.mode(WIFI_OFF); };
+        args.callback = [](void* /*arg*/){ dnsServer.stop(); server.stop(); WiFi.softAPdisconnect(true); WiFi.mode(WIFI_OFF); };
         args.dispatch_method = ESP_TIMER_TASK;
         args.name = "ts_window";
         esp_timer_handle_t h = nullptr;
         if (esp_timer_create(&args, &h) == ESP_OK) {
             esp_timer_start_once(h, static_cast<uint64_t>(remain) * 1000ULL);
+            // Keep handle to cancel on success/cancel
+            windowTimer_ = reinterpret_cast<void*>(h);
         }
     }
 #endif
@@ -130,8 +202,17 @@ void SoftApTimeSyncController::begin() {
 
 void SoftApTimeSyncController::cancel() {
 #ifdef ARDUINO
+    if (windowTimer_ != nullptr) {
+        esp_timer_handle_t h = reinterpret_cast<esp_timer_handle_t>(windowTimer_);
+        esp_timer_stop(h);
+        esp_timer_delete(h);
+        windowTimer_ = nullptr;
+    }
+    dnsServer.stop();
+    server.stop();
     WiFi.softAPdisconnect(true);
     WiFi.mode(WIFI_OFF);
+    delay(50);
 #endif
     running_ = false;
 }
@@ -140,6 +221,8 @@ void SoftApTimeSyncController::loopTick() {
 #ifdef ARDUINO
     // Handle incoming HTTP requests for /sync and /time/set
     server.handleClient();
+    // Process DNS queries for captive portal
+    dnsServer.processNextRequest();
 
     // Fallback: station count check → Step2
     if (logic_.getStatus() == TimeSyncLogic::Status::Step1) {
